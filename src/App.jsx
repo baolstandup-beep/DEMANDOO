@@ -16,6 +16,7 @@ import { AdminDriverReviewPage } from './pages/AdminDriverReviewPage';
 import { MyBookingsPage } from './pages/MyBookingsPage';
 import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
+import { SubscriptionPage } from './pages/SubscriptionPage';
 
 export function App() {
   const location = useLocation();
@@ -45,6 +46,8 @@ export function App() {
       document.title = 'Connexion | Demandoo';
     } else if (path === '/register') {
       document.title = 'Inscription | Demandoo';
+    } else if (path === '/abonnement') {
+      document.title = 'Abonnement Chauffeur | Demandoo';
     }
   }, [location]);
 
@@ -61,6 +64,7 @@ export function App() {
           <Route path="/publier" element={<PublishTripPage />} />
           <Route path="/espace-chauffeur" element={<DriverSpacePage />} />
           <Route path="/verification-chauffeur" element={<DriverVerificationPage />} />
+          <Route path="/abonnement" element={<SubscriptionPage />} />
           
           <Route path="/admin/paiements" element={<AdminDashboardPage />} />
           <Route path="/admin/drivers" element={<AdminDriversPage />} />

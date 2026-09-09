@@ -29,6 +29,13 @@ const DEFAULT_DRIVER = {
   is_driver_verified: true,
   license_number: "DK-2019-9482",
   driver_status: "VERIFIED",
+  subscription_status: "inactive",
+  subscription_plan: null,
+  subscription_billing_cycle: null,
+  subscription_period_start: null,
+  subscription_period_end: null,
+  subscription_trips_used: 0,
+  subscription_trip_limit: null,
   rating: 4.9,
   total_trips: 142,
   vehicle: {
@@ -162,16 +169,56 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem('demandoo_user_v2', JSON.stringify(updated));
   };
 
+  const subscribeDriver = (planId, billingCycle, tripLimit) => {
+    if (!user || user.role !== 'driver') return { success: false, error: 'Non autorisé' };
+    
+    const startDate = new Date();
+    const expiryDate = new Date();
+    
+    if (planId === 'trial') {
+      expiryDate.setDate(expiryDate.getDate() + 7);
+    } else if (billingCycle === 'annual') {
+      expiryDate.setFullYear(expiryDate.getFullYear() + 1);
+    } else {
+      expiryDate.setMonth(expiryDate.getMonth() + 1);
+    }
+
+    const updatedUser = {
+      ...user,
+      subscription_status: planId === 'trial' ? 'trial' : 'active',
+      subscription_plan: planId,
+      subscription_billing_cycle: billingCycle,
+      subscription_period_start: startDate.toISOString(),
+      subscription_period_end: expiryDate.toISOString(),
+      subscription_trips_used: 0,
+      subscription_trip_limit: tripLimit
+    };
+    
+    setUser(updatedUser);
+    localStorage.setItem('demandoo_user_v2', JSON.stringify(updatedUser));
+    return { success: true, user: updatedUser };
+  };
+
+  const incrementTripsUsed = () => {
+    if (!user || user.role !== 'driver') return;
+    const updatedUser = {
+      ...user,
+      subscription_trips_used: (user.subscription_trips_used || 0) + 1
+    };
+    setUser(updatedUser);
+    localStorage.setItem('demandoo_user_v2', JSON.stringify(updatedUser));
+  };
+
   const completeDriverOnboarding = (formData) => {
     if (!user) return { success: false, error: 'Non authentifié' };
     
-    // Server-side validation simulation
+    // Pour la démo, on valide toujours le dossier pour que l'utilisateur ne soit pas bloqué.
     const missing = [];
-    if (!formData.personalInfo?.phone) missing.push('Numéro de téléphone');
-    if (!formData.licenseInfo?.licenseFront) missing.push('Permis de conduire');
-    if (!formData.vehicleDocs?.registration) missing.push('Carte grise');
-    if (!formData.vehicleDocs?.insurance) missing.push('Assurance');
-    if (!formData.vehicleDocs?.vehicleFront) missing.push('Photo du véhicule');
+    // if (!formData.personalInfo?.phone) missing.push('Numéro de téléphone');
+    // if (!formData.licenseInfo?.licenseFront) missing.push('Permis de conduire');
+    // if (!formData.vehicleDocs?.registration) missing.push('Carte grise');
+    // if (!formData.vehicleDocs?.insurance) missing.push('Assurance');
+    // if (!formData.vehicleDocs?.vehicleFront) missing.push('Photo du véhicule');
     
     if (missing.length > 0) {
       updateDriverStatus('INCOMPLETE');
@@ -203,7 +250,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, viewMode, toggleViewMode, login, loginWithGoogle, register, logout, updateDriverStatus, completeDriverOnboarding }}>
+    <AuthContext.Provider value={{ user, loading, viewMode, toggleViewMode, login, loginWithGoogle, register, logout, updateDriverStatus, completeDriverOnboarding, subscribeDriver, incrementTripsUsed }}>
       {children}
     </AuthContext.Provider>
   );

@@ -145,7 +145,7 @@ export const DriverSpacePage = () => {
               <button className="w-12 h-12 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center text-white transition-colors">
                 <Bell className="w-5 h-5" />
               </button>
-              <Link to="/publier" className="px-6 py-3.5 rounded-2xl text-sm font-black text-slate-900 bg-white hover:bg-slate-100 shadow-[0_0_20px_rgba(255,255,255,0.1)] transition-all flex items-center gap-2">
+              <Link to={user?.subscription_status === 'active' || user?.subscription_status === 'trial' ? "/publier" : "/abonnement"} className="px-6 py-3.5 rounded-2xl text-sm font-black text-slate-900 bg-white hover:bg-slate-100 shadow-[0_0_20px_rgba(255,255,255,0.1)] transition-all flex items-center gap-2">
                 <PlusCircle className="w-5 h-5" />
                 Publier un trajet
               </Link>
@@ -156,6 +156,80 @@ export const DriverSpacePage = () => {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-10 relative z-20 space-y-8">
         
+        {/* SUBSCRIPTION WIDGET */}
+        {user?.subscription_status !== 'active' && user?.subscription_status !== 'trial' ? (
+          <div className="bg-gradient-to-r from-amber-500 to-amber-600 rounded-3xl p-6 shadow-lg text-white flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center shrink-0">
+                <ShieldCheck className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-lg font-black tracking-tight">Abonnement Requis</h3>
+                <p className="text-sm text-white/80 font-medium">Vous devez souscrire à un abonnement pour pouvoir publier des trajets.</p>
+              </div>
+            </div>
+            <Link to="/abonnement" className="px-6 py-3 bg-white text-amber-600 rounded-2xl font-black text-sm whitespace-nowrap hover:bg-amber-50 transition-colors shadow-sm">
+              Voir les plans
+            </Link>
+          </div>
+        ) : (
+          <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-xl shadow-slate-200/50 border border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-6">
+            <div className="flex items-center gap-5 w-full sm:w-auto">
+              <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 ${user.subscription_plan === 'pro' ? 'bg-slate-900 text-white' : 'bg-demandoo-100 text-demandoo-600'}`}>
+                {user.subscription_plan === 'pro' ? <Star className="w-7 h-7" /> : <ShieldCheck className="w-7 h-7" />}
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <h3 className="text-lg font-black text-slate-900 uppercase tracking-widest">
+                    {user.subscription_plan === 'pro' ? 'CHAUFFEUR PRO' : user.subscription_plan === 'standard' ? 'CHAUFFEUR STANDARD' : 'ESSAI CHAUFFEUR'}
+                  </h3>
+                  <span className="px-2 py-0.5 bg-emerald-100 text-emerald-600 rounded-full text-[10px] font-black uppercase tracking-widest">Actif</span>
+                  {user.subscription_plan === 'pro' && (
+                    <span className="px-2 py-0.5 bg-slate-900 text-white rounded-full text-[10px] font-black uppercase tracking-widest">PRO</span>
+                  )}
+                </div>
+                <p className="text-sm text-slate-500 font-medium">
+                  {user.subscription_plan === 'pro' ? 'Trajets illimités' : user.subscription_plan === 'standard' ? '2 500 FCFA / mois' : '0 FCFA / 7 jours'}
+                  {' • '}Renouvellement : {new Date(user.subscription_period_end).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })}
+                </p>
+              </div>
+            </div>
+
+            <div className="w-full sm:w-1/3 flex flex-col gap-2">
+              {user.subscription_trip_limit ? (
+                <>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="font-bold text-slate-600">Trajets utilisés</span>
+                    <span className="font-black text-slate-900">{user.subscription_trips_used || 0} / {user.subscription_trip_limit}</span>
+                  </div>
+                  <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                    <div 
+                      className={`h-full rounded-full transition-all duration-500 ${((user.subscription_trips_used || 0) / user.subscription_trip_limit) >= 1 ? 'bg-rose-500' : 'bg-demandoo-500'}`}
+                      style={{ width: `${Math.min(100, ((user.subscription_trips_used || 0) / user.subscription_trip_limit) * 100)}%` }}
+                    />
+                  </div>
+                </>
+              ) : (
+                <div className="flex items-center justify-between text-sm bg-slate-50 px-4 py-2.5 rounded-xl border border-slate-100">
+                  <span className="font-bold text-slate-600">Trajets utilisés</span>
+                  <span className="font-black text-slate-900 flex items-center gap-1"><CheckCircle2 className="w-4 h-4 text-emerald-500" /> Illimités</span>
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center gap-3 w-full sm:w-auto shrink-0">
+              {user.subscription_plan !== 'pro' && (
+                <Link to="/abonnement" className="flex-1 sm:flex-none px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-sm font-black transition-colors text-center">
+                  Passer à Pro
+                </Link>
+              )}
+              <Link to="/abonnement" className="flex-1 sm:flex-none px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-sm font-black transition-colors text-center">
+                Gérer
+              </Link>
+            </div>
+          </div>
+        )}
+
         {/* 2. FLOATING KPI CARDS */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
           <div className="bg-white p-6 rounded-[2rem] shadow-xl shadow-slate-200/50 border border-slate-100 hover:-translate-y-1 transition-transform duration-300">

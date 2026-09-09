@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 
 export const PublishTripPage = () => {
-  const { user } = useAuth();
+  const { user, incrementTripsUsed } = useAuth();
   const { publishTrip } = useTrips();
   const navigate = useNavigate();
 
@@ -91,9 +91,19 @@ export const PublishTripPage = () => {
         }
       }, user);
 
+      incrementTripsUsed();
       navigate(`/trajet/${newTrip.id}`);
     } catch (err) {
-      setErrorMsg("Erreur lors de la publication du trajet.");
+      if (err.message.includes("429")) {
+        setErrorMsg("Quota atteint : Vous avez utilisé tous vos trajets. Passez à l'abonnement Pro pour publier en illimité.");
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } else if (err.message.includes("402")) {
+        alert("⚠️ Abonnement requis pour publier un trajet.\n\nVous allez être redirigé vers la page des abonnements pour activer votre forfait.");
+        navigate('/abonnement');
+      } else {
+        setErrorMsg("Erreur lors de la publication du trajet.");
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
     }
   };
 

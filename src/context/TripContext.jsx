@@ -83,9 +83,17 @@ export const TripProvider = ({ children }) => {
 
   // 4. PUBLISH A TRIP
   const publishTrip = (tripData, driverUser) => {
-    // SECURITY: Server-side check for driver authorization
+    // SECURITY: Server-side check for driver authorization & subscription
     if (driverUser.role !== 'driver' || driverUser.driver_status !== 'VERIFIED' || !driverUser.is_driver_active) {
       throw new Error("403 FORBIDDEN: Seuls les chauffeurs vérifiés peuvent publier un trajet.");
+    }
+    if (driverUser.subscription_status !== 'active' && driverUser.subscription_status !== 'trial') {
+      throw new Error("402 PAYMENT REQUIRED: Un abonnement actif est requis pour publier.");
+    }
+    
+    // SECURITY: Quota check
+    if (driverUser.subscription_trip_limit !== null && (driverUser.subscription_trips_used || 0) >= driverUser.subscription_trip_limit) {
+      throw new Error("429 TOO MANY REQUESTS: Vous avez atteint votre quota de trajets pour cette période.");
     }
     
     // Check if driver is verified for extra trust badges
