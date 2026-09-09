@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="https://media.base44.com/images/public/6a0d9f8627a0a3f643c96e81/7963f8b34_logo.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="theme-color" content="#10b981" />
+    <meta name="description" content="Demandoo — Le covoiturage de confiance de Touba vers tout le Sénégal. Réservez et publiez des trajets facilement et en toute sécurité avec Wave, Orange Money et LigdiCash." />
+    
+    <!-- PWA -->
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Demandoo" />
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+    <!-- Leaflet CSS for Map -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+
+    <title>Demandoo — Covoiturage au Sénégal (Touba, Dakar, Thiès...)</title>
+  </head>
+  <body class="bg-slate-50 text-slate-900 font-sans antialiased selection:bg-demandoo-500 selection:text-white">
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js').catch(err => {
+            console.log('SW registration failed: ', err);
+          });
+        });
+      }
+    </script>
+  </body>
+</html>
