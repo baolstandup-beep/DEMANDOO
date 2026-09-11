@@ -15,7 +15,7 @@
   ],
   "start_url": "/",
   "background_color": "#ffffff",
-  "theme_color": "#10b981",
+  "theme_color": "#183e94",
   "display": "standalone",
   "orientation": "portrait",
   "categories": ["travel", "transportation"]

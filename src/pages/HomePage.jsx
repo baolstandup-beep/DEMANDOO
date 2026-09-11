@@ -237,8 +237,8 @@ export const HomePage = () => {
             className="group relative h-[220px] sm:h-[260px] rounded-[2rem] overflow-hidden cursor-pointer shadow-lg shadow-slate-200/50 w-full"
           >
             <img 
-              src="https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&q=80&w=800" 
-              alt="Touba - Dakar" 
+              src="/images/touba-dakar.jpg" 
+              alt="Touba - Dakar (Monument de la Renaissance)" 
               className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0A]/90 via-[#0A0A0A]/30 to-transparent transition-opacity group-hover:opacity-90" />
@@ -262,9 +262,10 @@ export const HomePage = () => {
             className="group relative h-[220px] sm:h-[260px] rounded-[2rem] overflow-hidden cursor-pointer shadow-lg shadow-slate-200/50 w-full"
           >
             <img 
-              src="https://images.unsplash.com/photo-1494522358652-f30e61a60313?auto=format&fit=crop&q=80&w=800" 
-              alt="Touba - Thiès" 
+              src="/images/touba-thies.jpg" 
+              alt="Touba - Thiès (Statue Lat Dior)" 
               className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+              style={{ objectPosition: 'center 22%' }}
             />
             <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0A]/90 via-[#0A0A0A]/30 to-transparent transition-opacity group-hover:opacity-90" />
             
@@ -287,8 +288,8 @@ export const HomePage = () => {
             className="group relative h-[220px] sm:h-[260px] rounded-[2rem] overflow-hidden cursor-pointer shadow-lg shadow-slate-200/50 w-full"
           >
             <img 
-              src="https://images.unsplash.com/photo-1605810230434-7631ac76ec81?auto=format&fit=crop&q=80&w=800" 
-              alt="Touba - Mbour" 
+              src="/images/touba-mbour.jpg" 
+              alt="Touba - Mbour (Saly & Plage de Mbour)" 
               className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0A]/90 via-[#0A0A0A]/30 to-transparent transition-opacity group-hover:opacity-90" />
@@ -312,8 +313,8 @@ export const HomePage = () => {
             className="group relative h-[220px] sm:h-[260px] rounded-[2rem] overflow-hidden cursor-pointer shadow-lg shadow-slate-200/50 w-full"
           >
             <img 
-              src="https://images.unsplash.com/photo-1580828369019-18ba4c7604fb?auto=format&fit=crop&q=80&w=800" 
-              alt="Touba - Saint-Louis" 
+              src="/images/touba-saint-louis.jpg" 
+              alt="Touba - Saint-Louis (Pont Faidherbe)" 
               className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0A]/90 via-[#0A0A0A]/30 to-transparent transition-opacity group-hover:opacity-90" />

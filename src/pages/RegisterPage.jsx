@@ -81,10 +81,9 @@ export const RegisterPage = () => {
       <div className="relative z-10 bg-white/5 backdrop-blur-2xl rounded-[2rem] sm:rounded-[3rem] p-8 sm:p-12 max-w-[550px] w-full border border-white/10 shadow-2xl shadow-black/50">
         
         <div className="text-center space-y-4 mb-8">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-demandoo-500 to-demandoo-700 text-white flex items-center justify-center mx-auto shadow-lg shadow-demandoo-500/30 mb-6">
-            <Car className="w-8 h-8 stroke-[2]" />
-          </div>
-          <h2 className="text-demandoo-400 font-bold tracking-widest text-xs uppercase mb-2">DEMANDOO</h2>
+          <Link to="/" className="inline-block p-3 rounded-2xl bg-white shadow-xl shadow-black/25 hover:scale-105 transition-transform mx-auto mb-3">
+            <img src="/logo.png" alt="Demandoo — Covoiturage Sénégal" className="h-10 w-auto object-contain" />
+          </Link>
           <h1 className="text-3xl sm:text-4xl font-black text-white tracking-tight">Créer un compte</h1>
           <p className="text-sm sm:text-base text-slate-400 font-medium">Rejoignez la plus grande communauté de covoiturage au Sénégal.</p>
         </div>

@@ -51,12 +51,9 @@ export const Footer = () => {
           
           {/* COLONNE 1 — DEMANDOO */}
           <div className="space-y-6">
-            <div className="flex items-center gap-2">
-              <div className="w-10 h-10 bg-demandoo-500 rounded-xl flex items-center justify-center text-white">
-                <Car className="w-6 h-6 stroke-[2.5]" />
-              </div>
-              <span className="text-2xl font-black text-white tracking-tight">Demandoo</span>
-            </div>
+            <Link to="/" className="inline-block p-2.5 rounded-2xl bg-white shadow-md shadow-black/20 hover:scale-[1.02] transition-transform">
+              <img src="/logo.png" alt="Demandoo — Covoiturage Sénégal" className="h-8 w-auto object-contain" />
+            </Link>
             <p className="text-sm text-slate-400 font-medium leading-relaxed">
               Le covoiturage de confiance entre Touba et tout le Sénégal. Demandoo facilite la mise en relation entre conducteurs et passagers pour voyager simplement, partager les frais et se déplacer en toute sécurité.
             </p>

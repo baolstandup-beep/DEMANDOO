@@ -39,18 +39,12 @@ export const Header = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         
         {/* LOGO */}
-        <Link to="/" className="flex items-center gap-2.5 group">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-demandoo-500 to-demandoo-600 flex items-center justify-center text-white shadow-md shadow-demandoo-500/25 group-hover:scale-105 transition-all">
-            <Car className="w-6 h-6 stroke-[2.5]" />
-          </div>
-          <div className="flex flex-col">
-            <span className="text-xl font-black tracking-tight text-slate-900 leading-tight">
-              Demandoo<span className="text-demandoo-500">.</span>
-            </span>
-            <span className="text-[9px] font-bold text-slate-400 -mt-1 tracking-wider uppercase">
-              Covoiturage Sénégal
-            </span>
-          </div>
+        <Link to="/" className="flex items-center gap-2 group py-1">
+          <img 
+            src="/logo.png" 
+            alt="Demandoo — Covoiturage Sénégal" 
+            className="h-8 sm:h-9 w-auto object-contain transition-transform duration-200 group-hover:scale-[1.03]"
+          />
         </Link>
 
         {/* DESKTOP NAVIGATION */}

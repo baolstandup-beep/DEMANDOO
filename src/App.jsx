@@ -19,6 +19,7 @@ import { RegisterPage } from './pages/RegisterPage';
 import { CompleteDriverProfilePage } from './pages/CompleteDriverProfilePage';
 import { SubscriptionPage } from './pages/SubscriptionPage';
 import { DriverRouteGuard } from './components/common/DriverRouteGuard';
+import { NotFoundPage } from './pages/NotFoundPage';
 
 export function App() {
   const location = useLocation();
@@ -96,7 +97,7 @@ export function App() {
           
           <Route path="/mes-reservations" element={<MyBookingsPage />} />
           <Route path="/login" element={<LoginPage />} />
-          <Route path="*" element={<HomePage />} />
+          <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </main>
 

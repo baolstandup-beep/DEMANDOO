@@ -15,15 +15,15 @@
 
 /* Glassmorphism & Modern SaaS UI Utilities */
 .glass-card {
-  background: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.88);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid rgba(255, 255, 255, 0.6);
-  box-shadow: 0 10px 30px -5px rgba(16, 42, 67, 0.06), 0 4px 12px 0 rgba(7, 156, 148, 0.04);
+  box-shadow: 0 10px 30px -5px rgba(24, 62, 148, 0.07), 0 4px 12px 0 rgba(0, 133, 119, 0.05);
 }
 
 .glass-card-dark {
-  background: rgba(16, 42, 67, 0.85);
+  background: rgba(10, 30, 74, 0.85);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -31,7 +31,7 @@
 }
 
 .glass-nav {
-  background: rgba(255, 255, 255, 0.92);
+  background: rgba(255, 255, 255, 0.94);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid rgba(226, 232, 240, 0.8);
@@ -46,27 +46,27 @@
 
 .glass-input:focus {
   background: #ffffff;
-  border-color: #079c94;
-  box-shadow: 0 0 0 4px rgba(7, 156, 148, 0.15);
+  border-color: #008577;
+  box-shadow: 0 0 0 4px rgba(0, 133, 119, 0.15);
   outline: none;
 }
 
 /* Mesh Gradients & Hero Background Glows */
 .bg-mesh-pattern {
-  background-color: #0d1f2d;
+  background-color: #060f29;
   background-image: 
-    radial-gradient(at 10% 20%, rgba(7, 156, 148, 0.25) 0px, transparent 50%),
-    radial-gradient(at 90% 10%, rgba(5, 107, 102, 0.3) 0px, transparent 50%),
-    radial-gradient(at 50% 90%, rgba(16, 42, 67, 0.7) 0px, transparent 50%),
-    radial-gradient(at 80% 80%, rgba(245, 158, 11, 0.15) 0px, transparent 50%);
+    radial-gradient(at 10% 20%, rgba(0, 133, 119, 0.28) 0px, transparent 50%),
+    radial-gradient(at 90% 10%, rgba(24, 62, 148, 0.4) 0px, transparent 50%),
+    radial-gradient(at 50% 90%, rgba(10, 30, 74, 0.8) 0px, transparent 50%),
+    radial-gradient(at 80% 80%, rgba(245, 158, 11, 0.12) 0px, transparent 50%);
 }
 
 .bg-emerald-glow {
-  background: radial-gradient(circle at 50% 0%, rgba(7, 156, 148, 0.12) 0%, rgba(246, 250, 249, 0) 75%);
+  background: radial-gradient(circle at 50% 0%, rgba(0, 133, 119, 0.14) 0%, rgba(246, 250, 249, 0) 75%);
 }
 
 .gradient-text {
-  background: linear-gradient(135deg, #079c94 0%, #056b66 50%, #102a43 100%);
+  background: linear-gradient(135deg, #183E94 0%, #008577 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
