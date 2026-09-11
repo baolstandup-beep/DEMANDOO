@@ -1,158 +1,158 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { getLocalStore, setLocalStore, initLocalDatabase, supabase } from '../lib/supabase';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
 
 const AuthContext = createContext();
-
-const DEFAULT_PASSENGER = {
-  id: "usr-passenger-101",
-  full_name: "Fatou Sow",
-  email: "fatou.sow@demandoo.sn",
-  phone: "+221 77 888 99 00",
-  avatar_url: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=250",
-  role: "passenger",
-  is_phone_verified: true,
-  is_identity_verified: true,
-  is_driver_active: false,
-  created_at: new Date().toISOString()
-};
-
-const DEFAULT_DRIVER = {
-  id: "drv-001",
-  full_name: "Modou Diop",
-  email: "modou.diop@demandoo.sn",
-  phone: "+221 77 450 12 34",
-  avatar_url: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=250",
-  role: "driver",
-  is_phone_verified: true,
-  is_identity_verified: true,
-  is_driver_active: true,
-  is_driver_verified: true,
-  license_number: "DK-2019-9482",
-  driver_status: "VERIFIED",
-  subscription_status: "inactive",
-  subscription_plan: null,
-  subscription_billing_cycle: null,
-  subscription_period_start: null,
-  subscription_period_end: null,
-  subscription_trips_used: 0,
-  subscription_trip_limit: null,
-  rating: 4.9,
-  total_trips: 142,
-  vehicle: {
-    make: "Peugeot",
-    model: "508 GT",
-    year: 2021,
-    color: "Gris Nardo",
-    plate_number: "DK-8492-BC",
-    seats_count: 4
-  }
-};
-
-const DEFAULT_ADMIN = {
-  id: "usr-admin-001",
-  full_name: "Administrateur Demandoo",
-  email: "admin@demandoo.sn",
-  phone: "+221 33 800 00 00",
-  avatar_url: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=250",
-  role: "admin",
-  is_phone_verified: true,
-  is_identity_verified: true
-};
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [viewMode, setViewMode] = useState('passenger'); // 'passenger' | 'driver'
+  const [viewMode, setViewMode] = useState('passenger');
 
   useEffect(() => {
-    initLocalDatabase();
-    const storedUser = localStorage.getItem('demandoo_user_v2');
-    const storedViewMode = localStorage.getItem('demandoo_view_mode') || 'passenger';
-    
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-      setViewMode(storedViewMode);
-    } else {
-      // Default initial logged in user as passenger
-      setUser(DEFAULT_PASSENGER);
-      localStorage.setItem('demandoo_user_v2', JSON.stringify(DEFAULT_PASSENGER));
+    let mounted = true;
+
+    async function getInitialSession() {
+      if (!isSupabaseConfigured) {
+        try {
+          const stored = localStorage.getItem('demandoo_user_v2');
+          if (stored && mounted) {
+            const parsed = JSON.parse(stored);
+            setUser(parsed);
+            const storedMode = localStorage.getItem('demandoo_view_mode');
+            if (storedMode) setViewMode(storedMode);
+            else if (parsed.role === 'driver') setViewMode('driver');
+          }
+        } catch (e) {
+          console.error("Error reading stored local session:", e);
+        } finally {
+          if (mounted) setLoading(false);
+        }
+        return;
+      }
+
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session && mounted) {
+          await fetchUserProfile(session.user);
+        } else if (mounted) {
+          setUser(null);
+          setLoading(false);
+        }
+      } catch (error) {
+        console.error("Error getting session:", error);
+        if (mounted) setLoading(false);
+      }
     }
-    setLoading(false);
+
+    getInitialSession();
+
+    if (!isSupabaseConfigured) {
+      return () => {
+        mounted = false;
+      };
+    }
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (!mounted) return;
+      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        if (session) await fetchUserProfile(session.user);
+      } else if (event === 'SIGNED_OUT') {
+        setUser(null);
+        localStorage.removeItem('demandoo_view_mode');
+      }
+    });
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
-  const login = (email, password, roleChoice = 'passenger') => {
-    let chosenUser = DEFAULT_PASSENGER;
-    if (roleChoice === 'driver') chosenUser = DEFAULT_DRIVER;
-    if (roleChoice === 'admin') chosenUser = DEFAULT_ADMIN;
-    
-    // Custom user payload if given specific email
-    if (email && email.includes('admin')) chosenUser = DEFAULT_ADMIN;
-    else if (email && (email.includes('driver') || email.includes('chauffeur'))) chosenUser = DEFAULT_DRIVER;
+  const fetchUserProfile = async (authUser) => {
+    try {
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', authUser.id)
+        .single();
 
-    setUser(chosenUser);
-    localStorage.setItem('demandoo_user_v2', JSON.stringify(chosenUser));
-    return { success: true, user: chosenUser };
+      if (error && error.code === 'PGRST116') {
+        // Profil n'existe pas encore, on le crée
+        const newProfile = {
+          id: authUser.id,
+          email: authUser.email,
+          full_name: authUser.user_metadata?.full_name || authUser.email?.split('@')[0],
+          avatar_url: authUser.user_metadata?.avatar_url || '',
+          role: 'passenger',
+          is_phone_verified: false,
+          is_identity_verified: false,
+          is_driver_active: false
+        };
+        const { data: insertedProfile, error: insertError } = await supabase
+          .from('profiles')
+          .insert([newProfile])
+          .select()
+          .single();
+          
+        if (insertError) throw insertError;
+        setUser(insertedProfile);
+      } else if (error) {
+        throw error;
+      } else {
+        setUser(profile);
+        const storedViewMode = localStorage.getItem('demandoo_view_mode');
+        if (storedViewMode === 'driver' && profile.role === 'driver' && profile.driver_status === 'VERIFIED') {
+          setViewMode('driver');
+        } else {
+          setViewMode('passenger');
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching user profile:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const loginWithGoogle = async (roleChoice = 'passenger') => {
-    try {
-      if (supabase && import.meta.env.VITE_SUPABASE_URL) {
-        const { data, error } = await supabase.auth.signInWithOAuth({
-          provider: 'google',
-          options: {
-            redirectTo: `${window.location.origin}/`
-          }
-        });
-        if (error) throw error;
-        return data;
+  const loginWithGoogle = async (role = 'passenger') => {
+    if (!isSupabaseConfigured) {
+      const mockUser = {
+        id: 'demo-google-user',
+        email: 'demo.user@gmail.com',
+        full_name: 'Ousmane Kane (Google)',
+        avatar_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=250',
+        role: role === 'driver' ? 'driver' : 'passenger',
+        driver_status: role === 'driver' ? 'VERIFIED' : null,
+        is_driver_active: role === 'driver',
+        is_driver_verified: role === 'driver',
+        subscription_status: role === 'driver' ? 'active' : null
+      };
+      setUser(mockUser);
+      localStorage.setItem('demandoo_user_v2', JSON.stringify(mockUser));
+      if (mockUser.role === 'driver') {
+        setViewMode('driver');
+        localStorage.setItem('demandoo_view_mode', 'driver');
       }
-    } catch (err) {
-      console.warn("Supabase Google OAuth fallback triggered:", err.message);
+      return { user: mockUser };
     }
 
-    // Instant fail-safe Google Auth login for preview & local environment
-    const googleUser = {
-      id: `usr-google-${Date.now()}`,
-      full_name: "Cheikh Ndiaye",
-      email: "cheikh.ndiaye@gmail.com",
-      phone: "+221 77 555 44 33",
-      avatar_url: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=250",
-      role: roleChoice || 'passenger',
-      is_phone_verified: true,
-      is_identity_verified: false,
-      is_driver_active: false,
-      is_driver_verified: false,
-      driver_status: roleChoice === 'driver' ? 'INCOMPLETE' : null,
-      created_at: new Date().toISOString()
-    };
-
-    setUser(googleUser);
-    localStorage.setItem('demandoo_user_v2', JSON.stringify(googleUser));
-    return { success: true, user: googleUser };
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/`,
+      }
+    });
+    if (error) throw error;
+    return data;
   };
 
-  const register = (userData) => {
-    const newUser = {
-      id: `usr-${Date.now()}`,
-      full_name: userData.full_name,
-      email: userData.email,
-      phone: userData.phone,
-      role: userData.role || 'passenger',
-      is_phone_verified: true,
-      is_identity_verified: false,
-      is_driver_active: false,
-      is_driver_verified: false,
-      driver_status: userData.role === 'driver' ? 'INCOMPLETE' : null,
-      created_at: new Date().toISOString()
-    };
-    setUser(newUser);
-    localStorage.setItem('demandoo_user_v2', JSON.stringify(newUser));
-    return { success: true, user: newUser };
-  };
-
-  const logout = () => {
+  const logout = async () => {
+    if (isSupabaseConfigured) {
+      await supabase.auth.signOut();
+    }
     setUser(null);
     localStorage.removeItem('demandoo_user_v2');
+    localStorage.removeItem('demandoo_view_mode');
   };
 
   const toggleViewMode = () => {
@@ -162,95 +162,212 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem('demandoo_view_mode', newMode);
   };
 
-  const updateDriverStatus = (status, notes = '') => {
-    if (!user) return;
-    const updated = { ...user, driver_status: status, driver_notes: notes };
-    setUser(updated);
-    localStorage.setItem('demandoo_user_v2', JSON.stringify(updated));
-  };
+  const updateProfile = async (updates) => {
+    if (!user) return { success: false };
 
-  const subscribeDriver = (planId, billingCycle, tripLimit) => {
-    if (!user || user.role !== 'driver') return { success: false, error: 'Non autorisé' };
-    
-    const startDate = new Date();
-    const expiryDate = new Date();
-    
-    if (planId === 'trial') {
-      expiryDate.setDate(expiryDate.getDate() + 7);
-    } else if (billingCycle === 'annual') {
-      expiryDate.setFullYear(expiryDate.getFullYear() + 1);
-    } else {
-      expiryDate.setMonth(expiryDate.getMonth() + 1);
+    if (!isSupabaseConfigured) {
+      const updated = { ...user, ...updates };
+      setUser(updated);
+      localStorage.setItem('demandoo_user_v2', JSON.stringify(updated));
+      return { success: true, user: updated };
     }
 
-    const updatedUser = {
-      ...user,
-      subscription_status: planId === 'trial' ? 'trial' : 'active',
-      subscription_plan: planId,
-      subscription_billing_cycle: billingCycle,
-      subscription_period_start: startDate.toISOString(),
-      subscription_period_end: expiryDate.toISOString(),
-      subscription_trips_used: 0,
-      subscription_trip_limit: tripLimit
-    };
-    
-    setUser(updatedUser);
-    localStorage.setItem('demandoo_user_v2', JSON.stringify(updatedUser));
-    return { success: true, user: updatedUser };
+    const { data, error } = await supabase
+      .from('profiles')
+      .update(updates)
+      .eq('id', user.id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Update profile error:", error);
+      return { success: false, error };
+    }
+    setUser(data);
+    return { success: true, user: data };
   };
 
-  const incrementTripsUsed = () => {
-    if (!user || user.role !== 'driver') return;
-    const updatedUser = {
-      ...user,
-      subscription_trips_used: (user.subscription_trips_used || 0) + 1
-    };
-    setUser(updatedUser);
-    localStorage.setItem('demandoo_user_v2', JSON.stringify(updatedUser));
-  };
-
-  const completeDriverOnboarding = (formData) => {
+  const completeDriverOnboarding = async (formData) => {
     if (!user) return { success: false, error: 'Non authentifié' };
     
-    // Pour la démo, on valide toujours le dossier pour que l'utilisateur ne soit pas bloqué.
-    const missing = [];
-    // if (!formData.personalInfo?.phone) missing.push('Numéro de téléphone');
-    // if (!formData.licenseInfo?.licenseFront) missing.push('Permis de conduire');
-    // if (!formData.vehicleDocs?.registration) missing.push('Carte grise');
-    // if (!formData.vehicleDocs?.insurance) missing.push('Assurance');
-    // if (!formData.vehicleDocs?.vehicleFront) missing.push('Photo du véhicule');
-    
-    if (missing.length > 0) {
-      updateDriverStatus('INCOMPLETE');
-      return { 
-        success: false, 
-        error: `Il reste ${missing.length} élément(s) obligatoire(s) à fournir.`,
-        missing 
-      };
-    }
-
-    const updatedUser = {
-      ...user,
-      role: 'driver', // User naturally gets upgraded to driver
-      driver_status: 'VERIFIED',
+    const updates = {
+      role: 'driver',
+      driver_status: 'VERIFIED', // Simulate auto-verification for demo
       is_driver_active: true,
       onboarding_completed: true,
       is_driver_verified: true,
       activated_at: new Date().toISOString()
     };
     
-    setUser(updatedUser);
-    localStorage.setItem('demandoo_user_v2', JSON.stringify(updatedUser));
-    
-    // Automatically switch them to driver view mode
-    setViewMode('driver');
-    localStorage.setItem('demandoo_view_mode', 'driver');
+    const res = await updateProfile(updates);
+    if (res.success) {
+      setViewMode('driver');
+      localStorage.setItem('demandoo_view_mode', 'driver');
+    }
+    return res;
+  };
 
-    return { success: true };
+  // SaaS Subscriptions logic
+  const subscribeDriver = async (planSlug, billingCycle, tripLimit) => {
+    if (!user) return { success: false };
+
+    const updates = {
+      subscription_status: planSlug === 'trial' ? 'trial' : 'active',
+      subscription_plan: planSlug,
+      subscription_trip_limit: tripLimit,
+      subscription_trips_used: 0
+    };
+
+    if (!isSupabaseConfigured) {
+      const updated = { ...user, ...updates };
+      setUser(updated);
+      localStorage.setItem('demandoo_user_v2', JSON.stringify(updated));
+      return { success: true, user: updated };
+    }
+
+    try {
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .update(updates)
+        .eq('id', user.id)
+        .select()
+        .single();
+
+      if (profileError) throw profileError;
+
+      const { data: planData } = await supabase.from('subscription_plans').select('id').eq('slug', planSlug).single();
+      
+      if (planData) {
+        const periodEnd = new Date();
+        if (planSlug === 'trial') periodEnd.setDate(periodEnd.getDate() + 7);
+        else if (billingCycle === 'annual') periodEnd.setFullYear(periodEnd.getFullYear() + 1);
+        else periodEnd.setMonth(periodEnd.getMonth() + 1);
+
+        await supabase.from('driver_subscriptions').insert([{
+          driver_id: user.id,
+          plan_id: planData.id,
+          billing_cycle: billingCycle,
+          status: updates.subscription_status,
+          period_end: periodEnd.toISOString(),
+          trips_used: 0
+        }]);
+      }
+
+      setUser(profileData);
+      return { success: true, user: profileData };
+    } catch (e) {
+      console.error("Subscription error:", e);
+      return { success: false, error: e };
+    }
+  };
+
+  const updateDriverStatus = () => {};
+  const incrementTripsUsed = () => {};
+  
+  const login = async (identifier, password, role = 'passenger') => {
+    if (!isSupabaseConfigured) {
+      let mockUser;
+      if (role === 'driver' || identifier?.toLowerCase().includes('driver') || identifier?.toLowerCase().includes('modou')) {
+        mockUser = {
+          id: 'drv-001',
+          email: identifier || 'modou.diop@demandoo.sn',
+          full_name: 'Modou Diop',
+          phone: '+221 77 450 12 34',
+          avatar_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=250',
+          role: 'driver',
+          driver_status: 'VERIFIED',
+          is_driver_active: true,
+          is_driver_verified: true,
+          subscription_status: 'active',
+          subscription_plan: 'pro',
+          vehicle: {
+            make: 'Peugeot',
+            model: '508 GT',
+            plate_number: 'DK-8492-BC',
+            seats_count: 4
+          }
+        };
+        setViewMode('driver');
+        localStorage.setItem('demandoo_view_mode', 'driver');
+      } else if (role === 'admin' || identifier?.toLowerCase().includes('admin')) {
+        mockUser = {
+          id: 'admin-001',
+          email: identifier || 'admin@demandoo.sn',
+          full_name: 'Administrateur DEMANDOO',
+          role: 'admin'
+        };
+      } else {
+        mockUser = {
+          id: 'pass-001',
+          email: identifier || 'passager@demandoo.sn',
+          full_name: identifier?.split('@')[0] || 'Passager Démo',
+          phone: '+221 77 123 45 67',
+          role: 'passenger'
+        };
+        setViewMode('passenger');
+      }
+      setUser(mockUser);
+      localStorage.setItem('demandoo_user_v2', JSON.stringify(mockUser));
+      return { user: mockUser };
+    }
+
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: identifier,
+      password
+    });
+    if (error) {
+      console.error("Erreur de connexion:", error.message);
+      return null;
+    }
+    const { data: profile } = await supabase.from('profiles').select('*').eq('id', data.user.id).single();
+    return { user: profile || { role: 'passenger' } };
+  };
+
+  const register = async (userData) => {
+    if (!isSupabaseConfigured) {
+      const mockUser = {
+        id: `usr-${Date.now()}`,
+        email: userData.email,
+        full_name: `${userData.firstName || ''} ${userData.lastName || ''}`.trim() || userData.name || 'Utilisateur',
+        phone: userData.phone,
+        role: userData.role || 'passenger',
+        is_driver_verified: false
+      };
+      setUser(mockUser);
+      localStorage.setItem('demandoo_user_v2', JSON.stringify(mockUser));
+      return { success: true, user: mockUser };
+    }
+
+    const { data, error } = await supabase.auth.signUp({
+      email: userData.email,
+      password: userData.password,
+      options: {
+        data: {
+          full_name: `${userData.firstName || ''} ${userData.lastName || ''}`.trim() || userData.name,
+          phone: userData.phone
+        }
+      }
+    });
+    if (error) return { success: false, error: error.message };
+    return { success: true, user: data.user };
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, viewMode, toggleViewMode, login, loginWithGoogle, register, logout, updateDriverStatus, completeDriverOnboarding, subscribeDriver, incrementTripsUsed }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      loading, 
+      viewMode, 
+      toggleViewMode, 
+      login, 
+      loginWithGoogle, 
+      register, 
+      updateProfile,
+      logout, 
+      updateDriverStatus, 
+      completeDriverOnboarding, 
+      subscribeDriver, 
+      incrementTripsUsed 
+    }}>
       {children}
     </AuthContext.Provider>
   );

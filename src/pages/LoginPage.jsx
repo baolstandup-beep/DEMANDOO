@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Car, Lock, User, ArrowRight, Eye, EyeOff } from 'lucide-react';
+import { isSupabaseConfigured } from '../lib/supabase';
+import { Car, Lock, User, ArrowRight, Eye, EyeOff, Sparkles } from 'lucide-react';
 
 const GoogleIcon = () => (
   <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -22,12 +23,11 @@ export const LoginPage = () => {
   const [loginRole, setLoginRole] = useState('passenger');
   const [error, setError] = useState('');
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
-    // Backend/context can handle specific role routing
-    const result = login(identifier, password, loginRole);
+    const result = await login(identifier, password, loginRole);
     
     if (result && result.user) {
       if (result.user.role === 'driver') navigate('/espace-chauffeur');
@@ -40,10 +40,21 @@ export const LoginPage = () => {
 
   const handleGoogleLogin = async () => {
     try {
-      await loginWithGoogle(loginRole);
-      navigate('/trajets');
+      const res = await loginWithGoogle(loginRole);
+      if (res?.user?.role === 'driver') navigate('/espace-chauffeur');
+      else navigate('/trajets');
     } catch (err) {
       setError("Impossible de se connecter avec Google.");
+    }
+  };
+
+  const handleQuickLogin = async (role) => {
+    const email = role === 'driver' ? 'modou.diop@demandoo.sn' : role === 'admin' ? 'admin@demandoo.sn' : 'passager@demandoo.sn';
+    const result = await login(email, 'demo123', role);
+    if (result && result.user) {
+      if (role === 'driver') navigate('/espace-chauffeur');
+      else if (role === 'admin') navigate('/admin/paiements');
+      else navigate('/trajets');
     }
   };
 
@@ -70,6 +81,39 @@ export const LoginPage = () => {
           </div>
         )}
 
+        {!isSupabaseConfigured && (
+          <div className="mb-6 p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-center space-y-2">
+            <div className="inline-flex items-center gap-2 text-xs font-black text-emerald-400">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span>Mode Démo Local Actif</span>
+            </div>
+            <p className="text-[11px] text-slate-400">Accédez en 1 clic sans avoir besoin de Supabase :</p>
+            <div className="grid grid-cols-3 gap-2 pt-1">
+              <button 
+                type="button" 
+                onClick={() => handleQuickLogin('passenger')} 
+                className="py-1.5 px-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition-all active:scale-95"
+              >
+                Passager
+              </button>
+              <button 
+                type="button" 
+                onClick={() => handleQuickLogin('driver')} 
+                className="py-1.5 px-2 rounded-xl bg-demandoo-500/30 hover:bg-demandoo-500/50 text-demandoo-300 text-xs font-bold transition-all active:scale-95"
+              >
+                Chauffeur
+              </button>
+              <button 
+                type="button" 
+                onClick={() => handleQuickLogin('admin')} 
+                className="py-1.5 px-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 text-xs font-bold transition-all active:scale-95"
+              >
+                Admin
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Bouton Google */}
         <button 
           onClick={handleGoogleLogin}
@@ -77,7 +121,7 @@ export const LoginPage = () => {
           className="w-full py-4 px-4 bg-white hover:bg-slate-50 text-slate-900 rounded-2xl font-bold text-sm shadow-sm transition-all flex items-center justify-center gap-3 active:scale-[0.98]"
         >
           <GoogleIcon />
-          Continuer avec Google
+          Continuer avec Google {!isSupabaseConfigured && <span className="text-xs text-slate-500 font-normal">(Démo)</span>}
         </button>
 
         <div className="flex items-center gap-4 my-8">
@@ -159,8 +203,8 @@ export const LoginPage = () => {
 
         <p className="text-sm text-center text-slate-400 font-medium mt-8">
           Vous n'avez pas de compte ?{' '}
-          <Link to="/register" className="font-black text-demandoo-400 hover:text-demandoo-300 transition-colors">
-            S'inscrire
+          <Link to="/inscription-chauffeur" className="font-black text-demandoo-400 hover:text-demandoo-300 transition-colors">
+            Créer un compte Chauffeur
           </Link>
         </p>
 

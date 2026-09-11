@@ -47,8 +47,9 @@ export const PublishTripPage = () => {
 
   const [errorMsg, setErrorMsg] = useState('');
 
-  // Check driver authorization before allowing public publication
   const isAllowedToPublish = user?.driver_status === 'VERIFIED' || user?.role === 'admin';
+  const hasActiveSub = user?.subscription_status === 'active' || user?.subscription_status === 'trial';
+  const limitReached = user?.subscription_trip_limit !== null && (user?.subscription_trips_used || 0) >= user?.subscription_trip_limit;
 
   React.useEffect(() => {
     if (!user) {
@@ -57,8 +58,10 @@ export const PublishTripPage = () => {
       navigate('/');
     } else if (user && !isAllowedToPublish) {
       navigate('/verification-chauffeur');
+    } else if (user && (!hasActiveSub || limitReached)) {
+      navigate('/abonnement');
     }
-  }, [user, isAllowedToPublish, navigate]);
+  }, [user, isAllowedToPublish, hasActiveSub, limitReached, navigate]);
 
   const handleFinalSubmit = (e) => {
     e.preventDefault();

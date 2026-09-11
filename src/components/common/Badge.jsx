@@ -1,10 +1,24 @@
 import React from 'react';
-import { ShieldCheck, CheckCircle2, Phone, Car } from 'lucide-react';
+import { ShieldCheck, CheckCircle2, Phone, Car, Clock, AlertTriangle } from 'lucide-react';
 
 export const VerifiedDriverBadge = ({ className = "" }) => (
   <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-demandoo-700 border border-emerald-200 shadow-sm ${className}`}>
     <ShieldCheck className="w-3.5 h-3.5 text-demandoo-600" />
     Conducteur vérifié
+  </span>
+);
+
+export const PendingVerificationBadge = ({ className = "" }) => (
+  <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-700 border border-amber-200 shadow-sm ${className}`}>
+    <Clock className="w-3.5 h-3.5 text-amber-600" />
+    Vérification en cours
+  </span>
+);
+
+export const IncompleteVerificationBadge = ({ className = "" }) => (
+  <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-100 text-rose-700 border border-rose-200 shadow-sm ${className}`}>
+    <AlertTriangle className="w-3.5 h-3.5 text-rose-600" />
+    Documents requis
   </span>
 );
 

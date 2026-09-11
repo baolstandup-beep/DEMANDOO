@@ -92,17 +92,28 @@ export const SubscriptionPage = () => {
 
     setIsProcessing(true);
 
-    // Simulation du paiement / Activation
-    setTimeout(() => {
-      subscribeDriver(plan.id, billingCycle, plan.tripLimit);
+    try {
+      const result = await subscribeDriver(plan.id, billingCycle, plan.tripLimit);
+      
+      if (result.success) {
+        addNotification({
+          title: "Abonnement activé !",
+          message: plan.isTrial ? "Votre période d'essai de 7 jours a démarré." : `Votre abonnement ${plan.name} est maintenant actif.`,
+          type: "success"
+        });
+        navigate('/espace-chauffeur');
+      } else {
+        throw new Error("Erreur lors de la souscription");
+      }
+    } catch (e) {
       addNotification({
-        title: "Abonnement activé !",
-        message: plan.isTrial ? "Votre période d'essai de 7 jours a démarré." : `Votre abonnement ${plan.name} est maintenant actif.`,
-        type: "success"
+        title: "Erreur d'abonnement",
+        message: "Une erreur est survenue lors de l'activation de votre abonnement.",
+        type: "error"
       });
+    } finally {
       setIsProcessing(false);
-      navigate('/espace-chauffeur');
-    }, 2000);
+    }
   };
 
   return (

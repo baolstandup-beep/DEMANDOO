@@ -72,6 +72,14 @@ CREATE POLICY "Plans are visible to all users" ON public.subscription_plans
 CREATE POLICY "Drivers can view own subscriptions" ON public.driver_subscriptions
   FOR SELECT USING (auth.uid() = driver_id);
 
+-- Drivers can create their own subscriptions
+CREATE POLICY "Drivers can create own subscriptions" ON public.driver_subscriptions
+  FOR INSERT WITH CHECK (auth.uid() = driver_id);
+
+-- Drivers can update their own subscriptions
+CREATE POLICY "Drivers can update own subscriptions" ON public.driver_subscriptions
+  FOR UPDATE USING (auth.uid() = driver_id);
+
 -- Drivers can view their own payments
 CREATE POLICY "Drivers can view own payments" ON public.payments
   FOR SELECT USING (auth.uid() = driver_id);

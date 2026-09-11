@@ -16,7 +16,9 @@ import { AdminDriverReviewPage } from './pages/AdminDriverReviewPage';
 import { MyBookingsPage } from './pages/MyBookingsPage';
 import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
+import { CompleteDriverProfilePage } from './pages/CompleteDriverProfilePage';
 import { SubscriptionPage } from './pages/SubscriptionPage';
+import { DriverRouteGuard } from './components/common/DriverRouteGuard';
 
 export function App() {
   const location = useLocation();
@@ -44,7 +46,7 @@ export function App() {
       document.title = 'Mes Réservations | Demandoo';
     } else if (path === '/login') {
       document.title = 'Connexion | Demandoo';
-    } else if (path === '/register') {
+    } else if (path === '/inscription-chauffeur') {
       document.title = 'Inscription | Demandoo';
     } else if (path === '/abonnement') {
       document.title = 'Abonnement Chauffeur | Demandoo';
@@ -61,10 +63,32 @@ export function App() {
           <Route path="/trajets" element={<SearchPage />} />
           <Route path="/trajet/:id" element={<TripDetailsPage />} />
           <Route path="/reservation/:trajetId" element={<BookingPage />} />
-          <Route path="/publier" element={<PublishTripPage />} />
-          <Route path="/espace-chauffeur" element={<DriverSpacePage />} />
-          <Route path="/verification-chauffeur" element={<DriverVerificationPage />} />
-          <Route path="/abonnement" element={<SubscriptionPage />} />
+          <Route path="/inscription-chauffeur" element={<RegisterPage />} />
+          <Route path="/completer-profil-chauffeur" element={
+            <DriverRouteGuard>
+              <CompleteDriverProfilePage />
+            </DriverRouteGuard>
+          } />
+          <Route path="/publier" element={
+            <DriverRouteGuard allowedStatuses={['VERIFIED']}>
+              <PublishTripPage />
+            </DriverRouteGuard>
+          } />
+          <Route path="/espace-chauffeur" element={
+            <DriverRouteGuard allowedStatuses={['VERIFIED']}>
+              <DriverSpacePage />
+            </DriverRouteGuard>
+          } />
+          <Route path="/verification-chauffeur" element={
+            <DriverRouteGuard>
+              <DriverVerificationPage />
+            </DriverRouteGuard>
+          } />
+          <Route path="/abonnement" element={
+            <DriverRouteGuard allowedStatuses={['VERIFIED']}>
+              <SubscriptionPage />
+            </DriverRouteGuard>
+          } />
           
           <Route path="/admin/paiements" element={<AdminDashboardPage />} />
           <Route path="/admin/drivers" element={<AdminDriversPage />} />
@@ -72,7 +96,6 @@ export function App() {
           
           <Route path="/mes-reservations" element={<MyBookingsPage />} />
           <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
           <Route path="*" element={<HomePage />} />
         </Routes>
       </main>

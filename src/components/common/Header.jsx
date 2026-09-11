@@ -300,7 +300,7 @@ export const Header = () => {
                 Connexion
               </Link>
               <Link 
-                to="/register"
+                to="/inscription-chauffeur"
                 className="px-4 py-2 rounded-xl text-xs font-extrabold text-white bg-demandoo-500 hover:bg-demandoo-600 shadow-sm transition-all"
               >
                 S'inscrire

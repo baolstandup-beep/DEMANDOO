@@ -19,6 +19,7 @@ export const RegisterPage = () => {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [phone, setPhone] = useState('');
+  const [address, setAddress] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -26,7 +27,7 @@ export const RegisterPage = () => {
   const [role, setRole] = useState('passenger'); // 'passenger' | 'driver'
   const [error, setError] = useState('');
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
@@ -42,28 +43,29 @@ export const RegisterPage = () => {
 
     const fullName = `${firstName} ${lastName}`.trim();
 
-    register({
+    const result = await register({
       full_name: fullName,
       phone: phone,
+      address: address,
       password: password,
       role: role
     });
     
-    if (role === 'driver') {
-      navigate('/verification-chauffeur');
+    if (result.success) {
+      if (role === 'driver') {
+        navigate('/verification-chauffeur');
+      } else {
+        navigate('/trajets');
+      }
     } else {
-      navigate('/trajets');
+      setError(result.error || "Erreur lors de l'inscription.");
     }
   };
 
   const handleGoogleSignup = async () => {
     try {
       await loginWithGoogle(role);
-      if (role === 'driver') {
-        navigate('/verification-chauffeur');
-      } else {
-        navigate('/trajets');
-      }
+      // The redirect logic will be handled by the Route Guard in App.jsx / AuthContext based on profile completeness
     } catch (err) {
       setError("Impossible de s'inscrire avec Google.");
     }
@@ -82,6 +84,7 @@ export const RegisterPage = () => {
           <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-demandoo-500 to-demandoo-700 text-white flex items-center justify-center mx-auto shadow-lg shadow-demandoo-500/30 mb-6">
             <Car className="w-8 h-8 stroke-[2]" />
           </div>
+          <h2 className="text-demandoo-400 font-bold tracking-widest text-xs uppercase mb-2">DEMANDOO</h2>
           <h1 className="text-3xl sm:text-4xl font-black text-white tracking-tight">Créer un compte</h1>
           <p className="text-sm sm:text-base text-slate-400 font-medium">Rejoignez la plus grande communauté de covoiturage au Sénégal.</p>
         </div>
@@ -93,18 +96,23 @@ export const RegisterPage = () => {
         )}
 
         {/* Bouton Google */}
-        <button 
-          onClick={handleGoogleSignup}
-          type="button" 
-          className="w-full py-4 px-4 bg-white hover:bg-slate-50 text-slate-900 rounded-2xl font-bold text-sm shadow-sm transition-all flex items-center justify-center gap-3 active:scale-[0.98]"
-        >
-          <GoogleIcon />
-          S'inscrire avec Google
-        </button>
+        <div className="mb-8">
+          <button 
+            onClick={handleGoogleSignup}
+            type="button" 
+            className="w-full py-4 px-4 bg-white hover:bg-slate-50 text-slate-900 rounded-2xl font-bold text-sm shadow-sm transition-all flex items-center justify-center gap-3 active:scale-[0.98]"
+          >
+            <GoogleIcon />
+            Continuer avec Google
+          </button>
+          <p className="text-center text-[11px] text-slate-500 mt-3 font-medium">
+            <Lock className="w-3 h-3 inline-block mr-1 -mt-0.5" /> Connexion sécurisée avec Google
+          </p>
+        </div>
 
-        <div className="flex items-center gap-4 my-8">
+        <div className="flex items-center gap-4 mb-8">
           <div className="h-px flex-1 bg-white/10" />
-          <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">ou avec votre email</span>
+          <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">OU Créer un compte avec téléphone</span>
           <div className="h-px flex-1 bg-white/10" />
         </div>
 
@@ -185,6 +193,20 @@ export const RegisterPage = () => {
           </div>
 
           <div className="space-y-2">
+            <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest block ml-1">Adresse ou quartier</label>
+            <div className="relative flex">
+              <input
+                type="text"
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                placeholder="Ex: Parcelles Assainies"
+                className="w-full px-4 py-3.5 rounded-2xl bg-white/5 border border-white/10 text-sm font-bold text-white placeholder:text-slate-500 focus:bg-white/10 focus:border-demandoo-500 focus:ring-2 focus:ring-demandoo-500/50 transition-all outline-none"
+                required
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
             <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest block ml-1">Mot de passe</label>
             <div className="relative">
               <Lock className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
@@ -239,11 +261,17 @@ export const RegisterPage = () => {
         </form>
 
         <p className="text-sm text-center text-slate-400 font-medium mt-8">
-          Vous avez déjà un compte ?{' '}
+          Déjà chauffeur ?{' '}
           <Link to="/login" className="font-black text-demandoo-400 hover:text-demandoo-300 transition-colors">
             Se connecter
           </Link>
         </p>
+
+        <div className="text-center mt-6">
+          <Link to="/trajets" className="text-xs font-bold text-slate-500 hover:text-white transition-colors">
+            ← Chercher un trajet sans compte
+          </Link>
+        </div>
 
       </div>
     </div>

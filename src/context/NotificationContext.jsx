@@ -1,41 +1,66 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { getLocalStore, setLocalStore } from '../lib/supabase';
+import { supabase } from '../lib/supabase';
+import { useAuth } from './AuthContext';
 
 const NotificationContext = createContext();
 
 export const NotificationProvider = ({ children }) => {
+  const { user } = useAuth();
   const [notifications, setNotifications] = useState([]);
 
   useEffect(() => {
-    const loaded = getLocalStore('NOTIFICATIONS');
-    setNotifications(loaded);
-  }, []);
+    if (!user) {
+      setNotifications([]);
+      return;
+    }
 
-  const addNotification = ({ title, message, type = 'info', link = null }) => {
+    loadNotifications();
+
+    const channel = supabase.channel('public:notifications')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${user.id}` }, payload => {
+        setNotifications(prev => [payload.new, ...prev]);
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'notifications', filter: `user_id=eq.${user.id}` }, payload => {
+        setNotifications(prev => prev.map(n => n.id === payload.new.id ? payload.new : n));
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user]);
+
+  const loadNotifications = async () => {
+    const { data } = await supabase
+      .from('notifications')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false });
+      
+    if (data) setNotifications(data);
+  };
+
+  const addNotification = async ({ title, message, type = 'info', link = null }) => {
+    if (!user) return;
     const newNotif = {
-      id: `notif-${Date.now()}`,
+      user_id: user.id,
       title,
       message,
       type,
       link,
-      read: false,
-      created_at: new Date().toISOString()
+      read: false
     };
-    const updated = [newNotif, ...notifications];
-    setNotifications(updated);
-    setLocalStore('NOTIFICATIONS', updated);
+    await supabase.from('notifications').insert([newNotif]);
+    // The realtime subscription will update the state
   };
 
-  const markAsRead = (id) => {
-    const updated = notifications.map(n => n.id === id ? { ...n, read: true } : n);
-    setNotifications(updated);
-    setLocalStore('NOTIFICATIONS', updated);
+  const markAsRead = async (id) => {
+    await supabase.from('notifications').update({ read: true }).eq('id', id);
   };
 
-  const markAllAsRead = () => {
-    const updated = notifications.map(n => ({ ...n, read: true }));
-    setNotifications(updated);
-    setLocalStore('NOTIFICATIONS', updated);
+  const markAllAsRead = async () => {
+    if (!user) return;
+    await supabase.from('notifications').update({ read: true }).eq('user_id', user.id).eq('read', false);
   };
 
   const unreadCount = notifications.filter(n => !n.read).length;

@@ -121,3 +121,42 @@
   animation-play-state: paused;
 }
 
+/* Leaflet Animated Route Polyline & Markers */
+@keyframes routeDash {
+  0% {
+    stroke-dashoffset: 24;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+.leaflet-animated-route path {
+  animation: routeDash 1.2s linear infinite;
+}
+
+@keyframes mapPing {
+  0% {
+    transform: scale(0.9);
+    opacity: 0.8;
+  }
+  70%, 100% {
+    transform: scale(2.4);
+    opacity: 0;
+  }
+}
+
+.map-marker-pulse {
+  animation: mapPing 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+/* Hide scrollbar for clean horizontal tabs */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+

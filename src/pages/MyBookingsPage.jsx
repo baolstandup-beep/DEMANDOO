@@ -95,18 +95,40 @@ export const MyBookingsPage = () => {
                   </span>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 text-xs bg-slate-50 p-4 rounded-2xl border border-slate-100">
                   <div>
                     <span className="text-slate-400 block text-[10px] font-extrabold uppercase">Conducteur</span>
                     <span className="font-extrabold text-demandoo-dark">{b.trip?.driver?.full_name || 'Modou Diop'}</span>
                   </div>
                   <div>
-                    <span className="text-slate-400 block text-[10px] font-extrabold uppercase">Point de rendez-vous</span>
+                    <span className="text-slate-400 block text-[10px] font-extrabold uppercase">Contact</span>
+                    {['accepted', 'completed'].includes(b.status) ? (
+                      <div className="flex flex-col gap-1 mt-1">
+                        <a href={`tel:${b.trip?.driver?.phone}`} className="font-bold text-demandoo-600 flex items-center gap-1 hover:underline">
+                          <Phone className="w-3 h-3" />
+                          {b.trip?.driver?.phone || '+221 77 000 00 00'}
+                        </a>
+                        <a 
+                          href={`https://wa.me/${(b.trip?.driver?.phone || '').replace(/\s+/g, '').replace(/^\+/, '')}?text=${encodeURIComponent(`Bonjour ${b.trip?.driver?.full_name}, je suis ${b.passenger_name}, votre passager pour le trajet ${b.trip?.departure_city} → ${b.trip?.arrival_city}.`)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="font-bold text-emerald-600 flex items-center gap-1 hover:underline"
+                        >
+                          <MessageSquare className="w-3 h-3" />
+                          WhatsApp
+                        </a>
+                      </div>
+                    ) : (
+                      <span className="font-bold text-slate-500 italic">Masqué (En attente)</span>
+                    )}
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-[10px] font-extrabold uppercase">Point de rdv</span>
                     <span className="font-bold text-slate-800">{b.pickup_point}</span>
                   </div>
                   <div>
                     <span className="text-slate-400 block text-[10px] font-extrabold uppercase">Montant payé</span>
-                    <span className="font-black text-demandoo-600">{b.total_price?.toLocaleString('fr-FR')} FCFA ({b.seats_booked} place)</span>
+                    <span className="font-black text-demandoo-600">{b.total_price?.toLocaleString('fr-FR')} FCFA ({b.seats_booked} pl)</span>
                   </div>
                 </div>
 

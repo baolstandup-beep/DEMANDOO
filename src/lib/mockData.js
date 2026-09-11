@@ -40,7 +40,8 @@ export const INITIAL_DRIVERS = [
       year: 2021,
       color: "Gris Nardo",
       plate_number: "DK-8492-BC",
-      seats_count: 4
+      seats_count: 4,
+      image_url: "https://images.unsplash.com/photo-1555215695-3004980ad54e?auto=format&fit=crop&q=80&w=600"
     }
   },
   {
@@ -62,7 +63,8 @@ export const INITIAL_DRIVERS = [
       year: 2022,
       color: "Blanc Nacré",
       plate_number: "TH-3310-AX",
-      seats_count: 4
+      seats_count: 4,
+      image_url: "https://images.unsplash.com/photo-1621007947382-bb3c3994e3fd?auto=format&fit=crop&q=80&w=600"
     }
   },
   {
@@ -84,7 +86,8 @@ export const INITIAL_DRIVERS = [
       year: 2020,
       color: "Noir Ebène",
       plate_number: "SL-5591-AA",
-      seats_count: 4
+      seats_count: 4,
+      image_url: "https://images.unsplash.com/photo-1629897048514-3dd742630268?auto=format&fit=crop&q=80&w=600"
     }
   },
   {
@@ -106,7 +109,8 @@ export const INITIAL_DRIVERS = [
       year: 2019,
       color: "Bleu Marbre",
       plate_number: "KL-7712-BB",
-      seats_count: 3
+      seats_count: 3,
+      image_url: "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&q=80&w=600"
     }
   }
 ];
