@@ -26,7 +26,8 @@ export const DriverSpacePage = () => {
   React.useEffect(() => {
     if (!user) {
       navigate('/login');
-    } else if (user.role === 'passenger') {
+    } else if (user.role !== 'driver' && user.role !== 'admin') {
+      // Seuls les chauffeurs (et admins) peuvent accéder à l'espace chauffeur
       navigate('/');
     }
   }, [user, navigate]);

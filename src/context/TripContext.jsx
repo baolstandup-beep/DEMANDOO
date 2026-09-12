@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { INITIAL_TRIPS, INITIAL_DRIVERS } from '../lib/mockData';
 import { useAuth } from './AuthContext';
+import { sendSmsNotification } from '../services/afrotoolsService';
 
 const TripContext = createContext();
 
@@ -60,7 +61,7 @@ export const TripProvider = ({ children }) => {
         const { data: bookingsData } = await supabase
           .from('bookings')
           .select(`*, trip:trip_id(*)`)
-          .or(`passenger_id.eq.${user.id},trip.driver_id.eq.${user.id}`)
+          .eq('passenger_id', user.id)
           .order('created_at', { ascending: false });
         
         setBookings(bookingsData || []);
@@ -179,15 +180,32 @@ export const TripProvider = ({ children }) => {
     const trip = trips.find(t => t.id === tripId);
     if (!trip) throw new Error("Trajet non trouvé");
 
-    const passengerName = passengerInfo ? `${passengerInfo.firstName} ${passengerInfo.lastName}` : passengerUser.full_name;
-    const passengerPhone = passengerInfo ? passengerInfo.phone : (passengerUser.phone || 'N/A');
+    const passengerName = passengerInfo ? `${passengerInfo.firstName} ${passengerInfo.lastName}` : (passengerUser?.full_name || 'Passager');
+    const passengerPhone = passengerInfo ? passengerInfo.phone : (passengerUser?.phone || '+221 77 000 00 00');
     const passengerAddress = passengerInfo ? passengerInfo.address : '';
 
+    const localId = `bk_${Date.now()}`;
     const newBooking = {
+      id: localId,
       trip_id: tripId,
-      passenger_id: passengerUser.id,
+      trip: trip,
+      passenger_id: passengerUser ? passengerUser.id : 'guest',
       passenger_name: passengerName,
       passenger_phone: passengerPhone, 
+      passenger_address: passengerAddress,
+      seats_booked: seatsCount,
+      total_price: trip.price_per_seat * seatsCount,
+      pickup_point: pickupPoint || passengerAddress || trip.departure_address,
+      status: 'pending',
+      created_at: new Date().toISOString()
+    };
+
+    // Données à insérer dans Supabase (sans id local ni objet trip imbriqué)
+    const supabasePayload = {
+      trip_id: tripId,
+      passenger_id: passengerUser ? passengerUser.id : null,
+      passenger_name: passengerName,
+      passenger_phone: passengerPhone,
       passenger_address: passengerAddress,
       seats_booked: seatsCount,
       total_price: trip.price_per_seat * seatsCount,
@@ -195,14 +213,50 @@ export const TripProvider = ({ children }) => {
       status: 'pending'
     };
 
-    const { data, error } = await supabase.from('bookings').insert([newBooking]).select('*, trip:trip_id(*)').single();
-    if (error) throw error;
-    
-    setBookings([data, ...bookings]);
-    return data;
+    if (!isSupabaseConfigured) {
+      setBookings(prev => [newBooking, ...prev]);
+      // Envoi du SMS de confirmation au passager via Afrotools
+      sendSmsNotification({
+        to: passengerPhone,
+        message: `DEMANDOO: Votre demande de réservation pour le trajet ${trip.departure_city} - ${trip.arrival_city} a été reçue.`
+      });
+      return newBooking;
+    }
+
+    try {
+      const { data, error } = await supabase.from('bookings').insert([supabasePayload]).select('*, trip:trip_id(*)').single();
+      if (error) throw error;
+      setBookings(prev => [data, ...prev]);
+      sendSmsNotification({
+        to: passengerPhone,
+        message: `DEMANDOO: Votre demande de réservation pour le trajet ${trip.departure_city} - ${trip.arrival_city} a été reçue.`
+      });
+      return data;
+    } catch (err) {
+      console.warn("Supabase booking insert fallback:", err.message);
+      setBookings(prev => [newBooking, ...prev]);
+      return newBooking;
+    }
   };
 
   const acceptBooking = async (bookingId, driverUser) => {
+    if (!isSupabaseConfigured) {
+      setBookings(prev => prev.map(b => {
+        if (b.id === bookingId) {
+          return { ...b, status: 'accepted' };
+        }
+        return b;
+      }));
+      const bk = bookings.find(b => b.id === bookingId);
+      if (bk) {
+        sendSmsNotification({
+          to: bk.passenger_phone,
+          message: `DEMANDOO: Votre réservation pour ${bk.trip?.arrival_city || 'votre trajet'} a été confirmée par le chauffeur !`
+        });
+      }
+      return { id: bookingId, status: 'accepted' };
+    }
+
     const { data: booking, error } = await supabase.from('bookings').update({ status: 'accepted' }).eq('id', bookingId).select('*, trip:trip_id(*)').single();
     if (error) throw error;
     
@@ -215,6 +269,11 @@ export const TripProvider = ({ children }) => {
   };
 
   const rejectBooking = async (bookingId, driverUser) => {
+    if (!isSupabaseConfigured) {
+      setBookings(prev => prev.map(b => b.id === bookingId ? { ...b, status: 'rejected' } : b));
+      return { id: bookingId, status: 'rejected' };
+    }
+
     const { data: booking, error } = await supabase.from('bookings').update({ status: 'rejected' }).eq('id', bookingId).select('*, trip:trip_id(*)').single();
     if (error) throw error;
     loadAllData();

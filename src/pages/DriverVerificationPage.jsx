@@ -30,7 +30,8 @@ export const DriverVerificationPage = () => {
       navigate('/login');
     } else if (user.role === 'passenger') {
       navigate('/');
-    } else if (user.driver_status === 'ACTIVE') {
+    } else if (user.driver_status === 'VERIFIED' && user.is_driver_active) {
+      // Chauffeur déjà vérifié et actif → espace chauffeur
       navigate('/espace-chauffeur');
     }
   }, [user, navigate]);
@@ -94,7 +95,7 @@ export const DriverVerificationPage = () => {
   const handleNext = () => setStep(s => Math.min(s + 1, 6));
   const handlePrev = () => setStep(s => Math.max(s - 1, 1));
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!certify) {
       addNotification({
@@ -105,7 +106,7 @@ export const DriverVerificationPage = () => {
       return;
     }
     // Execute Server-Side Verification Simulation
-    const result = completeDriverOnboarding({
+    const result = await completeDriverOnboarding({
       personalInfo,
       licenseInfo,
       vehicleDocs,

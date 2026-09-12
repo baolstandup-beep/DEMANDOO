@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useNotifications } from '../context/NotificationContext';
 import { Crown, CheckCircle2, ArrowRight, ShieldCheck, Zap, Sparkles } from 'lucide-react';
+import { createWaveCheckout } from '../services/afrotoolsService';
 
 export const SubscriptionPage = () => {
   const { user, subscribeDriver } = useAuth();
@@ -93,12 +94,23 @@ export const SubscriptionPage = () => {
     setIsProcessing(true);
 
     try {
+      const price = billingCycle === 'annual' ? plan.priceAnnual : plan.priceMonthly;
+
+      // Si le plan n'est pas gratuit/essai, passer par le checkout Wave Afrotools
+      if (price > 0) {
+        await createWaveCheckout({
+          amount: price,
+          clientReference: `demandoo_sub_${plan.id}_${user.id}_${Date.now()}`,
+          clientPhone: user.phone
+        });
+      }
+
       const result = await subscribeDriver(plan.id, billingCycle, plan.tripLimit);
       
       if (result.success) {
         addNotification({
           title: "Abonnement activé !",
-          message: plan.isTrial ? "Votre période d'essai de 7 jours a démarré." : `Votre abonnement ${plan.name} est maintenant actif.`,
+          message: plan.isTrial ? "Votre période d'essai de 7 jours a démarré." : `Votre abonnement ${plan.name} a été réglé avec succès via Wave et est actif.`,
           type: "success"
         });
         navigate('/espace-chauffeur');

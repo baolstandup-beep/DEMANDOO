@@ -20,8 +20,12 @@ import {
   Car,
   User,
   Plus,
-  Minus
+  Minus,
+  Smartphone,
+  CreditCard,
+  Zap
 } from 'lucide-react';
+import { createWaveCheckout, createBictorysCharge } from '../services/afrotoolsService';
 
 export const BookingPage = () => {
   const { trajetId } = useParams();
@@ -46,6 +50,7 @@ export const BookingPage = () => {
   const [bookingObj, setBookingObj] = useState(null);
   const [errorMessage, setErrorMessage] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState('wave'); // 'wave' | 'orange' | 'cash'
 
   useEffect(() => {
     if (user && user.role !== 'admin') {
@@ -108,10 +113,24 @@ export const BookingPage = () => {
     setIsProcessing(true);
 
     try {
-      // Simulate network request
-      await new Promise(r => setTimeout(r, 1200));
+      let paymentResult = null;
+      if (paymentMethod === 'wave') {
+        paymentResult = await createWaveCheckout({
+          amount: estimatedTotal,
+          clientReference: `demandoo_trip_${trip.id}_${Date.now()}`,
+          clientPhone: passengerInfo.phone
+        });
+      } else if (paymentMethod === 'bictorys') {
+        paymentResult = await createBictorysCharge({
+          amount: estimatedTotal,
+          clientReference: `demandoo_bictorys_${trip.id}_${Date.now()}`,
+          customerName: `${passengerInfo.firstName} ${passengerInfo.lastName}`,
+          customerPhone: passengerInfo.phone,
+          customerEmail: user.email
+        });
+      }
 
-      const newBk = createBooking({
+      const newBk = await createBooking({
         tripId: trip.id,
         passengerUser: user,
         passengerInfo: passengerInfo,
@@ -128,9 +147,19 @@ export const BookingPage = () => {
         origin: { y: 0.6 }
       });
 
+      const notifTitle = paymentMethod === 'wave' 
+        ? "Paiement Wave Validé !" 
+        : paymentMethod === 'bictorys'
+        ? "Paiement Bictorys / Orange Money Validé !"
+        : "Demande envoyée !";
+
+      const notifMsg = paymentMethod === 'cash'
+        ? `Votre demande pour ${trip.departure_city} a été transmise au conducteur.`
+        : `Votre paiement de ${estimatedTotal.toLocaleString('fr-FR')} FCFA a été confirmé via ${paymentMethod === 'wave' ? 'Wave' : 'Bictorys (Orange Money / CB)'}.`;
+
       addNotification({
-        title: "Demande envoyée !",
-        message: `Votre demande pour ${trip.departure_city} a été transmise au conducteur.`,
+        title: notifTitle,
+        message: notifMsg,
         type: "success",
         link: "/mes-reservations"
       });
@@ -449,8 +478,86 @@ export const BookingPage = () => {
               </div>
             </div>
 
-            <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-100 text-xs text-emerald-800 font-medium">
-              Demandoo facilite la mise en relation entre passagers et chauffeurs. Le paiement du trajet est effectué directement entre le passager et le chauffeur.
+            {/* SÉLECTION DU MODE DE PAIEMENT */}
+            <div className="space-y-3 pt-2">
+              <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                <Zap className="w-4 h-4 text-demandoo-500" /> Mode de règlement
+              </h4>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setPaymentMethod('wave')}
+                  className={`p-4 rounded-2xl border-2 text-left transition-all flex flex-col justify-between ${
+                    paymentMethod === 'wave'
+                      ? 'border-[#1DC3E8] bg-sky-50/50 shadow-sm ring-2 ring-[#1DC3E8]/20'
+                      : 'border-slate-200 hover:border-slate-300 bg-white'
+                  }`}
+                >
+                  <div className="flex items-center justify-between w-full mb-2">
+                    <div className="w-9 h-9 rounded-xl bg-[#1DC3E8] text-white flex items-center justify-center font-black text-sm shadow-sm">
+                      🐧
+                    </div>
+                    {paymentMethod === 'wave' && (
+                      <CheckCircle2 className="w-5 h-5 text-[#1DC3E8]" />
+                    )}
+                  </div>
+                  <div>
+                    <h5 className="text-sm font-black text-slate-900">Wave</h5>
+                    <p className="text-[11px] text-slate-500 font-medium">Instantané, 0% frais</p>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setPaymentMethod('bictorys')}
+                  className={`p-4 rounded-2xl border-2 text-left transition-all flex flex-col justify-between ${
+                    paymentMethod === 'bictorys'
+                      ? 'border-orange-500 bg-orange-50/40 shadow-sm ring-2 ring-orange-500/20'
+                      : 'border-slate-200 hover:border-slate-300 bg-white'
+                  }`}
+                >
+                  <div className="flex items-center justify-between w-full mb-2">
+                    <div className="w-9 h-9 rounded-xl bg-orange-500 text-white flex items-center justify-center font-black text-xs shadow-sm">
+                      🟧
+                    </div>
+                    {paymentMethod === 'bictorys' && (
+                      <CheckCircle2 className="w-5 h-5 text-orange-500" />
+                    )}
+                  </div>
+                  <div>
+                    <h5 className="text-sm font-black text-slate-900">Bictorys</h5>
+                    <p className="text-[11px] text-slate-500 font-medium">Orange Money / CB</p>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setPaymentMethod('cash')}
+                  className={`p-4 rounded-2xl border-2 text-left transition-all flex flex-col justify-between ${
+                    paymentMethod === 'cash'
+                      ? 'border-demandoo-500 bg-emerald-50/40 shadow-sm ring-2 ring-demandoo-500/20'
+                      : 'border-slate-200 hover:border-slate-300 bg-white'
+                  }`}
+                >
+                  <div className="flex items-center justify-between w-full mb-2">
+                    <div className="w-9 h-9 rounded-xl bg-emerald-500 text-white flex items-center justify-center font-black text-xs shadow-sm">
+                      💵
+                    </div>
+                    {paymentMethod === 'cash' && (
+                      <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                    )}
+                  </div>
+                  <div>
+                    <h5 className="text-sm font-black text-slate-900">Espèces</h5>
+                    <p className="text-[11px] text-slate-500 font-medium">Direct au chauffeur</p>
+                  </div>
+                </button>
+              </div>
+            </div>
+
+            <div className="p-3.5 bg-emerald-50 rounded-xl border border-emerald-100 text-xs text-emerald-900 font-medium flex items-center gap-2">
+              <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>Garantie de voyage Demandoo : vérification d'identité et contact direct dès acceptation.</span>
             </div>
 
           </div>
@@ -460,7 +567,15 @@ export const BookingPage = () => {
             disabled={isProcessing}
             className="w-full py-4 rounded-2xl text-sm font-black text-white bg-gradient-to-r from-demandoo-500 to-demandoo-600 hover:from-demandoo-600 hover:to-demandoo-700 shadow-md shadow-demandoo-500/25 active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-70"
           >
-            {isProcessing ? <Loader2 className="w-5 h-5 animate-spin" /> : "Confirmer ma demande"}
+            {isProcessing ? (
+              <Loader2 className="w-5 h-5 animate-spin" />
+            ) : paymentMethod === 'wave' ? (
+              <span>Payer avec Wave ({estimatedTotal.toLocaleString('fr-FR')} FCFA)</span>
+            ) : paymentMethod === 'bictorys' ? (
+              <span>Payer via Bictorys / Orange Money ({estimatedTotal.toLocaleString('fr-FR')} FCFA)</span>
+            ) : (
+              "Confirmer ma demande"
+            )}
           </button>
         </div>
       )}

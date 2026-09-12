@@ -26,14 +26,6 @@ export const Header = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const handleRoleSwitch = (role) => {
-    switchRole(role);
-    setShowRoleSwitcher(false);
-    if (role === 'admin') navigate('/admin/paiements');
-    else if (role === 'driver') navigate('/espace-chauffeur');
-    else navigate('/trajets');
-  };
-
   return (
     <header className="sticky top-0 z-40 glass-nav shadow-sm transition-all">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
