@@ -21,7 +21,7 @@ export const BASE44_TRAJETS = [
     "non_fumeur": true,
     "accepte_bagages": true,
     "conducteur_telephone": "777",
-    "prix_par_place": 17777,
+    "prix_par_place": 5000,
     "marque": null,
     "conducteur_nom": "iiu",
     "duree_estimee_min": null,

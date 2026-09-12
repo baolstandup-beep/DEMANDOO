@@ -6,7 +6,7 @@ import { Footer } from './components/common/Footer';
 import { HomePage } from './pages/HomePage';
 import { SearchPage } from './pages/SearchPage';
 import { TripDetailsPage } from './pages/TripDetailsPage';
-import { BookingPage } from './pages/BookingPage';
+import { DriverProfilePage } from './pages/DriverProfilePage';
 import { DriverSpacePage } from './pages/DriverSpacePage';
 import { PublishTripPage } from './pages/PublishTripPage';
 import { DriverVerificationPage } from './pages/DriverVerificationPage';
@@ -16,8 +16,7 @@ import { AdminDriverReviewPage } from './pages/AdminDriverReviewPage';
 import { MyBookingsPage } from './pages/MyBookingsPage';
 import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
-import { CompleteDriverProfilePage } from './pages/CompleteDriverProfilePage';
-import { SubscriptionPage } from './pages/SubscriptionPage';
+
 import { DriverRouteGuard } from './components/common/DriverRouteGuard';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { AuthCallbackPage } from './pages/AuthCallbackPage';
@@ -34,8 +33,8 @@ export function App() {
       document.title = 'Trouver un trajet | Demandoo';
     } else if (path.startsWith('/trajet/')) {
       document.title = 'Détails du trajet | Demandoo';
-    } else if (path.startsWith('/reservation/')) {
-      document.title = 'Réservation & Paiement | Demandoo';
+    } else if (path.startsWith('/chauffeur/')) {
+      document.title = 'Profil Chauffeur | Demandoo';
     } else if (path === '/publier') {
       document.title = 'Publier un trajet | Demandoo';
     } else if (path === '/espace-chauffeur') {
@@ -50,8 +49,6 @@ export function App() {
       document.title = 'Connexion | Demandoo';
     } else if (path === '/inscription-chauffeur') {
       document.title = 'Inscription | Demandoo';
-    } else if (path === '/abonnement') {
-      document.title = 'Abonnement Chauffeur | Demandoo';
     }
   }, [location]);
 
@@ -64,13 +61,9 @@ export function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/trajets" element={<SearchPage />} />
           <Route path="/trajet/:id" element={<TripDetailsPage />} />
-          <Route path="/reservation/:trajetId" element={<BookingPage />} />
+          <Route path="/chauffeur/:driverId" element={<DriverProfilePage />} />
           <Route path="/inscription-chauffeur" element={<RegisterPage />} />
-          <Route path="/completer-profil-chauffeur" element={
-            <DriverRouteGuard>
-              <CompleteDriverProfilePage />
-            </DriverRouteGuard>
-          } />
+
           <Route path="/publier" element={
             <DriverRouteGuard allowedStatuses={['VERIFIED']}>
               <PublishTripPage />
@@ -86,11 +79,7 @@ export function App() {
               <DriverVerificationPage />
             </DriverRouteGuard>
           } />
-          <Route path="/abonnement" element={
-            <DriverRouteGuard allowedStatuses={['VERIFIED']}>
-              <SubscriptionPage />
-            </DriverRouteGuard>
-          } />
+
           
           <Route path="/admin/paiements" element={<AdminDashboardPage />} />
           <Route path="/admin/drivers" element={<AdminDriversPage />} />

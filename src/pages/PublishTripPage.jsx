@@ -58,10 +58,50 @@ export const PublishTripPage = () => {
       navigate('/');
     } else if (user && !isAllowedToPublish) {
       navigate('/verification-chauffeur');
-    } else if (user && (!hasActiveSub || limitReached)) {
-      navigate('/abonnement');
     }
-  }, [user, isAllowedToPublish, hasActiveSub, limitReached, navigate]);
+  }, [user, isAllowedToPublish, navigate]);
+
+  if (!hasActiveSub || limitReached) {
+    const isExpired = user?.subscription_status === 'expired' || (!hasActiveSub && user?.subscription_status !== 'trial');
+    const isDiscovery = user?.subscription_plan === 'trial';
+    const isStandard = user?.subscription_plan === 'standard';
+
+    return (
+      <div className="min-h-[85vh] bg-slate-50 flex flex-col items-center justify-center p-6 text-center">
+        <div className="bg-white p-8 rounded-3xl shadow-xl max-w-md w-full border border-slate-100">
+          <AlertTriangle className="w-16 h-16 text-amber-500 mx-auto mb-6" />
+          
+          {isExpired ? (
+            <>
+              <h2 className="text-2xl font-black text-slate-900 mb-2">Abonnement expiré</h2>
+              <p className="text-slate-500 mb-8">Renouvelez votre abonnement pour publier un nouveau trajet.</p>
+              <Link to="/#abonnements" className="block w-full py-4 bg-slate-900 text-white rounded-2xl font-black mb-3">Renouveler</Link>
+            </>
+          ) : isDiscovery ? (
+            <>
+              <h2 className="text-2xl font-black text-slate-900 mb-2">Trajet découverte utilisé</h2>
+              <p className="text-slate-500 mb-8">Votre trajet découverte a déjà été utilisé. Passez à une formule supérieure pour continuer.</p>
+              <Link to="/#abonnements" className="block w-full py-4 bg-slate-900 text-white rounded-2xl font-black mb-3">Choisir Standard</Link>
+              <Link to="/#abonnements" className="block w-full py-4 bg-demandoo-600 text-white rounded-2xl font-black">Passer à Pro</Link>
+            </>
+          ) : isStandard ? (
+            <>
+              <h2 className="text-2xl font-black text-slate-900 mb-2">Limite atteinte</h2>
+              <p className="text-slate-500 mb-8">Vous avez utilisé vos 4 publications disponibles pour cette période. Passez à Pro pour continuer à publier sans limite.</p>
+              <Link to="/#abonnements" className="block w-full py-4 bg-demandoo-600 text-white rounded-2xl font-black mb-3">Passer à Pro</Link>
+              <Link to="/espace-chauffeur" className="block w-full py-4 bg-slate-100 text-slate-700 rounded-2xl font-black hover:bg-slate-200">Plus tard</Link>
+            </>
+          ) : (
+            <>
+              <h2 className="text-2xl font-black text-slate-900 mb-2">Abonnement requis</h2>
+              <p className="text-slate-500 mb-8">Vous devez avoir un abonnement actif pour publier des trajets.</p>
+              <Link to="/#abonnements" className="block w-full py-4 bg-slate-900 text-white rounded-2xl font-black mb-3">Voir les offres</Link>
+            </>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   const handleFinalSubmit = (e) => {
     e.preventDefault();

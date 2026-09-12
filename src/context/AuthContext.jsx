@@ -333,16 +333,15 @@ export const AuthProvider = ({ children }) => {
   const subscribeDriver = async (planSlug, billingCycle, tripLimit) => {
     if (!user) return { success: false };
 
-    const updates = {
-      subscription_status: planSlug === 'trial' ? 'trial' : 'active',
-      subscription_plan: planSlug,
-      subscription_trip_limit: tripLimit,
-      subscription_trips_used: 0
-    };
-
     const isMockUser = !user.id || typeof user.id !== 'string' || user.id.startsWith('usr-');
 
     if (!isSupabaseConfigured || isMockUser) {
+      const updates = {
+        subscription_status: planSlug === 'trial' ? 'trial' : 'active',
+        subscription_plan: planSlug,
+        subscription_trip_limit: tripLimit,
+        subscription_trips_used: 0
+      };
       const updated = { ...user, ...updates };
       setUser(updated);
       localStorage.setItem('demandoo_user_v2', JSON.stringify(updated));
@@ -350,41 +349,31 @@ export const AuthProvider = ({ children }) => {
     }
 
     try {
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .update(updates)
-        .eq('id', user.id)
-        .select()
-        .single();
+      const mockTransactionId = `DEM-${Date.now()}`;
+      const amount = planSlug === 'pro' ? 5000 : (planSlug === 'standard' ? 2500 : 0);
 
-      if (profileError) throw profileError;
+      const { error } = await supabase.rpc('mock_payment_webhook', {
+        p_transaction_id: mockTransactionId,
+        p_driver_id: user.id,
+        p_plan: planSlug,
+        p_amount: amount
+      });
 
-      const { data: planData } = await supabase.from('subscription_plans').select('id').eq('slug', planSlug).single();
+      if (error) throw error;
 
-      if (planData) {
-        const periodEnd = new Date();
-        if (planSlug === 'trial') periodEnd.setDate(periodEnd.getDate() + 7);
-        else if (billingCycle === 'annual') periodEnd.setFullYear(periodEnd.getFullYear() + 1);
-        else periodEnd.setMonth(periodEnd.getMonth() + 1);
-
-        await supabase.from('driver_subscriptions').insert([{
-          driver_id: user.id,
-          plan_id: planData.id,
-          billing_cycle: billingCycle,
-          status: updates.subscription_status,
-          period_end: periodEnd.toISOString(),
-          trips_used: 0
-        }]);
+      // Refresh profile
+      const { data: refreshedProfile } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+      
+      if (refreshedProfile) {
+        setUser(refreshedProfile);
+        localStorage.setItem('demandoo_user_v2', JSON.stringify(refreshedProfile));
+        return { success: true, user: refreshedProfile };
       }
 
-      setUser(profileData);
-      return { success: true, user: profileData };
+      return { success: false };
     } catch (e) {
-      console.warn("Subscription error (fallback to local):", e);
-      const updated = { ...user, ...updates };
-      setUser(updated);
-      localStorage.setItem('demandoo_user_v2', JSON.stringify(updated));
-      return { success: true, user: updated };
+      console.warn("Subscription error:", e);
+      return { success: false, error: e };
     }
   };
 

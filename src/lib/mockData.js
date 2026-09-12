@@ -32,18 +32,30 @@ export const INITIAL_DRIVERS = [
     role: "driver",
     is_phone_verified: true,
     is_identity_verified: true,
+    license_verified: true,
+    vehicle_verified: true,
     license_number: "DK-2019-9482",
     rating: 4.9,
+    review_count: 32,
     total_trips: 142,
     kyc_status: "verified",
+    whatsapp_phone: "221774501234",
+    created_at: "2024-03-15T10:00:00Z",
     vehicle: {
       make: "Peugeot",
       model: "508 GT",
       year: 2021,
       color: "Gris Nardo",
-      plate_number: "DK-8492-BC",
+      license_plate: "DK-8492-BC",
       seats_count: 4,
-      image_url: "https://images.unsplash.com/photo-1555215695-3004980ad54e?auto=format&fit=crop&q=80&w=600"
+      vehicle_type: "Berline",
+      air_conditioning: true,
+      image_url: "https://images.unsplash.com/photo-1555215695-3004980ad54e?auto=format&fit=crop&q=80&w=600",
+      photos: [
+        "https://images.unsplash.com/photo-1555215695-3004980ad54e?auto=format&fit=crop&q=80&w=600",
+        "https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&q=80&w=600",
+        "https://images.unsplash.com/photo-1605515298946-d062f2e9da53?auto=format&fit=crop&q=80&w=600"
+      ]
     }
   },
   {
@@ -55,18 +67,29 @@ export const INITIAL_DRIVERS = [
     role: "driver",
     is_phone_verified: true,
     is_identity_verified: true,
+    license_verified: true,
+    vehicle_verified: true,
     license_number: "TH-2021-3310",
     rating: 5.0,
+    review_count: 45,
     total_trips: 89,
     kyc_status: "verified",
+    whatsapp_phone: "221781234567",
+    created_at: "2025-01-20T10:00:00Z",
     vehicle: {
       make: "Toyota",
       model: "RAV4 Hybride",
       year: 2022,
       color: "Blanc Nacré",
-      plate_number: "TH-3310-AX",
+      license_plate: "TH-3310-AX",
       seats_count: 4,
-      image_url: "https://images.unsplash.com/photo-1621007947382-bb3c3994e3fd?auto=format&fit=crop&q=80&w=600"
+      vehicle_type: "SUV",
+      air_conditioning: true,
+      image_url: "https://images.unsplash.com/photo-1621007947382-bb3c3994e3fd?auto=format&fit=crop&q=80&w=600",
+      photos: [
+        "https://images.unsplash.com/photo-1621007947382-bb3c3994e3fd?auto=format&fit=crop&q=80&w=600",
+        "https://images.unsplash.com/photo-1563720223185-11003d516935?auto=format&fit=crop&q=80&w=600"
+      ]
     }
   },
   {
@@ -78,18 +101,28 @@ export const INITIAL_DRIVERS = [
     role: "driver",
     is_phone_verified: true,
     is_identity_verified: true,
+    license_verified: true,
+    vehicle_verified: false,
     license_number: "SL-2020-5591",
     rating: 4.8,
+    review_count: 18,
     total_trips: 64,
     kyc_status: "verified",
+    whatsapp_phone: "221769876543",
+    created_at: "2025-06-12T10:00:00Z",
     vehicle: {
       make: "Hyundai",
       model: "Tucson",
       year: 2020,
       color: "Noir Ebène",
-      plate_number: "SL-5591-AA",
+      license_plate: "SL-5591-AA",
       seats_count: 4,
-      image_url: "https://images.unsplash.com/photo-1629897048514-3dd742630268?auto=format&fit=crop&q=80&w=600"
+      vehicle_type: "SUV",
+      air_conditioning: true,
+      image_url: "https://images.unsplash.com/photo-1629897048514-3dd742630268?auto=format&fit=crop&q=80&w=600",
+      photos: [
+        "https://images.unsplash.com/photo-1629897048514-3dd742630268?auto=format&fit=crop&q=80&w=600"
+      ]
     }
   },
   {
@@ -101,18 +134,28 @@ export const INITIAL_DRIVERS = [
     role: "driver",
     is_phone_verified: true,
     is_identity_verified: false,
+    license_verified: false,
+    vehicle_verified: false,
     license_number: "KL-2022-7712",
     rating: 4.7,
+    review_count: 12,
     total_trips: 28,
     kyc_status: "under_review",
+    whatsapp_phone: "221705432109",
+    created_at: "2026-01-05T10:00:00Z",
     vehicle: {
       make: "Renault",
       model: "Duster 4WD",
       year: 2019,
       color: "Bleu Marbre",
-      plate_number: "KL-7712-BB",
+      license_plate: "KL-7712-BB",
       seats_count: 3,
-      image_url: "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&q=80&w=600"
+      vehicle_type: "4x4",
+      air_conditioning: true,
+      image_url: "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&q=80&w=600",
+      photos: [
+        "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&q=80&w=600"
+      ]
     }
   }
 ];

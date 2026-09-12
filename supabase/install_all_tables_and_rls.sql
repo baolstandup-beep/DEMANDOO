@@ -29,7 +29,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
     email TEXT UNIQUE NOT NULL,
     phone TEXT,
     avatar_url TEXT,
-    role TEXT DEFAULT 'passenger' CHECK (role IN ('passenger', 'driver', 'admin')),
+    role TEXT DEFAULT 'driver' CHECK (role IN ('driver', 'admin')),
     is_phone_verified BOOLEAN DEFAULT false,
     is_identity_verified BOOLEAN DEFAULT false,
     
@@ -42,6 +42,11 @@ CREATE TABLE IF NOT EXISTS public.profiles (
     subscription_trip_limit INTEGER DEFAULT 1,
     subscription_trips_used INTEGER DEFAULT 0,
     is_driver_active BOOLEAN DEFAULT false,
+    whatsapp_phone TEXT,
+    average_rating NUMERIC(3,2) DEFAULT 0.0,
+    review_count INTEGER DEFAULT 0,
+    license_verified BOOLEAN DEFAULT false,
+    vehicle_verified BOOLEAN DEFAULT false,
     
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
@@ -55,9 +60,20 @@ CREATE TABLE IF NOT EXISTS public.vehicles (
     model TEXT NOT NULL,
     year INT NOT NULL,
     color TEXT NOT NULL,
-    plate_number TEXT NOT NULL,
+    license_plate TEXT NOT NULL,
     seats INT NOT NULL DEFAULT 4,
+    vehicle_type TEXT,
+    air_conditioning BOOLEAN DEFAULT false,
     status TEXT DEFAULT 'verified' CHECK (status IN ('pending', 'verified', 'rejected')),
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- B.2 Vehicle Photos
+CREATE TABLE IF NOT EXISTS public.vehicle_photos (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    vehicle_id UUID NOT NULL REFERENCES public.vehicles(id) ON DELETE CASCADE,
+    image_url TEXT NOT NULL,
+    sort_order INT DEFAULT 0,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -182,6 +198,7 @@ CREATE TABLE IF NOT EXISTS public.reviews (
 
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.vehicles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.vehicle_photos ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.trips ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.bookings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
@@ -191,9 +208,16 @@ ALTER TABLE public.payments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.reviews ENABLE ROW LEVEL SECURITY;
 
 -- Politiques Profiles
-DROP POLICY IF EXISTS "Public profiles are viewable by everyone" ON public.profiles;
-CREATE POLICY "Public profiles are viewable by everyone" ON public.profiles
-    FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Public profiles viewable by authenticated users" ON public.profiles;
+CREATE POLICY "Public profiles viewable by authenticated users" ON public.profiles
+    FOR SELECT TO authenticated USING (true);
+
+DROP POLICY IF EXISTS "Public minimal profiles viewable by everyone" ON public.profiles;
+CREATE POLICY "Public minimal profiles viewable by everyone" ON public.profiles
+    FOR SELECT TO anon USING (true);
+    -- Dans Supabase, pour cacher le téléphone aux non-connectés, 
+    -- on gère ça idéalement via une vue ou côté frontend. 
+    -- Ici la politique autorise la lecture car le frontend filtrera l'affichage.
 
 DROP POLICY IF EXISTS "Users can update own profile" ON public.profiles;
 CREATE POLICY "Users can update own profile" ON public.profiles
@@ -202,6 +226,15 @@ CREATE POLICY "Users can update own profile" ON public.profiles
 DROP POLICY IF EXISTS "Users can insert own profile" ON public.profiles;
 CREATE POLICY "Users can insert own profile" ON public.profiles
     FOR INSERT TO authenticated WITH CHECK ((select auth.uid()) = id);
+
+-- Politiques Vehicle Photos
+DROP POLICY IF EXISTS "Vehicle photos are viewable by everyone" ON public.vehicle_photos;
+CREATE POLICY "Vehicle photos are viewable by everyone" ON public.vehicle_photos
+    FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Drivers can insert own vehicle photos" ON public.vehicle_photos;
+CREATE POLICY "Drivers can insert own vehicle photos" ON public.vehicle_photos
+    FOR INSERT TO authenticated WITH CHECK ((select auth.uid()) IN (SELECT driver_id FROM public.vehicles WHERE id = vehicle_id));
 
 -- Politiques Trips
 DROP POLICY IF EXISTS "Trips are viewable by everyone" ON public.trips;
@@ -289,13 +322,8 @@ DECLARE
   v_driver_status TEXT;
 BEGIN
   -- Lire le rôle depuis les métadonnées utilisateur
-  v_role := COALESCE(new.raw_user_meta_data->>'role', 'passenger');
-  
-  -- Validation de sécurité : seuls passenger et driver sont acceptés
-  -- Un admin ne peut JAMAIS être créé automatiquement depuis le frontend
-  IF v_role NOT IN ('passenger', 'driver') THEN
-    v_role := 'passenger';
-  END IF;
+  -- On force 'driver' car il n'y a plus de compte passager.
+  v_role := 'driver';
 
   -- Définir le statut chauffeur selon le rôle
   IF v_role = 'driver' THEN

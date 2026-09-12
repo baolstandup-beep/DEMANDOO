@@ -18,6 +18,7 @@ import {
   Building2,
   DollarSign
 } from 'lucide-react';
+import { AdminSubscriptionsPage } from './AdminSubscriptionsPage';
 
 export const AdminDashboardPage = () => {
   const { user } = useAuth();
@@ -140,6 +141,15 @@ export const AdminDashboardPage = () => {
         </button>
 
         <button
+          onClick={() => setActiveTab('subscriptions')}
+          className={`px-4 py-2.5 rounded-xl transition-all ${
+            activeTab === 'subscriptions' ? 'bg-purple-700 text-white shadow-sm font-black' : 'text-slate-600 hover:bg-slate-100'
+          }`}
+        >
+          Abonnements Chauffeurs
+        </button>
+
+        <button
           onClick={() => setActiveTab('partners')}
           className={`px-4 py-2.5 rounded-xl transition-all ${
             activeTab === 'partners' ? 'bg-purple-700 text-white shadow-sm font-black' : 'text-slate-600 hover:bg-slate-100'
@@ -217,6 +227,10 @@ export const AdminDashboardPage = () => {
       )}
 
       {/* TAB 2: TRANSACTIONS & PAYMENTS TABLE */}
+      {activeTab === 'subscriptions' && (
+        <AdminSubscriptionsPage />
+      )}
+
       {activeTab === 'payments' && (
         <div className="glass-card rounded-3xl p-6 border border-slate-200/80 shadow-md space-y-4">
           <h3 className="font-black text-demandoo-dark text-base">Historique des transactions mobile money (Wave & OM)</h3>

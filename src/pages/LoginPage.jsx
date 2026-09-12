@@ -12,7 +12,6 @@ export const LoginPage = () => {
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [loginRole, setLoginRole] = useState('passenger');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -22,13 +21,12 @@ export const LoginPage = () => {
     setError('');
     setIsLoading(true);
 
-    const result = await login(identifier, password, loginRole);
+    const result = await login(identifier, password, 'driver');
     setIsLoading(false);
 
     if (result && result.user) {
-      if (result.user.role === 'driver') navigate('/espace-chauffeur');
-      else if (result.user.role === 'admin') navigate('/admin/paiements');
-      else navigate('/trajets');
+      if (result.user.role === 'admin') navigate('/admin/paiements');
+      else navigate('/espace-chauffeur');
     } else {
       setError(result?.error || "Email ou mot de passe incorrect.");
     }
@@ -39,9 +37,8 @@ export const LoginPage = () => {
     const email = role === 'driver' ? 'modou.diop@demandoo.sn' : role === 'admin' ? 'admin@demandoo.sn' : 'passager@demandoo.sn';
     const result = await login(email, 'demo123', role);
     if (result && result.user) {
-      if (role === 'driver') navigate('/espace-chauffeur');
-      else if (role === 'admin') navigate('/admin/paiements');
-      else navigate('/trajets');
+      if (role === 'admin') navigate('/admin/paiements');
+      else navigate('/espace-chauffeur');
     }
   };
 
@@ -58,8 +55,8 @@ export const LoginPage = () => {
           <Link to="/" className="inline-block p-3 rounded-2xl bg-white shadow-xl shadow-black/25 hover:scale-105 transition-transform mx-auto mb-3">
             <img src="/logo.png" alt="Demandoo — Covoiturage Sénégal" className="h-10 w-auto object-contain" />
           </Link>
-          <h1 className="text-3xl sm:text-4xl font-black text-white tracking-tight">Bienvenue</h1>
-          <p className="text-sm sm:text-base text-slate-400 font-medium">Connectez-vous pour continuer.</p>
+          <h1 className="text-3xl sm:text-4xl font-black text-white tracking-tight">Espace Chauffeur</h1>
+          <p className="text-sm sm:text-base text-slate-400 font-medium">Connectez-vous pour gérer vos trajets.</p>
         </div>
 
         {error && (
@@ -74,14 +71,7 @@ export const LoginPage = () => {
             <span>⚡ Accès Démo Rapide (1 Clic)</span>
           </div>
           <p className="text-[11px] text-slate-400">Testez directement les différents rôles de la plateforme :</p>
-          <div className="grid grid-cols-3 gap-2 pt-1">
-            <button 
-              type="button" 
-              onClick={() => handleQuickLogin('passenger')} 
-              className="py-1.5 px-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition-all active:scale-95"
-            >
-              Passager
-            </button>
+          <div className="flex gap-2 pt-1 justify-center">
             <button 
               type="button" 
               onClick={() => handleQuickLogin('driver')} 
@@ -102,7 +92,7 @@ export const LoginPage = () => {
         {/* Bouton Google OAuth */}
         <button
           type="button"
-          onClick={() => loginWithGoogle(loginRole)}
+          onClick={() => loginWithGoogle('driver')}
           className="w-full py-3.5 px-4 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 text-white font-bold text-sm flex items-center justify-center gap-3 transition-all active:scale-[0.98] shadow-sm mb-6 cursor-pointer"
         >
           <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -133,22 +123,7 @@ export const LoginPage = () => {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-2 gap-3 mb-4">
-            <button
-              type="button"
-              onClick={() => setLoginRole('passenger')}
-              className={`py-2.5 rounded-xl text-sm font-bold transition-all border ${loginRole === 'passenger' ? 'bg-demandoo-500/20 border-demandoo-500/50 text-demandoo-400' : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10'}`}
-            >
-              Je suis passager
-            </button>
-            <button
-              type="button"
-              onClick={() => setLoginRole('driver')}
-              className={`py-2.5 rounded-xl text-sm font-bold transition-all border ${loginRole === 'driver' ? 'bg-demandoo-500/20 border-demandoo-500/50 text-demandoo-400' : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/10'}`}
-            >
-              Je suis conducteur
-            </button>
-          </div>
+
 
           <div className="space-y-2">
             <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest block ml-1">Adresse email ou téléphone</label>

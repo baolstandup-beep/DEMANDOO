@@ -298,12 +298,12 @@ export const NationalCoverageSection = () => {
         <div className="flex flex-wrap items-center gap-2.5 pt-2 md:pt-0">
           <div className="px-3.5 py-2 rounded-2xl bg-white border border-slate-200/80 shadow-sm flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-emerald-500" />
-            <span className="text-xs font-black text-slate-900">14 régions</span>
+            <span className="text-xs font-black text-slate-900">{SENEGAL_REGIONS.length} régions</span>
             <span className="text-[11px] text-slate-500 font-medium">couvertes</span>
           </div>
           <div className="px-3.5 py-2 rounded-2xl bg-white border border-slate-200/80 shadow-sm flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-teal-500" />
-            <span className="text-xs font-black text-slate-900">30+ destinations</span>
+            <span className="text-xs font-black text-slate-900">{SENEGAL_DESTINATIONS.length}+ destinations</span>
             <span className="text-[11px] text-slate-500 font-medium">clés</span>
           </div>
           <div className="px-3.5 py-2 rounded-2xl bg-white border border-slate-200/80 shadow-sm flex items-center gap-2">
@@ -495,7 +495,7 @@ export const NationalCoverageSection = () => {
                 Touba — départ
               </span>
               <span className="text-xs font-extrabold text-slate-400 uppercase tracking-wider">
-                14 régions
+                {SENEGAL_REGIONS.length} régions
               </span>
             </div>
 
