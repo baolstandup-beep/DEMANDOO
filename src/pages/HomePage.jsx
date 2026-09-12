@@ -102,8 +102,6 @@ export const HomePage = () => {
     navigate(`/trajets?departure=${dep}&destination=${arr}`);
   };
 
-  const { trips, partners = [], reviews = [] } = useTrips();
-
   const handleSwap = () => {
     const temp = departure;
     setDeparture(destination);
