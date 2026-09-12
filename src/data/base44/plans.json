@@ -1,0 +1,121 @@
+[
+  {
+    "billing_period": "monthly",
+    "features": [
+      "Publication de trajets",
+      "Jusqu'à 3 trajets/mois",
+      "Support communautaire"
+    ],
+    "is_active": true,
+    "duration_label": "1 mois",
+    "price": 0,
+    "name": "Starter",
+    "duration_days": 30,
+    "description": null,
+    "currency": "XOF",
+    "sort_order": 1,
+    "slug": "starter_monthly",
+    "id": "6a996f82229e8cf75af7a0d1",
+    "created_date": "2026-09-03T13:00:50.479000",
+    "updated_date": "2026-09-03T13:00:50.479000",
+    "created_by_id": "6a0ecfc2795cdd246beae557",
+    "created_by": "baolstandup@gmail.com",
+    "is_sample": false
+  },
+  {
+    "billing_period": "monthly",
+    "features": [
+      "Trajets illimités",
+      "Badge Chauffeur vérifié prioritaire",
+      "Statistiques avancées",
+      "Support prioritaire"
+    ],
+    "is_active": true,
+    "duration_label": "1 mois",
+    "price": 5000,
+    "name": "Pro",
+    "duration_days": 30,
+    "description": null,
+    "currency": "XOF",
+    "sort_order": 2,
+    "slug": "pro_monthly",
+    "id": "6a996f82229e8cf75af7a0d2",
+    "created_date": "2026-09-03T13:00:50.479000",
+    "updated_date": "2026-09-03T13:00:50.479000",
+    "created_by_id": "6a0ecfc2795cdd246beae557",
+    "created_by": "baolstandup@gmail.com",
+    "is_sample": false
+  },
+  {
+    "billing_period": "monthly",
+    "features": [
+      "Tout le pack Pro",
+      "Mise en avant des trajets",
+      "0% commission (lancement)",
+      "Account manager dédié"
+    ],
+    "is_active": true,
+    "duration_label": "1 mois",
+    "price": 15000,
+    "name": "Premium",
+    "duration_days": 30,
+    "description": null,
+    "currency": "XOF",
+    "sort_order": 3,
+    "slug": "premium_monthly",
+    "id": "6a996f82229e8cf75af7a0d3",
+    "created_date": "2026-09-03T13:00:50.479000",
+    "updated_date": "2026-09-03T13:00:50.479000",
+    "created_by_id": "6a0ecfc2795cdd246beae557",
+    "created_by": "baolstandup@gmail.com",
+    "is_sample": false
+  },
+  {
+    "billing_period": "yearly",
+    "features": [
+      "Trajets illimités",
+      "Badge Chauffeur vérifié prioritaire",
+      "Statistiques avancées",
+      "2 mois offerts"
+    ],
+    "is_active": true,
+    "duration_label": "12 mois",
+    "price": 50000,
+    "name": "Pro Annuel",
+    "duration_days": 365,
+    "description": null,
+    "currency": "XOF",
+    "sort_order": 4,
+    "slug": "pro_yearly",
+    "id": "6a996f82229e8cf75af7a0d4",
+    "created_date": "2026-09-03T13:00:50.479000",
+    "updated_date": "2026-09-03T13:00:50.479000",
+    "created_by_id": "6a0ecfc2795cdd246beae557",
+    "created_by": "baolstandup@gmail.com",
+    "is_sample": false
+  },
+  {
+    "billing_period": "yearly",
+    "features": [
+      "Tout le pack Premium",
+      "0% commission (lancement)",
+      "Account manager dédié",
+      "2 mois offerts"
+    ],
+    "is_active": true,
+    "duration_label": "12 mois",
+    "price": 150000,
+    "name": "Premium Annuel",
+    "duration_days": 365,
+    "description": null,
+    "currency": "XOF",
+    "sort_order": 5,
+    "slug": "premium_yearly",
+    "id": "6a996f82229e8cf75af7a0d5",
+    "created_date": "2026-09-03T13:00:50.479000",
+    "updated_date": "2026-09-03T13:00:50.479000",
+    "created_by_id": "6a0ecfc2795cdd246beae557",
+    "created_by": "baolstandup@gmail.com",
+    "is_sample": false
+  }
+]

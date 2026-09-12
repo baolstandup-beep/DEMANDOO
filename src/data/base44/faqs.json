@@ -1,0 +1,26 @@
+[
+  {
+    "q": "Comment réserver un trajet ?",
+    "a": "Recherchez un trajet depuis la page Trajets, ouvrez le détail, puis cliquez sur Réserver et complétez le tunnel en quelques étapes."
+  },
+  {
+    "q": "Les chauffeurs sont-ils vérifiés ?",
+    "a": "Demandoo vérifie l'identité, le téléphone et le permis des chauffeurs. Le badge \"Chauffeur vérifié\" ne s'affiche que pour les chauffeurs dont l'identité a réellement été validée."
+  },
+  {
+    "q": "Comment se fait le paiement ?",
+    "a": "Le paiement en ligne (Wave, Orange Money, carte) est en cours d'activation. En attendant, le paiement se fait directement avec le conducteur, et votre réservation reste en attente de confirmation."
+  },
+  {
+    "q": "Puis-je annuler une réservation ?",
+    "a": "Oui, depuis Mes réservations. Le remboursement dépend de l'anticipation : 100% si plus de 24h, 75% entre 6h et 24h, règle configurable en dessous de 6h."
+  },
+  {
+    "q": "Comment devenir chauffeur ?",
+    "a": "Créez un compte, publiez un trajet et complétez la vérification (téléphone, identité, permis, véhicule) pour obtenir le badge Chauffeur vérifié."
+  },
+  {
+    "q": "Mes données personnelles sont-elles protégées ?",
+    "a": "Vos coordonnées ne sont jamais affichées publiquement. Elles ne sont partagées qu'avec le conducteur après réservation, via la messagerie interne."
+  }
+]

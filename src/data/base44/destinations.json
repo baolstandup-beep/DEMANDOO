@@ -1,0 +1,27 @@
+[
+  {
+    "to": "Dakar",
+    "img": "https://media.base44.com/images/public/6a0ecfc2795cdd246beae556/39e6e4f45_Dakar_statue-renaissance-africaine.jpg",
+    "price": "9 000"
+  },
+  {
+    "to": "Thiès",
+    "img": "https://media.base44.com/images/public/6a0ecfc2795cdd246beae556/ac1cc2c52_lat-dior-diop.webp",
+    "price": "7 000"
+  },
+  {
+    "to": "Kaolack",
+    "img": "https://media.base44.com/images/public/6a0ecfc2795cdd246beae556/126beb14e_istockphoto-1545843239-1024x1024.jpg",
+    "price": "4 000"
+  },
+  {
+    "to": "Saint-Louis",
+    "img": "https://media.base44.com/images/public/6a0ecfc2795cdd246beae556/807b13280_images1.jpeg",
+    "price": "4 000"
+  },
+  {
+    "to": "Ziguinchor",
+    "img": "https://media.base44.com/images/public/6a0ecfc2795cdd246beae556/4c9c6a928_ziguinchor-senegal-812566-1440x670.jpg",
+    "price": "12 000"
+  }
+]

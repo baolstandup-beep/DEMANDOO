@@ -24,3 +24,5 @@ node_modules
 # Environment
 .env
 .env.production
+.venv/
+crop_car*.py

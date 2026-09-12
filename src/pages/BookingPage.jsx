@@ -25,7 +25,6 @@ import {
   CreditCard,
   Zap
 } from 'lucide-react';
-import { createWaveCheckout, createBictorysCharge } from '../services/afrotoolsService';
 
 export const BookingPage = () => {
   const { trajetId } = useParams();
@@ -50,7 +49,7 @@ export const BookingPage = () => {
   const [bookingObj, setBookingObj] = useState(null);
   const [errorMessage, setErrorMessage] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState('wave'); // 'wave' | 'orange' | 'cash'
+  const [paymentMethod, setPaymentMethod] = useState('cash'); // 'cash' | 'wave_direct' | 'orange_direct'
 
   useEffect(() => {
     if (user && user.role !== 'admin') {
@@ -59,7 +58,7 @@ export const BookingPage = () => {
         firstName: parts[0] || '',
         lastName: parts.slice(1).join(' ') || '',
         phone: user.phone || '',
-        address: user.address || '' // assuming user has address
+        address: user.address || ''
       });
     }
   }, [user]);
@@ -102,6 +101,12 @@ export const BookingPage = () => {
     }
   };
 
+  const paymentMethodLabel = paymentMethod === 'wave_direct' 
+    ? 'Wave direct au chauffeur' 
+    : paymentMethod === 'orange_direct' 
+    ? 'Orange Money direct au chauffeur' 
+    : 'Espèces en mains propres au chauffeur';
+
   const handleConfirmRequest = async () => {
     setErrorMessage('');
     
@@ -113,33 +118,19 @@ export const BookingPage = () => {
     setIsProcessing(true);
 
     try {
-      let paymentResult = null;
-      if (paymentMethod === 'wave') {
-        paymentResult = await createWaveCheckout({
-          amount: estimatedTotal,
-          clientReference: `demandoo_trip_${trip.id}_${Date.now()}`,
-          clientPhone: passengerInfo.phone
-        });
-      } else if (paymentMethod === 'bictorys') {
-        paymentResult = await createBictorysCharge({
-          amount: estimatedTotal,
-          clientReference: `demandoo_bictorys_${trip.id}_${Date.now()}`,
-          customerName: `${passengerInfo.firstName} ${passengerInfo.lastName}`,
-          customerPhone: passengerInfo.phone,
-          customerEmail: user.email
-        });
-      }
-
+      // Réservation directe : Demandoo ne prélève aucun argent.
+      // Le règlement s'effectue directement de la main à la main ou via mobile money direct.
       const newBk = await createBooking({
         tripId: trip.id,
         passengerUser: user,
         passengerInfo: passengerInfo,
-        seatsCount: seatsCount
+        seatsCount: seatsCount,
+        paymentMethod: paymentMethod
       });
       
       setBookingObj(newBk);
       setIsProcessing(false);
-      setStep(5); // Contact Chauffeur
+      setStep(5); // Contact direct Chauffeur
 
       confetti({
         particleCount: 80,
@@ -147,19 +138,9 @@ export const BookingPage = () => {
         origin: { y: 0.6 }
       });
 
-      const notifTitle = paymentMethod === 'wave' 
-        ? "Paiement Wave Validé !" 
-        : paymentMethod === 'bictorys'
-        ? "Paiement Bictorys / Orange Money Validé !"
-        : "Demande envoyée !";
-
-      const notifMsg = paymentMethod === 'cash'
-        ? `Votre demande pour ${trip.departure_city} a été transmise au conducteur.`
-        : `Votre paiement de ${estimatedTotal.toLocaleString('fr-FR')} FCFA a été confirmé via ${paymentMethod === 'wave' ? 'Wave' : 'Bictorys (Orange Money / CB)'}.`;
-
       addNotification({
-        title: notifTitle,
-        message: notifMsg,
+        title: "Réservation confirmée !",
+        message: `Votre place pour ${trip.departure_city} → ${trip.arrival_city} est réservée. Règlement direct de ${estimatedTotal.toLocaleString('fr-FR')} FCFA au chauffeur.`,
         type: "success",
         link: "/mes-reservations"
       });
@@ -170,7 +151,17 @@ export const BookingPage = () => {
     }
   };
 
-  const whatsappMessage = `Bonjour ${trip.driver?.full_name?.split(' ')[0] || 'chauffeur'},\n\nJe vous contacte depuis Demandoo concernant votre trajet :\n${trip.departure_city} → ${trip.arrival_city}\n${new Date(trip.departure_datetime).toLocaleDateString('fr-FR')} à ${new Date(trip.departure_datetime).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}\n\nJe souhaite réserver ${seatsCount} place${seatsCount > 1 ? 's' : ''}.\n\nNom : ${passengerInfo.firstName} ${passengerInfo.lastName}\nTéléphone : ${passengerInfo.phone}\n\nMontant estimé : ${estimatedTotal.toLocaleString('fr-FR')} FCFA.\n\nMerci de me confirmer la disponibilité et les modalités du trajet.`;
+  const cleanDriverPhone = (trip.driver?.phone || '').replace(/[\s\-\(\)]/g, '').replace(/^\+/, '');
+
+  const whatsappMessage = `Bonjour ${trip.driver?.full_name || 'chauffeur'},\n\n` +
+    `Je vous contacte via Demandoo concernant votre trajet :\n` +
+    `📍 ${trip.departure_city} → ${trip.arrival_city}\n` +
+    `📅 ${new Date(trip.departure_datetime).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })} à ${new Date(trip.departure_datetime).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}\n\n` +
+    `👤 Passager : ${passengerInfo.firstName} ${passengerInfo.lastName}\n` +
+    `📞 Téléphone : ${passengerInfo.phone}\n` +
+    `🎟️ Places : ${seatsCount} place(s)\n` +
+    `💵 Règlement direct au chauffeur : ${estimatedTotal.toLocaleString('fr-FR')} FCFA (${paymentMethodLabel})\n\n` +
+    `Merci de me confirmer le point de prise en charge !`;
 
   const renderStepIndicator = () => {
     const steps = [
@@ -478,69 +469,29 @@ export const BookingPage = () => {
               </div>
             </div>
 
-            {/* SÉLECTION DU MODE DE PAIEMENT */}
+            {/* SÉLECTION DU MODE DE RÈGLEMENT DIRECT */}
             <div className="space-y-3 pt-2">
-              <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
-                <Zap className="w-4 h-4 text-demandoo-500" /> Mode de règlement
-              </h4>
+              <div className="flex items-center justify-between">
+                <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                  <Zap className="w-4 h-4 text-demandoo-500" /> Mode de règlement direct
+                </h4>
+                <span className="text-[11px] font-bold text-emerald-600 bg-emerald-50 px-2.5 py-0.5 rounded-full">
+                  Sans intermédiaire
+                </span>
+              </div>
+
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <button
                   type="button"
-                  onClick={() => setPaymentMethod('wave')}
-                  className={`p-4 rounded-2xl border-2 text-left transition-all flex flex-col justify-between ${
-                    paymentMethod === 'wave'
-                      ? 'border-[#1DC3E8] bg-sky-50/50 shadow-sm ring-2 ring-[#1DC3E8]/20'
-                      : 'border-slate-200 hover:border-slate-300 bg-white'
-                  }`}
-                >
-                  <div className="flex items-center justify-between w-full mb-2">
-                    <div className="w-9 h-9 rounded-xl bg-[#1DC3E8] text-white flex items-center justify-center font-black text-sm shadow-sm">
-                      🐧
-                    </div>
-                    {paymentMethod === 'wave' && (
-                      <CheckCircle2 className="w-5 h-5 text-[#1DC3E8]" />
-                    )}
-                  </div>
-                  <div>
-                    <h5 className="text-sm font-black text-slate-900">Wave</h5>
-                    <p className="text-[11px] text-slate-500 font-medium">Instantané, 0% frais</p>
-                  </div>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setPaymentMethod('bictorys')}
-                  className={`p-4 rounded-2xl border-2 text-left transition-all flex flex-col justify-between ${
-                    paymentMethod === 'bictorys'
-                      ? 'border-orange-500 bg-orange-50/40 shadow-sm ring-2 ring-orange-500/20'
-                      : 'border-slate-200 hover:border-slate-300 bg-white'
-                  }`}
-                >
-                  <div className="flex items-center justify-between w-full mb-2">
-                    <div className="w-9 h-9 rounded-xl bg-orange-500 text-white flex items-center justify-center font-black text-xs shadow-sm">
-                      🟧
-                    </div>
-                    {paymentMethod === 'bictorys' && (
-                      <CheckCircle2 className="w-5 h-5 text-orange-500" />
-                    )}
-                  </div>
-                  <div>
-                    <h5 className="text-sm font-black text-slate-900">Bictorys</h5>
-                    <p className="text-[11px] text-slate-500 font-medium">Orange Money / CB</p>
-                  </div>
-                </button>
-
-                <button
-                  type="button"
                   onClick={() => setPaymentMethod('cash')}
-                  className={`p-4 rounded-2xl border-2 text-left transition-all flex flex-col justify-between ${
+                  className={`p-4 rounded-2xl border-2 text-left transition-all flex flex-col justify-between cursor-pointer ${
                     paymentMethod === 'cash'
                       ? 'border-demandoo-500 bg-emerald-50/40 shadow-sm ring-2 ring-demandoo-500/20'
                       : 'border-slate-200 hover:border-slate-300 bg-white'
                   }`}
                 >
                   <div className="flex items-center justify-between w-full mb-2">
-                    <div className="w-9 h-9 rounded-xl bg-emerald-500 text-white flex items-center justify-center font-black text-xs shadow-sm">
+                    <div className="w-9 h-9 rounded-xl bg-emerald-500 text-white flex items-center justify-center font-black text-sm shadow-sm">
                       💵
                     </div>
                     {paymentMethod === 'cash' && (
@@ -549,15 +500,67 @@ export const BookingPage = () => {
                   </div>
                   <div>
                     <h5 className="text-sm font-black text-slate-900">Espèces</h5>
-                    <p className="text-[11px] text-slate-500 font-medium">Direct au chauffeur</p>
+                    <p className="text-[11px] text-slate-500 font-medium">En mains propres au départ</p>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setPaymentMethod('wave_direct')}
+                  className={`p-4 rounded-2xl border-2 text-left transition-all flex flex-col justify-between cursor-pointer ${
+                    paymentMethod === 'wave_direct'
+                      ? 'border-[#1DC3E8] bg-sky-50/50 shadow-sm ring-2 ring-[#1DC3E8]/20'
+                      : 'border-slate-200 hover:border-slate-300 bg-white'
+                  }`}
+                >
+                  <div className="flex items-center justify-between w-full mb-2">
+                    <div className="w-9 h-9 rounded-xl bg-[#1DC3E8] text-white flex items-center justify-center font-black text-sm shadow-sm">
+                      🐧
+                    </div>
+                    {paymentMethod === 'wave_direct' && (
+                      <CheckCircle2 className="w-5 h-5 text-[#1DC3E8]" />
+                    )}
+                  </div>
+                  <div>
+                    <h5 className="text-sm font-black text-slate-900">Wave direct</h5>
+                    <p className="text-[11px] text-slate-500 font-medium">Au numéro du chauffeur</p>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setPaymentMethod('orange_direct')}
+                  className={`p-4 rounded-2xl border-2 text-left transition-all flex flex-col justify-between cursor-pointer ${
+                    paymentMethod === 'orange_direct'
+                      ? 'border-orange-500 bg-orange-50/40 shadow-sm ring-2 ring-orange-500/20'
+                      : 'border-slate-200 hover:border-slate-300 bg-white'
+                  }`}
+                >
+                  <div className="flex items-center justify-between w-full mb-2">
+                    <div className="w-9 h-9 rounded-xl bg-orange-500 text-white flex items-center justify-center font-black text-xs shadow-sm">
+                      🟧
+                    </div>
+                    {paymentMethod === 'orange_direct' && (
+                      <CheckCircle2 className="w-5 h-5 text-orange-500" />
+                    )}
+                  </div>
+                  <div>
+                    <h5 className="text-sm font-black text-slate-900">Orange Money</h5>
+                    <p className="text-[11px] text-slate-500 font-medium">Directement au chauffeur</p>
                   </div>
                 </button>
               </div>
             </div>
 
-            <div className="p-3.5 bg-emerald-50 rounded-xl border border-emerald-100 text-xs text-emerald-900 font-medium flex items-center gap-2">
-              <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
-              <span>Garantie de voyage Demandoo : vérification d'identité et contact direct dès acceptation.</span>
+            {/* NOTICE PAIEMENT DIRECT SANS PLATEFORME */}
+            <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-200/80 text-xs text-emerald-950 space-y-1.5">
+              <div className="flex items-center gap-2 font-black text-emerald-800">
+                <ShieldCheck className="w-5 h-5 text-emerald-600 shrink-0" />
+                <span>Règlement direct entre vous et le chauffeur</span>
+              </div>
+              <p className="leading-relaxed text-emerald-900/80">
+                Demandoo est uniquement une plateforme de mise en relation de confiance. <strong>Aucun argent n'est prélevé par l'application</strong>. Vous réglerez directement le montant convenu de <strong className="text-emerald-950 font-black">{estimatedTotal.toLocaleString('fr-FR')} FCFA</strong> au conducteur.
+              </p>
             </div>
 
           </div>
@@ -565,22 +568,18 @@ export const BookingPage = () => {
           <button
             onClick={handleConfirmRequest}
             disabled={isProcessing}
-            className="w-full py-4 rounded-2xl text-sm font-black text-white bg-gradient-to-r from-demandoo-500 to-demandoo-600 hover:from-demandoo-600 hover:to-demandoo-700 shadow-md shadow-demandoo-500/25 active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-70"
+            className="w-full py-4 rounded-2xl text-sm font-black text-white bg-gradient-to-r from-demandoo-500 to-demandoo-600 hover:from-demandoo-600 hover:to-demandoo-700 shadow-lg shadow-demandoo-500/25 active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-70 cursor-pointer"
           >
             {isProcessing ? (
               <Loader2 className="w-5 h-5 animate-spin" />
-            ) : paymentMethod === 'wave' ? (
-              <span>Payer avec Wave ({estimatedTotal.toLocaleString('fr-FR')} FCFA)</span>
-            ) : paymentMethod === 'bictorys' ? (
-              <span>Payer via Bictorys / Orange Money ({estimatedTotal.toLocaleString('fr-FR')} FCFA)</span>
             ) : (
-              "Confirmer ma demande"
+              <span>Confirmer ma réservation ({estimatedTotal.toLocaleString('fr-FR')} FCFA à régler au chauffeur)</span>
             )}
           </button>
         </div>
       )}
 
-      {/* STEP 5: CONTACT CHAUFFEUR */}
+      {/* STEP 5: CONTACT CHAUFFEUR DIRECT */}
       {step === 5 && (
         <div className="glass-card rounded-3xl p-6 sm:p-8 border border-emerald-200 shadow-elevated space-y-6 animate-fade-in">
           
@@ -588,58 +587,90 @@ export const BookingPage = () => {
             <div className="w-16 h-16 rounded-full bg-emerald-100 text-demandoo-600 flex items-center justify-center mx-auto shadow-sm">
               <CheckCircle2 className="w-10 h-10 stroke-[2.5]" />
             </div>
-            <h1 className="text-2xl font-black text-demandoo-dark">Demande envoyée</h1>
+            <h1 className="text-2xl font-black text-demandoo-dark">Réservation confirmée !</h1>
             <p className="text-xs text-slate-500 font-medium">
-              Votre demande a bien été transmise au chauffeur.
+              Votre place est réservée. Prenez contact directement avec votre chauffeur ci-dessous.
             </p>
           </div>
 
-          {/* DRIVER CARD */}
-          <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex items-start gap-4">
-            <img 
-              src={trip.driver?.avatar_url} 
-              alt={trip.driver?.full_name} 
-              className="w-16 h-16 rounded-full object-cover border-2 border-demandoo-500 shrink-0"
-            />
-            <div className="space-y-1">
-              <h4 className="text-sm font-black text-slate-900">{trip.driver?.full_name}</h4>
-              <div className="text-[10px] font-bold text-amber-500 flex items-center gap-1">
-                ⭐ {trip.driver?.rating} ({trip.driver?.total_trips} trajets)
+          {/* DRIVER CARD AVEC CONTACTS DIRECTS */}
+          <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
+            <div className="flex items-start gap-4">
+              <img 
+                src={trip.driver?.avatar_url} 
+                alt={trip.driver?.full_name} 
+                className="w-16 h-16 rounded-full object-cover border-2 border-demandoo-500 shrink-0"
+              />
+              <div className="space-y-1 flex-1">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-base font-black text-slate-900">{trip.driver?.full_name}</h4>
+                  <span className="text-xs font-black text-demandoo-600">{estimatedTotal.toLocaleString('fr-FR')} FCFA</span>
+                </div>
+                <div className="text-[11px] font-bold text-amber-500 flex items-center gap-1">
+                  ⭐ {trip.driver?.rating} ({trip.driver?.total_trips} trajets)
+                </div>
+                <p className="text-sm text-slate-800 font-bold mt-1">{trip.driver?.phone}</p>
+                
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {trip.driver?.is_identity_verified && (
+                    <span className="text-[10px] font-bold text-emerald-600 flex items-center gap-1 bg-emerald-50 px-2 py-0.5 rounded-full">
+                      <CheckCircle2 className="w-3 h-3" /> Identité vérifiée
+                    </span>
+                  )}
+                  {trip.driver?.is_phone_verified && (
+                    <span className="text-[10px] font-bold text-emerald-600 flex items-center gap-1 bg-emerald-50 px-2 py-0.5 rounded-full">
+                      <CheckCircle2 className="w-3 h-3" /> Téléphone vérifié
+                    </span>
+                  )}
+                </div>
               </div>
-              <p className="text-xs text-slate-500 font-medium mt-1">{trip.driver?.phone}</p>
-              
-              <div className="flex flex-col gap-1 mt-2">
-                {trip.driver?.is_identity_verified && (
-                  <span className="text-[10px] font-bold text-emerald-600 flex items-center gap-1">
-                    <CheckCircle2 className="w-3 h-3" /> Identité vérifiée
-                  </span>
-                )}
-                {trip.driver?.is_phone_verified && (
-                  <span className="text-[10px] font-bold text-emerald-600 flex items-center gap-1">
-                    <CheckCircle2 className="w-3 h-3" /> Téléphone vérifié
-                  </span>
-                )}
-                <span className="text-[10px] font-bold text-emerald-600 flex items-center gap-1">
-                  <CheckCircle2 className="w-3 h-3" /> Permis vérifié
-                </span>
-              </div>
+            </div>
+
+            {/* ACTION DIRECTE WHATSAPP & APPEL */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+              <a
+                href={`https://wa.me/${cleanDriverPhone}?text=${encodeURIComponent(whatsappMessage)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full py-3.5 px-4 rounded-2xl text-xs font-black text-white bg-emerald-600 hover:bg-emerald-700 shadow-md shadow-emerald-600/20 active:scale-95 transition-all flex items-center justify-center gap-2"
+              >
+                <MessageCircle className="w-4 h-4" />
+                Contacter sur WhatsApp (Message prêt)
+              </a>
+
+              <a
+                href={`tel:${trip.driver?.phone}`}
+                className="w-full py-3.5 px-4 rounded-2xl text-xs font-black text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 active:scale-95 transition-all flex items-center justify-center gap-2"
+              >
+                <Phone className="w-4 h-4" />
+                Appeler le chauffeur
+              </a>
             </div>
           </div>
 
-          <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 text-center space-y-2">
-            <ShieldCheck className="w-6 h-6 text-slate-400 mx-auto" />
-            <h4 className="text-sm font-black text-slate-900">En attente de confirmation</h4>
-            <p className="text-xs text-slate-500 font-medium">
-              Pour des raisons de sécurité, les coordonnées du chauffeur vous seront communiquées dès qu'il aura accepté votre demande.
+          {/* RAPPEL PAIEMENT DIRECT */}
+          <div className="bg-amber-50/70 p-4 rounded-2xl border border-amber-200 text-xs text-amber-900 space-y-1">
+            <h4 className="font-black text-amber-950 flex items-center gap-1.5">
+              <span>💵</span> Règlement direct de votre trajet
+            </h4>
+            <p className="leading-relaxed">
+              Vous avez choisi le mode : <strong>{paymentMethodLabel}</strong>. Prévoyez de remettre directement vos <strong>{estimatedTotal.toLocaleString('fr-FR')} FCFA</strong> au chauffeur au point de rendez-vous. Demandoo ne prend aucune commission.
             </p>
           </div>
 
-          <div className="pt-4 flex justify-center border-t border-slate-100">
+          <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-slate-100">
             <Link
               to="/mes-reservations"
-              className="text-xs font-bold text-demandoo-600 hover:text-demandoo-700"
+              className="text-xs font-black text-demandoo-600 hover:text-demandoo-700"
             >
-              Voir mes réservations
+              Consulter mes réservations
+            </Link>
+
+            <Link
+              to="/trajets"
+              className="text-xs font-bold text-slate-500 hover:text-slate-800"
+            >
+              Chercher un autre trajet
             </Link>
           </div>
 

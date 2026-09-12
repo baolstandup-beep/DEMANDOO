@@ -134,19 +134,7 @@ export const HomePage = () => {
             </div>
           </div>
 
-          {/* Image d'illustration du covoiturage */}
-          <div className="relative w-full max-w-5xl mx-auto rounded-[2rem] sm:rounded-[3rem] overflow-hidden shadow-2xl shadow-demandoo-500/10 border border-white/10 group mt-12">
-            <img 
-              src="https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?auto=format&fit=crop&q=80&w=1200" 
-              alt="Covoiturage au Sénégal" 
-              className="w-full h-[250px] sm:h-[350px] lg:h-[450px] object-cover transition-transform duration-1000 group-hover:scale-105"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0A] via-[#0A0A0A]/20 to-transparent" />
-            <div className="absolute bottom-6 left-8 bg-black/40 backdrop-blur-md border border-white/10 text-white text-sm font-medium px-4 py-2 rounded-full flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-demandoo-500 animate-pulse"></span>
-              +150 trajets aujourd'hui
-            </div>
-          </div>
+
 
         </div>
 

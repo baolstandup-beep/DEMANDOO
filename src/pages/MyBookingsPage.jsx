@@ -101,25 +101,25 @@ export const MyBookingsPage = () => {
                     <span className="font-extrabold text-demandoo-dark">{b.trip?.driver?.full_name || 'Modou Diop'}</span>
                   </div>
                   <div>
-                    <span className="text-slate-400 block text-[10px] font-extrabold uppercase">Contact</span>
-                    {['accepted', 'completed'].includes(b.status) ? (
+                    <span className="text-slate-400 block text-[10px] font-extrabold uppercase">Contact Chauffeur</span>
+                    {b.trip?.driver?.phone ? (
                       <div className="flex flex-col gap-1 mt-1">
                         <a href={`tel:${b.trip?.driver?.phone}`} className="font-bold text-demandoo-600 flex items-center gap-1 hover:underline">
                           <Phone className="w-3 h-3" />
-                          {b.trip?.driver?.phone || '+221 77 000 00 00'}
+                          {b.trip?.driver?.phone}
                         </a>
                         <a 
-                          href={`https://wa.me/${(b.trip?.driver?.phone || '').replace(/\s+/g, '').replace(/^\+/, '')}?text=${encodeURIComponent(`Bonjour ${b.trip?.driver?.full_name}, je suis ${b.passenger_name}, votre passager pour le trajet ${b.trip?.departure_city} → ${b.trip?.arrival_city}.`)}`}
+                          href={`https://wa.me/${(b.trip?.driver?.phone || '').replace(/[\s\-\(\)]/g, '').replace(/^\+/, '')}?text=${encodeURIComponent(`Bonjour ${b.trip?.driver?.full_name || 'chauffeur'}, je suis ${b.passenger_name}, votre passager Demandoo pour le trajet ${b.trip?.departure_city} → ${b.trip?.arrival_city}.`)}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="font-bold text-emerald-600 flex items-center gap-1 hover:underline"
                         >
                           <MessageSquare className="w-3 h-3" />
-                          WhatsApp
+                          WhatsApp direct
                         </a>
                       </div>
                     ) : (
-                      <span className="font-bold text-slate-500 italic">Masqué (En attente)</span>
+                      <span className="font-bold text-slate-500 italic">Non renseigné</span>
                     )}
                   </div>
                   <div>
@@ -127,8 +127,9 @@ export const MyBookingsPage = () => {
                     <span className="font-bold text-slate-800">{b.pickup_point}</span>
                   </div>
                   <div>
-                    <span className="text-slate-400 block text-[10px] font-extrabold uppercase">Montant payé</span>
+                    <span className="text-slate-400 block text-[10px] font-extrabold uppercase">Règlement direct</span>
                     <span className="font-black text-demandoo-600">{b.total_price?.toLocaleString('fr-FR')} FCFA ({b.seats_booked} pl)</span>
+                    <span className="block text-[9px] text-slate-400 font-medium">À remettre au chauffeur</span>
                   </div>
                 </div>
 

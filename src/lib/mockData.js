@@ -1,3 +1,5 @@
+import base44SeedTrips from '../data/base44/demandoo_trips_seed.json';
+
 // Mock initial seed data for Demandoo Senegal
 // Contains realistic Senegal routes, verified drivers, vehicles, bookings, and reviews
 
@@ -116,6 +118,7 @@ export const INITIAL_DRIVERS = [
 ];
 
 export const INITIAL_TRIPS = [
+  ...base44SeedTrips,
   {
     id: "trip-101",
     driver_id: "drv-001",

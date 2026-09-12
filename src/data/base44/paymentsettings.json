@@ -1,0 +1,34 @@
+[
+  {
+    "instructions": "Ouvrez votre application Wave\nAppuyez sur Envoyer de l'argent\nEntrez le numéro ci-dessous\nMontant : {montant} FCFA\nNote : {note}\nConfirmez et envoyez",
+    "is_active": true,
+    "provider": "wave",
+    "account_name": "Demandoo",
+    "phone_number": "77 000 00 00",
+    "montant": 5000,
+    "display_name": "Wave",
+    "note_reference": "Abonnement Demandoo",
+    "id": "6a97fc78999073a4c76a88cc",
+    "created_date": "2026-09-02T10:37:44.206000",
+    "updated_date": "2026-09-02T10:37:44.206000",
+    "created_by_id": "6a0ecfc2795cdd246beae557",
+    "created_by": "baolstandup@gmail.com",
+    "is_sample": false
+  },
+  {
+    "instructions": "Composez #144# sur votre téléphone Orange\nChoisissez Transfert d'argent\nEntrez le numéro ci-dessous\nMontant : {montant} FCFA\nNote : {note}\nValidez avec votre code PIN",
+    "is_active": true,
+    "provider": "orange_money",
+    "account_name": "Demandoo",
+    "phone_number": "76 000 00 00",
+    "montant": 5000,
+    "display_name": "Orange Money",
+    "note_reference": "Abonnement Demandoo",
+    "id": "6a97fc78999073a4c76a88cd",
+    "created_date": "2026-09-02T10:37:44.206000",
+    "updated_date": "2026-09-02T10:37:44.206000",
+    "created_by_id": "6a0ecfc2795cdd246beae557",
+    "created_by": "baolstandup@gmail.com",
+    "is_sample": false
+  }
+]

@@ -1,0 +1,42 @@
+[
+  {
+    "id": 1,
+    "bg": "from-emerald-600 to-emerald-800",
+    "tag": "Partenaire",
+    "title": "Orange Money",
+    "text": "Payez vos trajets en un clic. 0% de frais sur Demandoo ce mois-ci.",
+    "cta": "En savoir plus",
+    "href": "https://www.orange.sn",
+    "icon": "🍊"
+  },
+  {
+    "id": 2,
+    "bg": "from-blue-600 to-indigo-700",
+    "tag": "Promotion",
+    "title": "Wave Sénégal",
+    "text": "Réservez et payez avec Wave : -10% sur votre premier trajet Demandoo.",
+    "cta": "Profiter de l'offre",
+    "href": "https://wave.com",
+    "icon": "💧"
+  },
+  {
+    "id": 3,
+    "bg": "from-amber-500 to-orange-600",
+    "tag": "Bon plan",
+    "title": "TotalEnergies Touba",
+    "text": "Carburant et assistance pour les chauffeurs partenaires Demandoo.",
+    "cta": "Voir les avantages",
+    "href": "https://www.totalenergies.sn",
+    "icon": "⛽"
+  },
+  {
+    "id": 4,
+    "bg": "from-emerald-700 to-teal-900",
+    "tag": "Association",
+    "title": "Touba Ca Kanam",
+    "text": "Soutenez le développement de Touba et de ses habitants grâce à l'association Touba Ca Kanam.",
+    "cta": "Découvrir",
+    "href": "https://toubacakanam.org/",
+    "icon": "🕌"
+  }
+]

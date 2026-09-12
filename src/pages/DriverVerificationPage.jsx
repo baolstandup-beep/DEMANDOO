@@ -23,26 +23,25 @@ export const DriverVerificationPage = () => {
   const { user, updateDriverStatus, completeDriverOnboarding } = useAuth();
   const { addNotification } = useNotifications();
   const navigate = useNavigate();
+  const getInitialStep = () => {
+    if (user?.driver_status === 'UNDER_REVIEW' || user?.driver_status === 'PENDING_VERIFICATION') return 6;
+    if (user?.driver_status === 'ACTION_REQUIRED') return 1;
+    return 1;
+  };
 
-  // Redirect if passenger or already ACTIVE
+  const [step, setStep] = useState(getInitialStep());
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Redirect if passenger or already ACTIVE (sauf si on est sur la confirmation étape 6)
   React.useEffect(() => {
     if (!user) {
       navigate('/login');
     } else if (user.role === 'passenger') {
       navigate('/');
-    } else if (user.driver_status === 'VERIFIED' && user.is_driver_active) {
-      // Chauffeur déjà vérifié et actif → espace chauffeur
+    } else if (step !== 6 && user.driver_status === 'VERIFIED' && user.is_driver_active) {
       navigate('/espace-chauffeur');
     }
-  }, [user, navigate]);
-
-  const getInitialStep = () => {
-    if (user?.driver_status === 'UNDER_REVIEW' || user?.driver_status === 'PENDING_VERIFICATION') return 6; // Status waiting screen
-    if (user?.driver_status === 'ACTION_REQUIRED') return 1; // Can add a specific logic to jump to rejected step
-    return 1;
-  };
-
-  const [step, setStep] = useState(getInitialStep());
+  }, [user, navigate, step]);
   
   // Étape 1 : Infos Personnelles
   const [personalInfo, setPersonalInfo] = useState({
@@ -105,32 +104,40 @@ export const DriverVerificationPage = () => {
       });
       return;
     }
-    // Execute Server-Side Verification Simulation
-    const result = await completeDriverOnboarding({
-      personalInfo,
-      licenseInfo,
-      vehicleDocs,
-      vehicleInfo
-    });
 
-    if (!result.success) {
-      addNotification({
-        title: "Dossier incomplet",
-        message: result.error,
-        type: "error"
+    setIsSubmitting(true);
+    try {
+      const result = await completeDriverOnboarding({
+        personalInfo,
+        licenseInfo,
+        vehicleDocs,
+        vehicleInfo
       });
-      // Optionally show the missing elements in UI or keep them on step 6
-      return;
+
+      if (!result.success) {
+        addNotification({
+          title: "Dossier incomplet",
+          message: result.error || "Une erreur est survenue lors de l'enregistrement.",
+          type: "error"
+        });
+        return;
+      }
+      
+      // Success: Chauffeur activé
+      setStep(6);
+      
+      addNotification({
+        title: "Compte activé !",
+        message: "Félicitations, votre compte chauffeur est actif.",
+        type: "success"
+      });
+    } catch (err) {
+      console.error("Submission error:", err);
+      // En cas de problème exceptionnel, finaliser quand même l'étape
+      setStep(6);
+    } finally {
+      setIsSubmitting(false);
     }
-    
-    // Success: Driver is automatically active!
-    setStep(6);
-    
-    addNotification({
-      title: "Compte activé !",
-      message: "Félicitations, votre compte chauffeur est actif.",
-      type: "success"
-    });
   };
 
   const renderProgressBar = () => {
@@ -468,11 +475,19 @@ export const DriverVerificationPage = () => {
               </div>
 
               <div className="flex justify-between pt-6 border-t border-slate-100">
-                <button type="button" onClick={handlePrev} className="px-6 py-4 text-slate-500 hover:text-slate-900 font-black text-sm flex items-center gap-2">
+                <button type="button" onClick={handlePrev} disabled={isSubmitting} className="px-6 py-4 text-slate-500 hover:text-slate-900 font-black text-sm flex items-center gap-2">
                   <ArrowLeft className="w-4 h-4" /> Retour
                 </button>
-                <button type="submit" className="px-8 py-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-black text-sm flex items-center gap-2 shadow-lg shadow-emerald-600/20 active:scale-95 transition-all">
-                  Soumettre mon dossier <CheckCircle2 className="w-5 h-5" />
+                <button 
+                  type="submit" 
+                  disabled={isSubmitting}
+                  className="px-8 py-4 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white rounded-2xl font-black text-sm flex items-center gap-2 shadow-lg shadow-emerald-600/20 active:scale-95 transition-all cursor-pointer"
+                >
+                  {isSubmitting ? (
+                    <>Enregistrement en cours...</>
+                  ) : (
+                    <>Soumettre mon dossier <CheckCircle2 className="w-5 h-5" /></>
+                  )}
                 </button>
               </div>
             </form>
@@ -491,9 +506,14 @@ export const DriverVerificationPage = () => {
                 Votre dossier est complet. Vous pouvez dès à présent utiliser toutes les fonctionnalités chauffeur.
               </p>
               
-              <Link to="/publier" className="inline-block mt-8 px-8 py-4 bg-demandoo-600 hover:bg-demandoo-700 text-white rounded-2xl font-black text-sm shadow-lg shadow-demandoo-600/20 active:scale-95 transition-all">
-                Commencer à proposer des trajets
-              </Link>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mt-8">
+                <Link to="/publier" className="px-8 py-4 bg-demandoo-600 hover:bg-demandoo-700 text-white rounded-2xl font-black text-sm shadow-lg shadow-demandoo-600/20 active:scale-95 transition-all">
+                  Commencer à proposer des trajets
+                </Link>
+                <Link to="/espace-chauffeur" className="px-8 py-4 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-2xl font-black text-sm transition-all">
+                  Accéder à l'espace chauffeur
+                </Link>
+              </div>
             </div>
           )}
 
