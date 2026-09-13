@@ -124,7 +124,8 @@ export const HomePage = () => {
             className="w-full h-full object-cover"
             style={{ objectPosition: 'center' }}
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-slate-900/70 via-slate-900/50 to-[#F9FAFB]" />
+          {/* Léger dégradé uniquement en bas pour la transition vers le blanc */}
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-slate-900/10 to-[#F9FAFB]" />
         </div>
 
         {/* Abstract Dark Glows (conservés pour l'effet SaaS) */}
@@ -133,13 +134,10 @@ export const HomePage = () => {
 
         <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 w-full space-y-12">
           
-          <div className="text-center space-y-6 max-w-4xl mx-auto mt-10">
-            <h1 className="text-5xl sm:text-6xl font-black text-white tracking-tight leading-[1.05] drop-shadow-md">
-              Le covoiturage de confiance de <span className="text-demandoo-400 relative inline-block">Touba<svg className="absolute -bottom-2 left-0 w-full h-3 text-demandoo-500/50" viewBox="0 0 100 10" preserveAspectRatio="none"><path d="M0 5 Q 50 10 100 5" stroke="currentColor" strokeWidth="4" fill="transparent"/></svg></span> vers tout le Sénégal.
-            </h1>
-            <p className="text-lg sm:text-xl text-slate-100 font-medium max-w-2xl mx-auto drop-shadow-sm">
-              Réservez ou proposez des trajets partagés sûrs et abordables vers Dakar, Thiès, Saint-Louis, Mbacké et bien d'autres villes.
-            </p>
+          {/* Texte caché visuellement mais conservé pour le SEO car l'image contient déjà le texte */}
+          <div className="sr-only">
+            <h1>Le covoiturage de confiance de Touba vers tout le Sénégal.</h1>
+            <p>Réservez ou proposez des trajets partagés sûrs et abordables vers Dakar, Thiès, Saint-Louis, Mbacké et bien d'autres villes.</p>
           </div>
 
         {/* SEARCH BAR (White Card Style) */}
