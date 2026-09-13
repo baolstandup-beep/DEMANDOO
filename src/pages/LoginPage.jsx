@@ -34,11 +34,17 @@ export const LoginPage = () => {
 
 
   const handleQuickLogin = async (role) => {
+    setError('');
+    setIsLoading(true);
     const email = role === 'driver' ? 'modou.diop@demandoo.sn' : role === 'admin' ? 'admin@demandoo.sn' : 'passager@demandoo.sn';
     const result = await login(email, 'demo123', role);
+    setIsLoading(false);
+    
     if (result && result.user) {
       if (role === 'admin') navigate('/admin/paiements');
       else navigate('/espace-chauffeur');
+    } else {
+      setError(result?.error || `Impossible de se connecter avec le compte ${role}. Ce compte n'existe peut-être pas dans votre base de données.`);
     }
   };
 

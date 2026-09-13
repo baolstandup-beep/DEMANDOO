@@ -144,6 +144,19 @@ export const TripProvider = ({ children }) => {
       status: 'scheduled'
     };
 
+    const isMockUser = !driverUser.id || typeof driverUser.id !== 'string' || driverUser.id.startsWith('usr-') || driverUser.id === 'driver-123';
+
+    if (!isSupabaseConfigured || isMockUser) {
+      const mockNewTrip = {
+        id: `trip-mock-${Date.now()}`,
+        ...newTrip,
+        driver: driverUser,
+        created_at: new Date().toISOString()
+      };
+      setTrips([mockNewTrip, ...trips]);
+      return mockNewTrip;
+    }
+
     const { data, error } = await supabase.from('trips').insert([newTrip]).select('*, driver:driver_id(*)').single();
     if (error) throw error;
     

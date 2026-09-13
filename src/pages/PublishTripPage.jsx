@@ -103,7 +103,7 @@ export const PublishTripPage = () => {
     );
   }
 
-  const handleFinalSubmit = (e) => {
+  const handleFinalSubmit = async (e) => {
     e.preventDefault();
     if (!date) {
       setErrorMsg("Veuillez sélectionner une date de départ.");
@@ -113,7 +113,7 @@ export const PublishTripPage = () => {
 
     try {
       const departureDatetime = new Date(`${date}T${time}`).toISOString();
-      const newTrip = publishTrip({
+      const newTrip = await publishTrip({
         departure_city: departureCity || 'Touba',
         departure_address: departureAddress || 'Gare Routière',
         arrival_city: arrivalCity || 'Dakar',
@@ -140,8 +140,8 @@ export const PublishTripPage = () => {
       if (err.message.includes("429")) {
         setErrorMsg("Quota atteint : Vous avez utilisé tous vos trajets. Passez à l'abonnement Pro pour publier en illimité.");
         window.scrollTo({ top: 0, behavior: 'smooth' });
-      } else if (err.message.includes("402")) {
-        alert("⚠️ Abonnement requis pour publier un trajet.\n\nVous allez être redirigé vers la page des abonnements pour activer votre forfait.");
+      } else if (err.message.includes("402") || err.message.includes("FORBIDDEN")) {
+        alert("⚠️ Action non autorisée.\n\nVous allez être redirigé vers la page des abonnements ou de vérification.");
         navigate('/abonnement');
       } else {
         setErrorMsg("Erreur lors de la publication du trajet.");

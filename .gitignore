@@ -26,3 +26,7 @@ node_modules
 .env.production
 .venv/
 crop_car*.py
+android/
+ios/
+dist
+dist-ssr

@@ -12,7 +12,8 @@ export default defineConfig({
     },
   },
   server: {
-    port: 3000,
+    port: 5173,
+    strictPort: false, // Vite try 5173, if taken, it tries 5174, etc. But we want to make sure it's 5173 if possible. Let's kill whatever is on 5173 first if needed.
     host: true,
   },
 });

@@ -79,11 +79,7 @@ export function App() {
           <Route path="/chauffeur/:driverId" element={<DriverProfilePage />} />
           <Route path="/inscription-chauffeur" element={<RegisterPage />} />
 
-          <Route path="/abonnement" element={
-            <DriverRouteGuard allowedStatuses={['VERIFIED']}>
-              <SubscriptionPage />
-            </DriverRouteGuard>
-          } />
+          <Route path="/abonnement" element={<SubscriptionPage />} />
 
           <Route path="/publier" element={
             <DriverRouteGuard allowedStatuses={['VERIFIED']}>
