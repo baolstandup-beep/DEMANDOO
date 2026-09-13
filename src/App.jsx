@@ -98,7 +98,7 @@ export function App() {
           } />
 
           
-          <Route path="/admin/paiements" element={<AdminDashboardPage />} />
+          <Route path="/admin" element={<AdminDashboardPage />} />
           <Route path="/admin/drivers" element={<AdminDriversPage />} />
           <Route path="/admin/drivers/:id" element={<AdminDriverReviewPage />} />
           

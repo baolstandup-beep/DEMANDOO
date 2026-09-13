@@ -85,7 +85,7 @@ export const AdminDashboardPage = () => {
             <ShieldAlert className="w-6 h-6 text-purple-400" />
             <h1 className="text-2xl font-black tracking-tight">Panneau d'Administration Demandoo</h1>
           </div>
-          <p className="text-xs text-slate-300 font-medium">Supervision KYC, Paiements Wave/OM/LigdiCash, Sécurité & Audit</p>
+          <p className="text-xs text-slate-300 font-medium">Supervision KYC, Sécurité & Audit</p>
         </div>
 
         <div className="flex items-center gap-3">
@@ -105,13 +105,8 @@ export const AdminDashboardPage = () => {
         </div>
 
         <div className="glass-card p-5 rounded-3xl border border-slate-200/80 shadow-md hover-lift space-y-1">
-          <span className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider block">Total Paiements Traités</span>
-          <p className="text-2xl font-black text-demandoo-600">{payments.length}</p>
-        </div>
-
-        <div className="glass-card p-5 rounded-3xl border border-slate-200/80 shadow-md hover-lift space-y-1">
-          <span className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider block">Volume financier (FCFA)</span>
-          <p className="text-2xl font-black text-demandoo-dark">{totalPlatformVolume.toLocaleString('fr-FR')} FCFA</p>
+          <span className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider block">Chauffeurs vérifiés</span>
+          <p className="text-2xl font-black text-emerald-600">{verifications.filter(v => v.status === 'verified').length}</p>
         </div>
 
         <div className="glass-card p-5 rounded-3xl border border-slate-200/80 shadow-md hover-lift space-y-1">
@@ -131,23 +126,7 @@ export const AdminDashboardPage = () => {
           Vérifications KYC ({verifications.length})
         </button>
 
-        <button
-          onClick={() => setActiveTab('payments')}
-          className={`px-4 py-2.5 rounded-xl transition-all ${
-            activeTab === 'payments' ? 'bg-purple-700 text-white shadow-sm font-black' : 'text-slate-600 hover:bg-slate-100'
-          }`}
-        >
-          Transactions & Paiements ({payments.length})
-        </button>
 
-        <button
-          onClick={() => setActiveTab('subscriptions')}
-          className={`px-4 py-2.5 rounded-xl transition-all ${
-            activeTab === 'subscriptions' ? 'bg-purple-700 text-white shadow-sm font-black' : 'text-slate-600 hover:bg-slate-100'
-          }`}
-        >
-          Abonnements Chauffeurs
-        </button>
 
         <button
           onClick={() => setActiveTab('partners')}

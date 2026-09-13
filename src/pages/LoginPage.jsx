@@ -25,7 +25,7 @@ export const LoginPage = () => {
     setIsLoading(false);
 
     if (result && result.user) {
-      if (result.user.role === 'admin') navigate('/admin/paiements');
+      if (result.user.role === 'admin') navigate('/admin');
       else navigate('/espace-chauffeur');
     } else {
       setError(result?.error || "Email ou mot de passe incorrect.");
@@ -41,7 +41,7 @@ export const LoginPage = () => {
     setIsLoading(false);
     
     if (result && result.user) {
-      if (role === 'admin') navigate('/admin/paiements');
+      if (role === 'admin') navigate('/admin');
       else navigate('/espace-chauffeur');
     } else {
       setError(result?.error || `Impossible de se connecter avec le compte ${role}. Ce compte n'existe peut-être pas dans votre base de données.`);
@@ -192,7 +192,7 @@ export const LoginPage = () => {
         <p className="text-sm text-center text-slate-400 font-medium mt-8">
           Vous n'avez pas de compte ?{' '}
           <Link to="/inscription-chauffeur" className="font-black text-demandoo-400 hover:text-demandoo-300 transition-colors">
-            Créer un compte Chauffeur
+            Devenir chauffeur
           </Link>
         </p>
 
