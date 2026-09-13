@@ -95,9 +95,9 @@ export const SearchPage = () => {
             </button>
           </div>
 
-          {/* Formulaire de recherche */}
-          <form onSubmit={handleSearch} className="grid grid-cols-2 lg:grid-cols-5 gap-3">
-            <div className="col-span-2 lg:col-span-1 space-y-1.5">
+          {/* Formulaire de recherche Responsive (1 col mobile, 48-52px) */}
+          <form onSubmit={handleSearch} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+            <div className="space-y-1.5 sm:col-span-2 lg:col-span-1">
               <label className="text-[10px] font-extrabold text-slate-500 uppercase tracking-widest flex items-center gap-1">
                 <Navigation className="w-3 h-3 text-emerald-600" /> Départ
               </label>
@@ -106,12 +106,12 @@ export const SearchPage = () => {
                   type="text" list="cities-list" value={departure}
                   onChange={(e) => setDeparture(e.target.value)}
                   placeholder="Touba"
-                  className="w-full px-3.5 py-3 rounded-2xl border border-slate-200 text-sm font-bold text-slate-900 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/15 bg-slate-50 focus:bg-white transition-all"
+                  className="w-full px-3.5 py-3.5 sm:py-3 min-h-[48px] rounded-2xl border border-slate-200 text-sm font-bold text-slate-900 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/15 bg-slate-50 focus:bg-white transition-all"
                 />
               </div>
             </div>
 
-            <div className="col-span-2 lg:col-span-1 space-y-1.5">
+            <div className="space-y-1.5 sm:col-span-2 lg:col-span-1">
               <label className="text-[10px] font-extrabold text-slate-500 uppercase tracking-widest flex items-center gap-1">
                 <MapPin className="w-3 h-3 text-rose-500" /> Destination
               </label>
@@ -119,7 +119,7 @@ export const SearchPage = () => {
                 type="text" list="cities-list" value={destination}
                 onChange={(e) => setDestination(e.target.value)}
                 placeholder="Dakar, Thiès…"
-                className="w-full px-3.5 py-3 rounded-2xl border border-slate-200 text-sm font-bold text-slate-900 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/15 bg-slate-50 focus:bg-white transition-all"
+                className="w-full px-3.5 py-3.5 sm:py-3 min-h-[48px] rounded-2xl border border-slate-200 text-sm font-bold text-slate-900 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/15 bg-slate-50 focus:bg-white transition-all"
               />
             </div>
 
@@ -129,7 +129,7 @@ export const SearchPage = () => {
               </label>
               <input
                 type="date" value={date} onChange={(e) => setDate(e.target.value)}
-                className="w-full px-3.5 py-3 rounded-2xl border border-slate-200 text-sm font-bold text-slate-900 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/15 bg-slate-50 focus:bg-white transition-all"
+                className="w-full px-3.5 py-3.5 sm:py-3 min-h-[48px] rounded-2xl border border-slate-200 text-sm font-bold text-slate-900 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/15 bg-slate-50 focus:bg-white transition-all"
               />
             </div>
 
@@ -139,7 +139,7 @@ export const SearchPage = () => {
               </label>
               <select
                 value={passengers} onChange={(e) => setPassengers(parseInt(e.target.value, 10))}
-                className="w-full px-3.5 py-3 rounded-2xl border border-slate-200 text-sm font-bold text-slate-900 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/15 bg-slate-50 focus:bg-white transition-all"
+                className="w-full px-3.5 py-3.5 sm:py-3 min-h-[48px] rounded-2xl border border-slate-200 text-sm font-bold text-slate-900 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/15 bg-slate-50 focus:bg-white transition-all"
               >
                 <option value={1}>1 personne</option>
                 <option value={2}>2 personnes</option>
@@ -148,10 +148,10 @@ export const SearchPage = () => {
               </select>
             </div>
 
-            <div className="flex items-end">
+            <div className="flex items-end sm:col-span-2 lg:col-span-1">
               <button
                 type="submit"
-                className="w-full py-3 px-4 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-black text-sm shadow-lg shadow-emerald-600/25 hover:from-emerald-500 hover:to-teal-500 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                className="w-full py-3.5 sm:py-3 min-h-[48px] px-4 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-black text-sm shadow-lg shadow-emerald-600/25 hover:from-emerald-500 hover:to-teal-500 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
               >
                 <Search className="w-4 h-4" />
                 Rechercher
@@ -347,23 +347,26 @@ export const SearchPage = () => {
 
                     {/* Itinéraire */}
                     <div className="flex-1 bg-slate-50 rounded-2xl p-4 border border-slate-100">
-                      <div className="flex items-center gap-3">
-                        <div className="flex flex-col items-center gap-1">
-                          <div className="w-3 h-3 rounded-full bg-emerald-500 border-2 border-white shadow-sm" />
-                          <div className="w-0.5 h-8 bg-slate-200" />
-                          <div className="w-3 h-3 rounded-full bg-rose-500 border-2 border-white shadow-sm" />
-                        </div>
-                        <div className="flex-1 flex flex-col justify-between gap-4">
-                          <div>
-                            <span className="font-black text-slate-900 text-sm">{trip.departure_city}</span>
-                            <span className="text-xs text-slate-400 block font-medium">{trip.departure_address}</span>
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                        <div className="flex items-center gap-3 flex-1 min-w-0">
+                          <div className="flex flex-col items-center gap-1 shrink-0">
+                            <div className="w-3 h-3 rounded-full bg-emerald-500 border-2 border-white shadow-sm" />
+                            <div className="w-0.5 h-8 bg-slate-200" />
+                            <div className="w-3 h-3 rounded-full bg-rose-500 border-2 border-white shadow-sm" />
                           </div>
-                          <div>
-                            <span className="font-black text-slate-900 text-sm">{trip.arrival_city}</span>
+                          <div className="flex-1 min-w-0 flex flex-col justify-between gap-3">
+                            <div>
+                              <span className="font-black text-slate-900 text-sm block truncate">{trip.departure_city}</span>
+                              <span className="text-xs text-slate-400 block font-medium truncate">{trip.departure_address}</span>
+                            </div>
+                            <div>
+                              <span className="font-black text-slate-900 text-sm block truncate">{trip.arrival_city}</span>
+                            </div>
                           </div>
                         </div>
-                        <div className="text-right shrink-0 space-y-1">
-                          <div className="text-xs font-bold text-slate-500 flex items-center gap-1 justify-end">
+
+                        <div className="text-left sm:text-right shrink-0 space-y-1 w-full sm:w-auto pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-200/60 flex sm:flex-col items-center sm:items-end justify-between">
+                          <div className="text-xs font-bold text-slate-500 flex items-center gap-1">
                             <Clock className="w-3 h-3" />
                             {trip.estimated_duration}
                           </div>
@@ -378,20 +381,20 @@ export const SearchPage = () => {
                     </div>
 
                     {/* Prix & CTA */}
-                    <div className="flex md:flex-col items-center md:items-end justify-between md:w-36 shrink-0 pt-4 md:pt-0 border-t md:border-t-0 border-slate-100">
-                      <div className="text-right">
-                        <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-100 text-[10px] font-extrabold text-emerald-700 mb-2">
+                    <div className="flex flex-col sm:flex-row md:flex-col items-stretch sm:items-center md:items-end justify-between md:w-40 shrink-0 pt-3 md:pt-0 border-t md:border-t-0 border-slate-100 gap-3">
+                      <div className="text-left sm:text-right">
+                        <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-100 text-[10px] font-extrabold text-emerald-700 mb-1">
                           <Zap className="w-2.5 h-2.5" />
                           {trip.seats_available} place{trip.seats_available > 1 ? 's' : ''} libre{trip.seats_available > 1 ? 's' : ''}
                         </div>
                         <p className="text-2xl font-black text-slate-900 leading-none">
                           {trip.price_per_seat.toLocaleString('fr-FR')}
                         </p>
-                        <span className="text-xs text-slate-500 font-semibold">FCFA / siège</span>
+                        <span className="text-[11px] text-slate-500 font-semibold">FCFA / siège</span>
                       </div>
                       <Link
                         to={`/trajet/${trip.id}`}
-                        className="flex items-center gap-1.5 px-5 py-3 rounded-2xl text-xs font-black text-white bg-gradient-to-r from-emerald-600 to-teal-600 shadow-lg shadow-emerald-600/20 hover:from-emerald-500 hover:to-teal-500 active:scale-[0.97] transition-all mt-2"
+                        className="w-full sm:w-auto min-h-[46px] flex items-center justify-center gap-1.5 px-5 py-3 rounded-2xl text-xs font-black text-white bg-gradient-to-r from-emerald-600 to-teal-600 shadow-lg shadow-emerald-600/20 hover:from-emerald-500 hover:to-teal-500 active:scale-[0.97] transition-all"
                       >
                         Voir le trajet
                         <ArrowRight className="w-3.5 h-3.5" />
@@ -408,7 +411,7 @@ export const SearchPage = () => {
       {/* ─── MODAL ALERTE ─── */}
       {showAlertModal && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border border-slate-100 space-y-5">
+          <div className="bg-white rounded-3xl p-5 sm:p-6 w-[calc(100%-32px)] max-w-md max-h-[90vh] overflow-y-auto shadow-2xl border border-slate-100 space-y-5">
             <div className="flex items-center justify-between">
               <h3 className="font-black text-slate-900 text-base flex items-center gap-2">
                 <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center">

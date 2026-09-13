@@ -99,27 +99,27 @@ export const AdminDriverReviewPage = () => {
       <div className="max-w-7xl mx-auto space-y-8">
         
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Link to="/admin/drivers" className="w-10 h-10 bg-white border border-slate-200 rounded-full flex items-center justify-center text-slate-500 hover:text-slate-900 transition-colors">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <Link to="/admin/drivers" className="w-10 h-10 bg-white border border-slate-200 rounded-full flex items-center justify-center text-slate-500 hover:text-slate-900 transition-colors shrink-0 min-h-[40px]">
               <ArrowLeft className="w-5 h-5" />
             </Link>
             <div>
-              <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">Dossier Chauffeur : {driver.name}</h1>
-              <p className="text-sm text-slate-500 font-medium">ID: {driver.id}</p>
+              <h1 className="text-lg sm:text-2xl font-black text-slate-900 tracking-tight">Dossier Chauffeur : {driver.name}</h1>
+              <p className="text-xs sm:text-sm text-slate-500 font-medium">ID: {driver.id}</p>
             </div>
           </div>
           
-          <div className="flex gap-3">
+          <div className="flex flex-col sm:flex-row gap-2.5 w-full sm:w-auto">
             <button 
               onClick={() => handleGlobalDecision('REJECTED')}
-              className="px-6 py-2.5 bg-white border border-rose-200 text-rose-600 hover:bg-rose-50 rounded-xl text-sm font-black transition-colors"
+              className="w-full sm:w-auto min-h-[44px] px-5 py-2.5 bg-white border border-rose-200 text-rose-600 hover:bg-rose-50 rounded-xl text-xs sm:text-sm font-black transition-colors flex items-center justify-center"
             >
               REFUSER LE DOSSIER
             </button>
             <button 
               onClick={() => handleGlobalDecision('APPROVED')}
-              className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-black shadow-lg shadow-emerald-600/20 transition-colors flex items-center gap-2"
+              className="w-full sm:w-auto min-h-[44px] px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs sm:text-sm font-black shadow-lg shadow-emerald-600/20 transition-colors flex items-center justify-center gap-2"
             >
               <ShieldCheck className="w-4 h-4" /> VALIDER LE CHAUFFEUR
             </button>
@@ -132,7 +132,7 @@ export const AdminDriverReviewPage = () => {
           <div className="lg:col-span-4 space-y-6">
             
             {/* Info Card */}
-            <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-6">
+            <div className="bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-6 border border-slate-200 shadow-sm space-y-6">
               <div>
                 <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-3">
                   <User className="w-4 h-4" /> Informations Personnelles
@@ -158,7 +158,7 @@ export const AdminDriverReviewPage = () => {
             </div>
 
             {/* Documents List */}
-            <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-4">
+            <div className="bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-6 border border-slate-200 shadow-sm space-y-4">
               <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-4">
                 <FileText className="w-4 h-4" /> Pièces jointes ({driver.documents.length})
               </h3>
@@ -168,13 +168,13 @@ export const AdminDriverReviewPage = () => {
                   <button
                     key={doc.id}
                     onClick={() => setActiveDoc(doc)}
-                    className={`w-full text-left p-3 rounded-xl border flex items-center justify-between transition-all ${
+                    className={`w-full text-left p-3 rounded-xl border flex items-center justify-between transition-all min-h-[44px] ${
                       activeDoc.id === doc.id 
                         ? 'border-demandoo-500 bg-demandoo-50' 
                         : 'border-slate-100 hover:border-slate-300'
                     }`}
                   >
-                    <span className={`text-sm font-bold ${activeDoc.id === doc.id ? 'text-demandoo-900' : 'text-slate-700'}`}>
+                    <span className={`text-xs sm:text-sm font-bold ${activeDoc.id === doc.id ? 'text-demandoo-900' : 'text-slate-700'}`}>
                       {doc.type}
                     </span>
                     <span className={`px-2 py-1 rounded-md text-[10px] font-black uppercase flex items-center gap-1 border ${getStatusColor(doc.status)}`}>
@@ -189,27 +189,27 @@ export const AdminDriverReviewPage = () => {
 
           {/* RIGHT PANEL: Document Viewer & Actions */}
           <div className="lg:col-span-8">
-            <div className="bg-white rounded-[2rem] border border-slate-200 shadow-sm overflow-hidden flex flex-col h-[700px]">
+            <div className="bg-white rounded-2xl sm:rounded-[2rem] border border-slate-200 shadow-sm overflow-hidden flex flex-col min-h-[450px] lg:h-[700px]">
               
               {/* Toolbar */}
-              <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+              <div className="p-4 sm:p-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50/50">
                 <div>
-                  <h2 className="text-lg font-black text-slate-900">{activeDoc.type}</h2>
+                  <h2 className="text-base sm:text-lg font-black text-slate-900">{activeDoc.type}</h2>
                   <span className={`mt-1 inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-black uppercase border ${getStatusColor(activeDoc.status)}`}>
                     {getStatusIcon(activeDoc.status)} {activeDoc.status}
                   </span>
                 </div>
 
-                <div className="flex gap-2">
+                <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
                   <button 
                     onClick={() => setShowRejectModal(true)}
-                    className="px-5 py-2.5 bg-white border border-slate-200 text-rose-600 hover:bg-rose-50 hover:border-rose-200 rounded-xl text-sm font-black transition-colors"
+                    className="w-full sm:w-auto min-h-[44px] px-5 py-2.5 bg-white border border-slate-200 text-rose-600 hover:bg-rose-50 hover:border-rose-200 rounded-xl text-xs sm:text-sm font-black transition-colors flex items-center justify-center"
                   >
                     REFUSER PIÈCE
                   </button>
                   <button 
                     onClick={handleApproveDoc}
-                    className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-sm font-black transition-colors"
+                    className="w-full sm:w-auto min-h-[44px] px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs sm:text-sm font-black transition-colors flex items-center justify-center"
                   >
                     VALIDER PIÈCE
                   </button>
@@ -217,19 +217,19 @@ export const AdminDriverReviewPage = () => {
               </div>
 
               {/* Viewer Area (Mock) */}
-              <div className="flex-1 bg-slate-900 flex items-center justify-center p-8 relative">
+              <div className="flex-1 bg-slate-900 flex items-center justify-center p-6 sm:p-8 relative min-h-[250px]">
                 <div className="text-center space-y-4">
-                  <FileText className="w-16 h-16 text-slate-700 mx-auto" />
-                  <p className="text-slate-500 font-medium">Prévisualisation sécurisée du document :</p>
-                  <p className="text-xl font-black text-white">{activeDoc.type}</p>
+                  <FileText className="w-12 sm:w-16 h-12 sm:h-16 text-slate-700 mx-auto" />
+                  <p className="text-slate-500 font-medium text-xs sm:text-sm">Prévisualisation sécurisée du document :</p>
+                  <p className="text-lg sm:text-xl font-black text-white">{activeDoc.type}</p>
                 </div>
 
                 {activeDoc.status === 'REJECTED' && (
-                  <div className="absolute bottom-6 left-6 right-6 p-4 bg-rose-500/10 border border-rose-500/30 rounded-2xl backdrop-blur-md">
-                    <p className="text-rose-400 font-bold text-sm mb-1 flex items-center gap-2">
+                  <div className="absolute bottom-4 sm:bottom-6 left-4 sm:left-6 right-4 sm:right-6 p-4 bg-rose-500/10 border border-rose-500/30 rounded-2xl backdrop-blur-md">
+                    <p className="text-rose-400 font-bold text-xs sm:text-sm mb-1 flex items-center gap-2">
                       <AlertTriangle className="w-4 h-4" /> Pièce rejetée
                     </p>
-                    <p className="text-rose-200 text-sm">Motif : {activeDoc.rejectionReason}</p>
+                    <p className="text-rose-200 text-xs sm:text-sm">Motif : {activeDoc.rejectionReason}</p>
                   </div>
                 )}
               </div>
@@ -242,22 +242,22 @@ export const AdminDriverReviewPage = () => {
 
       {/* Reject Modal */}
       {showRejectModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-          <div className="bg-white rounded-[2rem] p-8 max-w-md w-full shadow-2xl">
-            <h3 className="text-xl font-black text-slate-900 mb-2">Refuser le document</h3>
-            <p className="text-sm text-slate-500 font-medium mb-6">Précisez le motif du refus. Ce motif sera affiché au chauffeur.</p>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl sm:rounded-[2rem] p-5 sm:p-8 w-[calc(100%-24px)] max-w-md max-h-[90vh] overflow-y-auto shadow-2xl">
+            <h3 className="text-lg sm:text-xl font-black text-slate-900 mb-2">Refuser le document</h3>
+            <p className="text-xs sm:text-sm text-slate-500 font-medium mb-6">Précisez le motif du refus. Ce motif sera affiché au chauffeur.</p>
             
             <form onSubmit={handleRejectDoc}>
               <textarea
                 value={rejectReason}
                 onChange={e => setRejectReason(e.target.value)}
                 placeholder="Ex: Document flou, date expirée..."
-                className="w-full p-4 rounded-xl bg-slate-50 border border-slate-200 text-sm font-bold focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 outline-none mb-6 min-h-[120px]"
+                className="w-full p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs sm:text-sm font-bold focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 outline-none mb-6 min-h-[120px]"
                 required
               />
-              <div className="flex gap-3 justify-end">
-                <button type="button" onClick={() => setShowRejectModal(false)} className="px-5 py-2.5 text-slate-500 font-bold hover:bg-slate-50 rounded-xl">Annuler</button>
-                <button type="submit" className="px-5 py-2.5 bg-rose-600 text-white font-black rounded-xl hover:bg-rose-700 shadow-lg shadow-rose-600/20">Confirmer le refus</button>
+              <div className="flex flex-col sm:flex-row gap-3 justify-end">
+                <button type="button" onClick={() => setShowRejectModal(false)} className="w-full sm:w-auto min-h-[44px] px-5 py-2.5 text-slate-500 font-bold hover:bg-slate-50 rounded-xl transition-colors">Annuler</button>
+                <button type="submit" className="w-full sm:w-auto min-h-[44px] px-5 py-2.5 bg-rose-600 text-white font-black rounded-xl hover:bg-rose-700 shadow-lg shadow-rose-600/20 transition-colors">Confirmer le refus</button>
               </div>
             </form>
           </div>

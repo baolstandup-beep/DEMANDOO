@@ -208,7 +208,7 @@ export const DriverProfilePage = () => {
             ) : null}
 
             {/* Informations */}
-            <div className="grid grid-cols-2 gap-y-6 gap-x-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-y-6 sm:gap-x-4">
               <div>
                 <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mb-1">Véhicule</span>
                 <span className="text-sm font-black text-slate-800">{driver.vehicle.make} {driver.vehicle.model}</span>
@@ -247,12 +247,12 @@ export const DriverProfilePage = () => {
         )}
 
         {/* ================= CONTACT DESKTOP ONLY ================= */}
-        <div className="hidden sm:block bg-demandoo-50 rounded-3xl p-8 border border-demandoo-100 text-center space-y-6">
+        <div className="hidden sm:block bg-demandoo-50 rounded-2xl sm:rounded-3xl p-6 sm:p-8 border border-demandoo-100 text-center space-y-6">
           <h3 className="text-xl font-black text-slate-900">Contacter {driver.full_name.split(' ')[0]}</h3>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
             <a 
               href={`tel:${driver.phone}`} 
-              className="flex items-center justify-center gap-2 px-8 py-4 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl font-black transition-colors"
+              className="min-h-[48px] flex items-center justify-center gap-2 px-8 py-4 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl font-black transition-colors"
             >
               <Phone className="w-5 h-5" />
               Appeler le {displayPhone}
@@ -261,7 +261,7 @@ export const DriverProfilePage = () => {
               href={`https://wa.me/${cleanDriverPhone}?text=${encodeURIComponent(whatsappMessage)}`} 
               target="_blank" 
               rel="noreferrer"
-              className="flex items-center justify-center gap-2 px-8 py-4 bg-[#25D366] hover:bg-[#1ebd5a] text-white rounded-2xl font-black transition-colors shadow-lg shadow-[#25D366]/20"
+              className="min-h-[48px] flex items-center justify-center gap-2 px-8 py-4 bg-[#25D366] hover:bg-[#1ebd5a] text-white rounded-2xl font-black transition-colors shadow-lg shadow-[#25D366]/20"
             >
               <MessageCircle className="w-5 h-5" />
               WhatsApp
@@ -274,23 +274,23 @@ export const DriverProfilePage = () => {
 
       </div>
 
-      <div className="sm:hidden fixed bottom-0 left-0 w-full bg-white border-t border-slate-200 p-4 shadow-[0_-10px_40px_rgba(0,0,0,0.05)] z-50">
-        <div className="flex gap-3">
+      <div className="sm:hidden fixed bottom-0 left-0 w-full bg-white border-t border-slate-200 p-3 pb-6 shadow-[0_-10px_40px_rgba(0,0,0,0.05)] z-50">
+        <div className="flex gap-2.5">
           <a 
             href={`tel:${driver.phone}`} 
-            className="flex-1 flex flex-col items-center justify-center py-3 bg-slate-100 text-slate-900 rounded-2xl transition-colors active:bg-slate-200"
+            className="flex-1 min-h-[48px] flex flex-col items-center justify-center py-2 px-3 bg-slate-100 text-slate-900 rounded-xl transition-colors active:bg-slate-200"
           >
-            <Phone className="w-5 h-5 mb-0.5" />
+            <Phone className="w-4 h-4 mb-0.5 shrink-0" />
             <span className="text-[10px] font-black uppercase tracking-wider">Appeler</span>
           </a>
           <a 
             href={`https://wa.me/${cleanDriverPhone}?text=${encodeURIComponent(whatsappMessage)}`} 
             target="_blank" 
             rel="noreferrer"
-            className="flex-[2] flex items-center justify-center gap-2 py-3 bg-[#25D366] text-white rounded-2xl shadow-lg shadow-[#25D366]/20 active:scale-95 transition-all"
+            className="flex-[2] min-h-[48px] flex items-center justify-center gap-2 py-2 px-4 bg-[#25D366] text-white rounded-xl shadow-lg shadow-[#25D366]/20 active:scale-95 transition-all"
           >
-            <MessageCircle className="w-5 h-5" />
-            <span className="text-sm font-black">WhatsApp</span>
+            <MessageCircle className="w-5 h-5 shrink-0" />
+            <span className="text-xs font-black">WhatsApp</span>
           </a>
         </div>
       </div>

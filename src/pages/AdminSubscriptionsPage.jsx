@@ -42,13 +42,13 @@ export const AdminSubscriptionsPage = () => {
     <div className="space-y-6 animate-fade-in text-left">
       
       {/* Metrics */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-200">
           <div className="flex items-center gap-2 text-emerald-600 mb-1">
             <DollarSign className="w-5 h-5" />
             <h3 className="font-bold text-xs uppercase">MRR Estimé</h3>
           </div>
-          <p className="text-2xl font-black text-slate-900">{mrr.toLocaleString('fr-FR')} FCFA</p>
+          <p className="text-xl sm:text-2xl font-black text-slate-900">{mrr.toLocaleString('fr-FR')} FCFA</p>
         </div>
         
         <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-200">
@@ -56,7 +56,7 @@ export const AdminSubscriptionsPage = () => {
             <Users className="w-5 h-5" />
             <h3 className="font-bold text-xs uppercase">Actifs Pro</h3>
           </div>
-          <p className="text-2xl font-black text-slate-900">{stats.activePro}</p>
+          <p className="text-xl sm:text-2xl font-black text-slate-900">{stats.activePro}</p>
         </div>
 
         <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-200">
@@ -64,7 +64,7 @@ export const AdminSubscriptionsPage = () => {
             <ShieldCheck className="w-5 h-5" />
             <h3 className="font-bold text-xs uppercase">Actifs Standard</h3>
           </div>
-          <p className="text-2xl font-black text-slate-900">{stats.activeStandard}</p>
+          <p className="text-xl sm:text-2xl font-black text-slate-900">{stats.activeStandard}</p>
         </div>
 
         <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-200">
@@ -72,19 +72,74 @@ export const AdminSubscriptionsPage = () => {
             <AlertCircle className="w-5 h-5" />
             <h3 className="font-bold text-xs uppercase">Expirés</h3>
           </div>
-          <p className="text-2xl font-black text-slate-900">{stats.expired}</p>
+          <p className="text-xl sm:text-2xl font-black text-slate-900">{stats.expired}</p>
         </div>
       </div>
 
-      <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-md">
+      <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 border border-slate-200 shadow-md">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="font-black text-slate-900 text-lg">Suivi des Abonnements</h3>
-          <button onClick={fetchSubscriptions} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
+          <h3 className="font-black text-slate-900 text-base sm:text-lg">Suivi des Abonnements</h3>
+          <button onClick={fetchSubscriptions} className="p-2 hover:bg-slate-100 rounded-full transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center">
             <RefreshCcw className={`w-5 h-5 text-slate-500 ${loading ? 'animate-spin' : ''}`} />
           </button>
         </div>
 
-        <div className="overflow-x-auto">
+        {/* MOBILE CARD VIEW (< lg) */}
+        <div className="block lg:hidden divide-y divide-slate-100">
+          {drivers.map(driver => (
+            <div key={driver.id} className="py-4 space-y-3">
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <div className="font-black text-slate-900 text-sm">{driver.full_name}</div>
+                  <div className="text-xs text-slate-500">{driver.email}</div>
+                  <div className="text-xs text-slate-600 font-medium mt-0.5">{driver.phone || '-'}</div>
+                </div>
+                <div>
+                  {driver.subscription_status === 'active' ? (
+                    <span className="text-emerald-600 text-xs font-bold bg-emerald-50 px-2.5 py-1 rounded-lg">Actif</span>
+                  ) : driver.subscription_status === 'expired' ? (
+                    <span className="text-rose-600 text-xs font-bold bg-rose-50 px-2.5 py-1 rounded-lg">Expiré</span>
+                  ) : (
+                    <span className="text-slate-500 text-xs font-bold bg-slate-100 px-2.5 py-1 rounded-lg">Essai / Inactif</span>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 text-xs bg-slate-50 p-3 rounded-xl">
+                <div>
+                  <span className="block text-[10px] font-bold text-slate-400 uppercase">Formule</span>
+                  <span className="font-black text-demandoo-700 uppercase">{driver.subscription_plan || 'Découverte'}</span>
+                </div>
+                <div>
+                  <span className="block text-[10px] font-bold text-slate-400 uppercase">Trajets Utilisés</span>
+                  <span className="font-bold text-slate-800">
+                    {driver.subscription_trips_used || 0} / {driver.subscription_trip_limit || (driver.subscription_plan === 'pro' ? '∞' : 1)}
+                  </span>
+                </div>
+                <div>
+                  <span className="block text-[10px] font-bold text-slate-400 uppercase">Renouvellement</span>
+                  <span className="font-medium text-slate-600">
+                    {driver.next_renewal_at ? new Date(driver.next_renewal_at).toLocaleDateString() : '-'}
+                  </span>
+                </div>
+                <div>
+                  <span className="block text-[10px] font-bold text-slate-400 uppercase">Réf Trans.</span>
+                  <span className="font-mono text-[11px] text-slate-500 truncate block">
+                    {driver.payment_reference || '-'}
+                  </span>
+                </div>
+              </div>
+            </div>
+          ))}
+          {drivers.length === 0 && !loading && (
+            <div className="text-center py-8 text-slate-500 text-sm">
+              Aucun chauffeur trouvé.
+            </div>
+          )}
+        </div>
+
+        {/* DESKTOP TABLE VIEW (>= lg) */}
+        <div className="hidden lg:block overflow-x-auto">
           <table className="w-full text-left text-sm">
             <thead>
               <tr className="border-b border-slate-200 text-slate-400 uppercase text-[10px] font-black tracking-wider">

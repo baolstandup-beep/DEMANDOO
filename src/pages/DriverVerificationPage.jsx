@@ -205,25 +205,25 @@ export const DriverVerificationPage = () => {
   );
 
   return (
-    <div className="min-h-[85vh] bg-slate-50/50 py-10 px-4 sm:px-6 relative overflow-hidden">
+    <div className="min-h-[85vh] bg-slate-50/50 py-6 sm:py-10 px-3 sm:px-6 relative overflow-hidden">
       
       {/* Decorative SaaS Background */}
       <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-demandoo-500/10 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/3 pointer-events-none" />
       
-      <div className="max-w-3xl mx-auto relative z-10 space-y-8">
+      <div className="w-full max-w-3xl mx-auto relative z-10 space-y-6 sm:space-y-8">
         
         {/* Header */}
-        <div className="bg-slate-900 text-white rounded-[2rem] p-8 sm:p-10 shadow-xl overflow-hidden relative">
+        <div className="bg-slate-900 text-white rounded-2xl sm:rounded-[2rem] p-5 sm:p-8 lg:p-10 shadow-xl overflow-hidden relative">
           <div className="absolute inset-0 bg-gradient-to-br from-slate-900 to-[#0A1A24]" />
-          <div className="relative z-10 flex flex-col sm:flex-row gap-6 items-start sm:items-center justify-between">
-            <div className="space-y-3">
+          <div className="relative z-10 flex flex-col sm:flex-row gap-4 sm:gap-6 items-start sm:items-center justify-between">
+            <div className="space-y-2 sm:space-y-3">
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black bg-demandoo-500/20 text-demandoo-400 border border-demandoo-500/30 uppercase tracking-widest">
                 <ShieldCheck className="w-3.5 h-3.5" /> Sécurisé par Demandoo
               </span>
-              <h1 className="text-2xl sm:text-3xl font-black tracking-tight">
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-black tracking-tight">
                 Devenez chauffeur Demandoo
               </h1>
-              <p className="text-sm text-slate-400 font-medium max-w-lg">
+              <p className="text-xs sm:text-sm text-slate-400 font-medium max-w-lg">
                 Complétez votre vérification pour commencer à proposer des trajets en toute sécurité.
               </p>
             </div>
@@ -231,7 +231,7 @@ export const DriverVerificationPage = () => {
         </div>
 
         {/* Security Notice */}
-        <div className="flex items-start gap-3 p-4 bg-white rounded-2xl border border-slate-200 shadow-sm text-xs font-medium text-slate-600">
+        <div className="flex items-start gap-3 p-3.5 sm:p-4 bg-white rounded-xl sm:rounded-2xl border border-slate-200 shadow-sm text-xs font-medium text-slate-600">
           <Lock className="w-5 h-5 text-demandoo-600 shrink-0 mt-0.5" />
           <p>
             Vos documents sont utilisés uniquement pour vérifier votre identité et sécuriser la communauté Demandoo.
@@ -240,9 +240,9 @@ export const DriverVerificationPage = () => {
 
         {/* ACTION REQUIRED Alert */}
         {user?.driver_status === 'ACTION_REQUIRED' && step < 7 && (
-          <div className="p-4 sm:p-5 bg-rose-50 border border-rose-200 text-rose-900 rounded-2xl text-sm space-y-3 shadow-sm">
+          <div className="p-4 sm:p-5 bg-rose-50 border border-rose-200 text-rose-900 rounded-2xl text-xs sm:text-sm space-y-3 shadow-sm">
             <div className="flex items-center gap-2 font-black">
-              <AlertCircle className="w-5 h-5 text-rose-600" />
+              <AlertCircle className="w-5 h-5 text-rose-600 shrink-0" />
               Une correction est nécessaire dans votre dossier.
             </div>
             <p className="font-medium text-rose-800/80 leading-relaxed">
@@ -253,7 +253,7 @@ export const DriverVerificationPage = () => {
         )}
 
         {/* Main Content Area */}
-        <div className="bg-white rounded-[2rem] p-6 sm:p-10 shadow-xl shadow-slate-200/50 border border-slate-100">
+        <div className="bg-white rounded-2xl sm:rounded-[2rem] p-4 sm:p-8 lg:p-10 shadow-xl shadow-slate-200/50 border border-slate-100">
           
           {step < 6 && renderProgressBar()}
 

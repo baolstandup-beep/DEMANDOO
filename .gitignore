@@ -30,3 +30,4 @@ android/
 ios/
 dist
 dist-ssr
+.vercel

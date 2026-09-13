@@ -41,7 +41,7 @@ export const TripQuotaProgress = ({ limit, used, limitReached }) => {
             </span>
             <Link 
               to="/abonnement" 
-              className="px-5 py-2.5 bg-demandoo-600 hover:bg-demandoo-700 text-white rounded-xl text-xs font-black transition-all shadow-md hover:shadow-lg text-center uppercase tracking-wider"
+              className="w-full sm:w-auto min-h-[44px] flex items-center justify-center px-5 py-2.5 bg-demandoo-600 hover:bg-demandoo-700 text-white rounded-xl text-xs font-black transition-all shadow-md hover:shadow-lg text-center uppercase tracking-wider active:scale-[0.98]"
             >
               Passer à Pro
             </Link>

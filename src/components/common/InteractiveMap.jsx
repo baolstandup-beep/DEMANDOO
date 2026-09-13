@@ -71,27 +71,27 @@ const InteractiveMap = () => {
   const selectedDest = DESTINATIONS.find(d => d.id === selectedDestId);
 
   return (
-    <section className="py-20 bg-slate-50 relative overflow-hidden" id="interactive-map">
+    <section className="py-10 sm:py-20 bg-slate-50 relative overflow-hidden" id="interactive-map">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Header */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-10 gap-6">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 sm:mb-10 gap-6">
           <div className="max-w-2xl">
-            <h2 className="text-3xl md:text-4xl font-serif font-bold text-slate-900 mb-4">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-serif font-bold text-slate-900 mb-2 sm:mb-4">
               Touba vers tout le Sénégal
             </h2>
-            <p className="text-lg text-slate-600">
+            <p className="text-sm sm:text-base lg:text-lg text-slate-600">
               Carte interactive des trajets — choisissez une destination pour voir la route et la distance.
             </p>
           </div>
-          <div className="flex items-center gap-4 bg-white p-2 rounded-full shadow-sm border border-slate-200">
-            <div className="flex items-center gap-2 px-4 py-2 bg-slate-100 rounded-full">
-              <MapPin className="h-4 w-4 text-demandoo-500" />
-              <span className="text-sm font-medium">Touba (départ)</span>
+          <div className="flex flex-wrap items-center gap-2 sm:gap-4 bg-white p-1.5 sm:p-2 rounded-2xl sm:rounded-full shadow-sm border border-slate-200">
+            <div className="flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-slate-100 rounded-xl sm:rounded-full">
+              <MapPin className="h-4 w-4 text-demandoo-500 shrink-0" />
+              <span className="text-xs sm:text-sm font-medium">Touba (départ)</span>
             </div>
-            <div className="flex items-center gap-2 px-4 py-2 text-slate-600">
-              <Navigation className="h-4 w-4" />
-              <span className="text-sm font-medium">Destinations</span>
+            <div className="flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 text-slate-600">
+              <Navigation className="h-4 w-4 shrink-0" />
+              <span className="text-xs sm:text-sm font-medium">Destinations</span>
             </div>
           </div>
         </div>
@@ -100,7 +100,7 @@ const InteractiveMap = () => {
         <div className="flex flex-col lg:flex-row gap-6 h-auto lg:h-[600px]">
           
           {/* Leaflet Map (Left) */}
-          <div className="flex-1 bg-white rounded-3xl overflow-hidden shadow-lg border border-slate-200 relative z-10 h-[400px] lg:h-full">
+          <div className="flex-1 bg-white rounded-2xl sm:rounded-3xl overflow-hidden shadow-lg border border-slate-200 relative z-10 h-[360px] sm:h-[420px] lg:h-full">
             <MapContainer 
               center={TOUBA_COORDS} 
               zoom={7} 
@@ -158,13 +158,13 @@ const InteractiveMap = () => {
 
             {/* Overlay Info on Map */}
             {selectedDest && (
-              <div className="absolute bottom-6 left-6 z-[1000] bg-white/95 backdrop-blur-sm p-4 rounded-2xl shadow-xl border border-slate-100 flex items-center gap-4">
-                <div className="w-10 h-10 bg-demandoo-50 text-demandoo-500 rounded-full flex items-center justify-center">
-                  <Navigation className="h-5 w-5" />
+              <div className="absolute bottom-3 left-3 right-3 sm:right-auto sm:bottom-6 sm:left-6 max-w-[calc(100%-24px)] sm:max-w-md z-[1000] bg-white/95 backdrop-blur-sm p-3 sm:p-4 rounded-xl sm:rounded-2xl shadow-xl border border-slate-100 flex items-center gap-3 sm:gap-4">
+                <div className="w-9 h-9 sm:w-10 sm:h-10 bg-demandoo-50 text-demandoo-500 rounded-full flex items-center justify-center shrink-0">
+                  <Navigation className="h-4 sm:h-5 w-4 sm:w-5" />
                 </div>
-                <div>
-                  <p className="text-xs text-slate-500 font-semibold uppercase tracking-wider mb-1">Itinéraire</p>
-                  <p className="text-slate-900 font-bold">Touba <span className="text-demandoo-500 mx-1">→</span> {selectedDest.name} · {selectedDest.distance} km</p>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[10px] sm:text-xs text-slate-500 font-semibold uppercase tracking-wider mb-0.5">Itinéraire</p>
+                  <p className="text-slate-900 font-bold text-xs sm:text-sm truncate">Touba <span className="text-demandoo-500 mx-0.5">→</span> {selectedDest.name} · {selectedDest.distance} km</p>
                 </div>
               </div>
             )}

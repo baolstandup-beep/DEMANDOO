@@ -153,19 +153,19 @@ export const PublishTripPage = () => {
   const progressPercentage = ((step - 1) / totalSteps) * 100;
 
   return (
-    <div className="min-h-[85vh] bg-slate-50/50 py-10 px-4 sm:px-6">
-      <div className="max-w-2xl mx-auto space-y-8">
+    <div className="min-h-[85vh] bg-slate-50/50 py-4 sm:py-8 lg:py-10 px-3 sm:px-6">
+      <div className="w-full max-w-2xl mx-auto space-y-6 sm:space-y-8">
         
         {/* HEADER & PROGRESS BAR */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <button 
               onClick={() => step > 1 ? setStep(step - 1) : navigate('/espace-chauffeur')}
-              className="w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-900 hover:bg-slate-50 transition-colors shadow-sm"
+              className="w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-500 hover:text-slate-900 hover:bg-slate-50 transition-colors shadow-sm min-h-[40px]"
             >
               <ArrowLeft className="w-5 h-5" />
             </button>
-            <Link to="/espace-chauffeur" className="text-sm font-extrabold text-slate-400 hover:text-slate-700 transition-colors">
+            <Link to="/espace-chauffeur" className="text-xs sm:text-sm font-extrabold text-slate-400 hover:text-slate-700 transition-colors py-2">
               Annuler
             </Link>
           </div>
@@ -188,24 +188,24 @@ export const PublishTripPage = () => {
         {!isAllowedToPublish && (
           <div className="p-4 sm:p-5 bg-amber-50 border border-amber-200 text-amber-900 rounded-2xl text-sm space-y-3 shadow-sm">
             <div className="flex items-center gap-2 font-black">
-              <AlertTriangle className="w-5 h-5 text-amber-600" />
+              <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0" />
               Vérification KYC requise
             </div>
-            <p className="font-medium text-amber-800/80 leading-relaxed">
+            <p className="font-medium text-amber-800/80 leading-relaxed text-xs sm:text-sm">
               Pour garantir la sécurité de notre communauté, vous devez valider vos documents d'identité (CNI, Permis) avant que votre trajet ne soit visible publiquement.
             </p>
-            <Link to="/verification-chauffeur" className="inline-block px-5 py-2.5 rounded-xl text-xs font-black bg-amber-600 text-white hover:bg-amber-700 shadow-sm transition-all">
+            <Link to="/verification-chauffeur" className="inline-block px-5 py-3 rounded-xl text-xs font-black bg-amber-600 text-white hover:bg-amber-700 shadow-sm transition-all min-h-[44px] flex items-center justify-center w-full sm:w-auto">
               Vérifier mon profil maintenant
             </Link>
           </div>
         )}
 
         {errorMsg && (
-          <div className="p-4 bg-rose-50 border border-rose-200 text-rose-800 rounded-2xl text-sm font-bold shadow-sm">{errorMsg}</div>
+          <div className="p-4 bg-rose-50 border border-rose-200 text-rose-800 rounded-2xl text-xs sm:text-sm font-bold shadow-sm">{errorMsg}</div>
         )}
 
         {/* MAIN CARD CONTAINER */}
-        <div className="bg-white rounded-[2rem] p-6 sm:p-10 shadow-xl shadow-slate-200/50 border border-slate-100 relative overflow-hidden">
+        <div className="bg-white rounded-2xl sm:rounded-[2rem] p-4 sm:p-8 lg:p-10 shadow-xl shadow-slate-200/50 border border-slate-100 relative overflow-hidden">
           
           {/* Subtle background decoration */}
           <div className="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 bg-demandoo-50 rounded-full blur-3xl opacity-50 pointer-events-none" />
@@ -568,17 +568,17 @@ export const PublishTripPage = () => {
                   </select>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <label className={`cursor-pointer flex flex-col items-center justify-center p-5 rounded-2xl border-2 transition-all ${rulesSmoking ? 'border-demandoo-500 bg-demandoo-50 text-demandoo-700' : 'border-slate-200 bg-slate-50 text-slate-500 hover:border-slate-300'}`}>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                  <label className={`cursor-pointer flex flex-row sm:flex-col items-center justify-start sm:justify-center p-3.5 sm:p-5 rounded-2xl border-2 transition-all gap-3 sm:gap-2 ${rulesSmoking ? 'border-demandoo-500 bg-demandoo-50 text-demandoo-700' : 'border-slate-200 bg-slate-50 text-slate-500 hover:border-slate-300'}`}>
                     <input type="checkbox" checked={rulesSmoking} onChange={(e) => setRulesSmoking(e.target.checked)} className="sr-only" />
-                    <span className="text-2xl mb-2">🚬</span>
-                    <span className="text-xs font-bold text-center">Fumeur autorisé</span>
+                    <span className="text-2xl">🚬</span>
+                    <span className="text-xs font-bold text-left sm:text-center">Fumeur autorisé</span>
                   </label>
 
-                  <label className={`cursor-pointer flex flex-col items-center justify-center p-5 rounded-2xl border-2 transition-all ${rulesPets ? 'border-demandoo-500 bg-demandoo-50 text-demandoo-700' : 'border-slate-200 bg-slate-50 text-slate-500 hover:border-slate-300'}`}>
+                  <label className={`cursor-pointer flex flex-row sm:flex-col items-center justify-start sm:justify-center p-3.5 sm:p-5 rounded-2xl border-2 transition-all gap-3 sm:gap-2 ${rulesPets ? 'border-demandoo-500 bg-demandoo-50 text-demandoo-700' : 'border-slate-200 bg-slate-50 text-slate-500 hover:border-slate-300'}`}>
                     <input type="checkbox" checked={rulesPets} onChange={(e) => setRulesPets(e.target.checked)} className="sr-only" />
-                    <span className="text-2xl mb-2">🐾</span>
-                    <span className="text-xs font-bold text-center">Animaux acceptés</span>
+                    <span className="text-2xl">🐾</span>
+                    <span className="text-xs font-bold text-left sm:text-center">Animaux acceptés</span>
                   </label>
                 </div>
               </div>
@@ -586,7 +586,7 @@ export const PublishTripPage = () => {
               <button
                 type="button"
                 onClick={() => setStep(8)}
-                className="w-full mt-8 py-4 rounded-2xl text-sm font-black text-white bg-demandoo-600 hover:bg-demandoo-700 shadow-lg shadow-demandoo-600/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                className="w-full min-h-[48px] mt-8 py-4 rounded-2xl text-sm font-black text-white bg-demandoo-600 hover:bg-demandoo-700 shadow-lg shadow-demandoo-600/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
               >
                 Vérifier le récapitulatif <ArrowRight className="w-5 h-5" />
               </button>
@@ -595,49 +595,51 @@ export const PublishTripPage = () => {
 
           {/* STEP 8: RECAP & CONFIRM PUBLISH */}
           {step === 8 && (
-            <form onSubmit={handleFinalSubmit} className="space-y-8 animate-fade-in relative z-10">
+            <form onSubmit={handleFinalSubmit} className="space-y-6 sm:space-y-8 animate-fade-in relative z-10">
               <div className="space-y-2 text-center">
-                <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 mx-auto mb-4">
-                  <ShieldCheck className="w-8 h-8" />
+                <div className="w-14 sm:w-16 h-14 sm:h-16 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 mx-auto mb-4">
+                  <ShieldCheck className="w-7 sm:w-8 h-7 sm:h-8" />
                 </div>
-                <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+                <h2 className="text-xl sm:text-3xl font-black text-slate-900 tracking-tight">
                   Prêt à publier !
                 </h2>
-                <p className="text-slate-500 font-medium text-sm">
+                <p className="text-slate-500 font-medium text-xs sm:text-sm">
                   Vérifiez une dernière fois vos informations.
                 </p>
               </div>
 
-              <div className="bg-slate-50 p-6 rounded-[1.5rem] border border-slate-100 space-y-4 shadow-inner">
+              <div className="bg-slate-50 p-4 sm:p-6 rounded-2xl sm:rounded-[1.5rem] border border-slate-100 space-y-4 shadow-inner">
                 <div className="flex flex-col items-center justify-center text-center space-y-1 pb-4 border-b border-slate-200">
-                  <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">{date} à {time}</span>
-                  <div className="text-xl font-black text-slate-900 flex items-center gap-3">
-                    {departureCity} <ArrowRight className="w-5 h-5 text-slate-300" /> {arrivalCity}
+                  <span className="text-[11px] sm:text-xs font-bold text-slate-400 uppercase tracking-widest">{date} à {time}</span>
+                  <div className="text-lg sm:text-xl font-black text-slate-900 flex flex-wrap items-center justify-center gap-2">
+                    <span>{departureCity}</span>
+                    <ArrowRight className="w-4 h-4 text-slate-300 shrink-0" />
+                    <span>{arrivalCity}</span>
                   </div>
-                  <span className="inline-block mt-2 px-3 py-1 bg-demandoo-100 text-demandoo-700 rounded-full font-black text-sm">
-                    {pricePerSeat.toLocaleString('fr-FR')} FCFA <span className="font-medium text-xs">/ place</span>
+                  <span className="inline-block mt-2 px-3 py-1 bg-demandoo-100 text-demandoo-700 rounded-full font-black text-xs sm:text-sm">
+                    {pricePerSeat.toLocaleString('fr-FR')} FCFA <span className="font-medium text-[11px]">/ place</span>
                   </span>
                 </div>
                 
-                <div className="grid grid-cols-2 gap-y-4 gap-x-2 text-xs">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                   <div>
-                    <span className="block text-slate-400 font-bold uppercase mb-1">Véhicule</span>
+                    <span className="block text-slate-400 font-bold uppercase mb-0.5">Véhicule</span>
                     <span className="font-bold text-slate-800">{vehicleMake} {vehicleModel}</span>
                   </div>
                   <div>
-                    <span className="block text-slate-400 font-bold uppercase mb-1">Places offertes</span>
+                    <span className="block text-slate-400 font-bold uppercase mb-0.5">Places offertes</span>
                     <span className="font-bold text-slate-800">{seatsTotal} passagers max</span>
                   </div>
-                  <div className="col-span-2">
-                    <span className="block text-slate-400 font-bold uppercase mb-1">Point de départ</span>
-                    <span className="font-bold text-slate-800">{departureAddress}</span>
+                  <div className="sm:col-span-2">
+                    <span className="block text-slate-400 font-bold uppercase mb-0.5">Point de départ</span>
+                    <span className="font-bold text-slate-800 break-words">{departureAddress}</span>
                   </div>
                 </div>
               </div>
 
               <button
                 type="submit"
-                className="w-full mt-8 py-4 rounded-2xl text-sm font-black text-white bg-demandoo-600 hover:bg-demandoo-700 shadow-lg shadow-demandoo-600/25 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                className="w-full min-h-[48px] mt-6 sm:mt-8 py-4 rounded-2xl text-sm font-black text-white bg-demandoo-600 hover:bg-demandoo-700 shadow-lg shadow-demandoo-600/25 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
               >
                 Publier le trajet maintenant
               </button>

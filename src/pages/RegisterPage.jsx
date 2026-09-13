@@ -143,13 +143,13 @@ export const RegisterPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#0A0A0A] font-sans flex items-center justify-center p-4 py-8 relative overflow-hidden">
+    <div className="min-h-screen bg-[#0A0A0A] font-sans flex items-center justify-center p-3 sm:p-4 py-6 sm:py-8 relative overflow-hidden">
       
       {/* Background Halos */}
       <div className="absolute top-0 left-0 w-full h-96 bg-gradient-to-b from-demandoo-600/10 to-transparent pointer-events-none" />
       <div className="absolute -top-24 -right-24 w-96 h-96 bg-demandoo-500/20 rounded-full blur-[100px] pointer-events-none" />
 
-      <div className="w-full max-w-xl bg-white rounded-[2rem] sm:rounded-[3rem] shadow-2xl p-6 sm:p-10 relative z-10">
+      <div className="w-full max-w-xl bg-white rounded-2xl sm:rounded-[2.5rem] shadow-2xl p-4 sm:p-8 lg:p-10 relative z-10">
         
         <div className="text-center mb-6">
           <Link to="/" className="inline-block p-2 rounded-xl bg-white shadow-md hover:scale-105 transition-transform mb-2 border border-slate-100">

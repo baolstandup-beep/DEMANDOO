@@ -165,78 +165,78 @@ export const SubscriptionPage = () => {
   }
 
   return (
-    <div className="min-h-screen py-16 px-4 bg-slate-50 font-sans">
-      <div className="max-w-6xl mx-auto">
+    <div className="min-h-screen py-8 sm:py-16 px-4 sm:px-6 lg:px-8 bg-slate-50 font-sans">
+      <div className="w-full max-w-6xl mx-auto">
         
         {/* En-tête */}
-        <div className="text-center max-w-3xl mx-auto mb-16 space-y-4">
-          <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-slate-900 tracking-tight">
+        <div className="text-center max-w-3xl mx-auto mb-8 sm:mb-16 space-y-3 sm:space-y-4">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-slate-900 tracking-tight">
             Choisissez votre formule chauffeur
           </h1>
-          <p className="text-lg text-slate-600 font-medium max-w-2xl mx-auto leading-relaxed">
+          <p className="text-sm sm:text-base lg:text-lg text-slate-600 font-medium max-w-2xl mx-auto leading-relaxed">
             Un premier trajet ou des déplacements réguliers : trouvez l'offre adaptée à votre rythme, avec zéro commission Demandoo sur vos trajets.
           </p>
         </div>
 
         {error && (
-          <div className="max-w-2xl mx-auto mb-10 bg-red-50 p-4 rounded-xl flex items-center gap-3 text-red-700 border border-red-200 shadow-sm">
+          <div className="max-w-2xl mx-auto mb-8 bg-red-50 p-4 rounded-xl flex items-center gap-3 text-red-700 border border-red-200 shadow-sm">
             <AlertCircle className="w-5 h-5 shrink-0" />
-            <p className="text-sm font-medium">{error}</p>
+            <p className="text-xs sm:text-sm font-medium">{error}</p>
           </div>
         )}
 
         {/* Grille des offres */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch">
           {SUBSCRIPTION_TIERS.map((tier) => {
             const isPro = tier.name === 'Pro';
             
             return (
               <div 
                 key={tier.name}
-                className={`relative flex flex-col rounded-3xl p-8 border transition-transform duration-300 hover:-translate-y-1 ${tier.cardStyle} ${isPro ? 'md:-mt-4 md:mb-4' : ''}`}
+                className={`relative flex flex-col rounded-2xl sm:rounded-3xl p-6 sm:p-8 border transition-transform duration-300 hover:-translate-y-1 ${tier.cardStyle} ${isPro ? 'lg:-mt-4 lg:mb-4' : ''}`}
               >
                 {/* Badge Pro */}
                 {tier.badge && (
-                  <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 bg-orange-500 text-white text-xs font-bold uppercase tracking-wide rounded-full whitespace-nowrap shadow-sm">
+                  <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 bg-orange-500 text-white text-[11px] sm:text-xs font-bold uppercase tracking-wide rounded-full whitespace-nowrap shadow-sm">
                     {tier.badge}
                   </div>
                 )}
                 
                 {/* En-tête de la carte */}
                 <div className={`mb-6 ${tier.badge ? 'pt-2' : ''}`}>
-                  <h3 className={`text-xl font-bold mb-3 ${isPro ? 'text-white' : 'text-slate-900'}`}>
+                  <h3 className={`text-xl font-bold mb-2 sm:mb-3 ${isPro ? 'text-white' : 'text-slate-900'}`}>
                     {tier.name}
                   </h3>
                   <div className="flex items-end gap-1.5 mb-2">
-                    <span className={`text-4xl font-black tracking-tight ${isPro ? 'text-white' : 'text-slate-900'}`}>
+                    <span className={`text-3xl sm:text-4xl font-black tracking-tight ${isPro ? 'text-white' : 'text-slate-900'}`}>
                       {tier.price.toLocaleString('fr-FR')}
                     </span>
-                    <span className={`text-lg font-bold pb-1 ${isPro ? 'text-white' : 'text-slate-900'}`}>
+                    <span className={`text-base sm:text-lg font-bold pb-1 ${isPro ? 'text-white' : 'text-slate-900'}`}>
                       FCFA
                     </span>
                   </div>
                   {tier.price > 0 && (
-                    <div className={`text-sm font-medium ${isPro ? 'text-demandoo-100' : 'text-slate-500'}`}>
+                    <div className={`text-xs sm:text-sm font-medium ${isPro ? 'text-demandoo-100' : 'text-slate-500'}`}>
                       / mois
                     </div>
                   )}
                   {tier.price === 0 && (
-                    <div className="text-sm font-medium text-slate-500">
+                    <div className="text-xs sm:text-sm font-medium text-slate-500">
                       Gratuit, sans engagement
                     </div>
                   )}
                 </div>
 
-                <div className={`text-sm font-medium mb-8 ${isPro ? 'text-demandoo-50' : 'text-slate-600'}`}>
+                <div className={`text-xs sm:text-sm font-medium mb-6 sm:mb-8 ${isPro ? 'text-demandoo-50' : 'text-slate-600'}`}>
                   {tier.description}
                 </div>
 
-                <div className="w-full h-px bg-current opacity-10 mb-8" />
+                <div className="w-full h-px bg-current opacity-10 mb-6 sm:mb-8" />
 
                 {/* Avantages */}
-                <ul className="space-y-4 mb-10 flex-grow">
+                <ul className="space-y-3.5 sm:space-y-4 mb-8 sm:mb-10 flex-grow">
                   {tier.features.map((feat, i) => (
-                    <li key={i} className="flex items-start gap-3 text-sm font-medium leading-snug">
+                    <li key={i} className="flex items-start gap-3 text-xs sm:text-sm font-medium leading-snug">
                       <div className={`mt-0.5 shrink-0 p-1 rounded-full ${tier.iconColor}`}>
                         <Check className="w-3.5 h-3.5" />
                       </div>
@@ -251,7 +251,7 @@ export const SubscriptionPage = () => {
                 <button
                   onClick={() => handleSubscribeClick(tier)}
                   disabled={subscribingTo !== null}
-                  className={`w-full py-3.5 rounded-xl text-sm font-bold transition-colors flex items-center justify-center gap-2 mt-auto ${tier.buttonStyle}`}
+                  className={`w-full min-h-[48px] py-3.5 rounded-xl text-sm font-bold transition-colors flex items-center justify-center gap-2 mt-auto ${tier.buttonStyle}`}
                 >
                   {subscribingTo === tier.id_fallback || (subscribingTo && subscribingTo === getPlanId(tier)) ? (
                     <><Loader2 className="w-5 h-5 animate-spin" /> Traitement...</>

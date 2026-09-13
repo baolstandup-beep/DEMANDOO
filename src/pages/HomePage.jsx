@@ -85,65 +85,195 @@ export const HomePage = () => {
 
   return (
     <div className="font-sans bg-[#F9FAFB]">
-      {/* 2. PREMIER ÉCRAN (Hero Section) */}
-      <section className="relative overflow-hidden bg-mesh-pattern pt-20 pb-28 border-b border-slate-800">
-        <div className="absolute inset-0 bg-gradient-to-t from-[#060f29] via-transparent to-transparent"></div>
+      {/* 2. PREMIER ÉCRAN (Hero Section Premium) */}
+      <section className="relative overflow-x-clip bg-gradient-to-b from-[#073444] to-[#07132E] min-h-[780px] flex items-center pt-24 pb-16 lg:pt-0 lg:pb-0 border-b border-slate-800">
+        <div className="absolute inset-0 bg-mesh-pattern opacity-20 pointer-events-none mix-blend-overlay"></div>
         
-        <div className="relative max-w-6xl mx-auto px-4 text-center space-y-8 z-10">
-          <FadeInSection delay={100}>
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/20 backdrop-blur-md mb-4 text-sm font-bold text-emerald-300">
-              <Star className="w-4 h-4" fill="currentColor" /> N°1 du covoiturage au Sénégal
+        <div className="relative w-[92%] max-w-[1500px] mx-auto z-10">
+          <div className="grid grid-cols-1 lg:grid-cols-[52%_48%] items-center justify-center min-h-[780px] gap-12 lg:gap-0">
+            
+            {/* COLONNE GAUCHE (CONTENU & RECHERCHE) */}
+            <div className="flex flex-col items-center lg:items-start text-center lg:text-left space-y-7 order-2 lg:order-1 w-full max-w-[720px] mx-auto lg:mx-0">
+              
+              {/* Badge */}
+              <FadeInSection delay={100}>
+                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-md text-xs sm:text-sm font-bold text-emerald-300 shadow-sm animate-fade-in">
+                  <Star className="w-4 h-4 shrink-0" fill="currentColor" />
+                  <span>★ Le covoiturage de confiance au Sénégal</span>
+                </div>
+              </FadeInSection>
+
+              {/* Titre Principal */}
+              <FadeInSection delay={200} className="w-full">
+                <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-[4rem] font-black text-white tracking-tight leading-[1.1] break-words">
+                  Depuis Touba,<br />
+                  trouvez votre trajet <br className="hidden sm:block" />
+                  <span className="text-amber-500">partout au Sénégal.</span>
+                </h1>
+              </FadeInSection>
+
+              {/* Description */}
+              <FadeInSection delay={300} className="w-full">
+                <p className="text-base sm:text-lg lg:text-xl text-slate-300 font-medium leading-relaxed">
+                  Demandoo met en relation passagers et chauffeurs. Vous organisez ensemble votre trajet et son règlement, simplement et directement.
+                </p>
+              </FadeInSection>
+              
+              {/* FORMULAIRE DE RECHERCHE */}
+              <FadeInSection delay={400} className="w-full">
+                <div className="bg-white/95 backdrop-blur-xl p-4 sm:p-5 lg:p-6 rounded-[24px] w-full shadow-2xl shadow-black/20 border border-white/50 relative z-20 transition-transform duration-300 hover:shadow-demandoo-500/10">
+                  <form onSubmit={handleSearchSubmit} className="flex flex-col gap-3">
+                    
+                    {/* VILLES DEPART ET DESTINATION */}
+                    <div className="flex flex-col sm:flex-row gap-3 relative">
+                      {/* Départ */}
+                      <div className="w-full sm:flex-1 flex items-center gap-3 bg-slate-50 hover:bg-white focus-within:bg-white focus-within:ring-2 focus-within:ring-demandoo-500/20 p-3.5 sm:p-4 rounded-2xl transition-all border border-slate-200">
+                        <MapPin className="w-5 h-5 text-demandoo-600 shrink-0" />
+                        <div className="w-full text-left">
+                          <label className="sr-only">Ville de départ</label>
+                          <input 
+                            type="text" 
+                            value={departure} 
+                            onChange={(e) => setDeparture(e.target.value)} 
+                            placeholder="Départ (ex: Touba)" 
+                            className="w-full bg-transparent font-bold text-slate-900 text-sm sm:text-base focus:outline-none placeholder-slate-400" 
+                          />
+                        </div>
+                      </div>
+                      
+                      {/* Bouton Swap */}
+                      <div className="flex justify-center -my-2 sm:my-0 sm:-mx-3 relative z-10 sm:self-center">
+                        <button 
+                          type="button" 
+                          onClick={handleSwap} 
+                          title="Inverser départ et destination"
+                          aria-label="Inverser départ et destination"
+                          className="w-10 h-10 rounded-full bg-white border border-slate-200 shadow-md flex items-center justify-center hover:bg-slate-50 transition-transform hover:scale-110 active:scale-95 group shrink-0"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-demandoo-600 sm:rotate-90 group-hover:text-demandoo-500">
+                            <path d="M12 3v18"/><path d="m8 7 4-4 4 4"/><path d="m8 17 4 4 4-4"/>
+                          </svg>
+                        </button>
+                      </div>
+
+                      {/* Destination */}
+                      <div className="w-full sm:flex-1 flex items-center gap-3 bg-slate-50 hover:bg-white focus-within:bg-white focus-within:ring-2 focus-within:ring-demandoo-500/20 p-3.5 sm:p-4 rounded-2xl transition-all border border-slate-200">
+                        <MapPin className="w-5 h-5 text-rose-500 shrink-0" />
+                        <div className="w-full text-left">
+                          <label className="sr-only">Destination</label>
+                          <input 
+                            type="text" 
+                            list="cities-list" 
+                            value={destination} 
+                            onChange={(e) => setDestination(e.target.value)} 
+                            placeholder="Destination (ex: Dakar)" 
+                            className="w-full bg-transparent font-bold text-slate-900 text-sm sm:text-base focus:outline-none placeholder-slate-400" 
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* DATE, PASSAGERS ET BOUTON RECHERCHER */}
+                    <div className="flex flex-col sm:flex-row gap-3">
+                      {/* Date */}
+                      <div className="w-full sm:flex-[2] md:flex-1 flex items-center gap-3 bg-slate-50 hover:bg-white focus-within:bg-white focus-within:ring-2 focus-within:ring-demandoo-500/20 p-3.5 sm:p-4 rounded-2xl transition-all border border-slate-200">
+                        <Calendar className="w-5 h-5 text-demandoo-600 shrink-0" />
+                        <div className="w-full text-left">
+                          <label className="sr-only">Date</label>
+                          <input 
+                            type="date" 
+                            value={date} 
+                            onChange={(e) => setDate(e.target.value)} 
+                            className="w-full bg-transparent font-bold text-slate-800 text-sm sm:text-base focus:outline-none" 
+                          />
+                        </div>
+                      </div>
+
+                      {/* Passagers */}
+                      <div className="w-full sm:w-32 flex items-center justify-between sm:justify-center gap-2 bg-slate-50 hover:bg-white focus-within:bg-white focus-within:ring-2 focus-within:ring-demandoo-500/20 p-3.5 sm:p-4 rounded-2xl transition-all border border-slate-200">
+                        <div className="flex items-center gap-2">
+                          <Users className="w-5 h-5 text-demandoo-600 shrink-0" />
+                          <span className="sm:hidden text-sm font-bold text-slate-600">Passagers :</span>
+                        </div>
+                        <input 
+                          type="number" 
+                          min="1" 
+                          max="7" 
+                          value={passengers} 
+                          onChange={(e) => setPassengers(e.target.value)} 
+                          className="w-12 bg-transparent font-bold text-slate-900 text-sm sm:text-base focus:outline-none text-right sm:text-center" 
+                          aria-label="Nombre de passagers"
+                        />
+                      </div>
+
+                      {/* Bouton Rechercher */}
+                      <button 
+                        type="submit" 
+                        className="w-full sm:w-auto px-8 py-3.5 sm:py-4 rounded-2xl font-black text-white bg-demandoo-500 hover:bg-demandoo-400 transition-all duration-300 transform hover:-translate-y-0.5 hover:shadow-lg flex items-center justify-center gap-2 shrink-0"
+                      >
+                        <Search className="w-5 h-5 shrink-0" />
+                        <span>Rechercher</span>
+                      </button>
+                    </div>
+
+                  </form>
+                </div>
+              </FadeInSection>
+
+              {/* CTA SECONDAIRE */}
+              <FadeInSection delay={500} className="w-full">
+                <div className="flex flex-col sm:flex-row items-center lg:justify-start justify-center gap-4 mt-2">
+                  <Link 
+                    to="/publier" 
+                    className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-bold text-sm text-white bg-white/10 hover:bg-white/20 border border-white/10 backdrop-blur-md transition-all shadow-sm w-full sm:w-auto"
+                  >
+                    <Car className="w-4 h-4" />
+                    Proposer un trajet
+                  </Link>
+                  <a 
+                    href="#comment-ca-marche" 
+                    className="text-sm font-bold text-slate-300 hover:text-white transition-colors underline-offset-4 hover:underline"
+                  >
+                    Comment ça marche ?
+                  </a>
+                </div>
+              </FadeInSection>
+              
+              <datalist id="cities-list">
+                {INITIAL_CITIES.map(c => <option key={c} value={c} />)}
+              </datalist>
+
             </div>
-            <h1 className="text-4xl sm:text-5xl md:text-6xl font-black text-white tracking-tight leading-tight mb-6 drop-shadow-lg">
-              Depuis Touba,<br/>
-              <span className="gradient-text-gold">trouvez votre trajet au Sénégal.</span>
-            </h1>
-            <p className="text-lg sm:text-xl text-slate-300 font-medium pb-8 max-w-2xl mx-auto leading-relaxed">
-              Demandoo met en relation passagers et chauffeurs. Les modalités du voyage et le paiement se règlent directement entre vous, en toute simplicité.
-            </p>
-          </FadeInSection>
-          
-          <FadeInSection delay={150}>
-            <div className="glass-card p-3 sm:p-4 rounded-[2rem] max-w-3xl mx-auto text-left relative z-20 mx-4 sm:mx-auto">
-              <form onSubmit={handleSearchSubmit} className="flex flex-col md:flex-row gap-3">
-                <div className="flex-1 flex items-center gap-3 bg-white/60 hover:bg-white focus-within:bg-white p-3 sm:p-4 rounded-xl transition-colors border border-slate-200">
-                  <MapPin className="w-5 h-5 text-demandoo-600 shrink-0" />
-                  <input type="text" value={departure} onChange={(e) => setDeparture(e.target.value)} placeholder="Départ" className="w-full bg-transparent font-bold text-slate-800 focus:outline-none placeholder-slate-400" />
-                </div>
-                
-                <div className="flex justify-center -my-4 md:my-0 md:-mx-4 relative z-10 md:self-center">
-                  <button type="button" onClick={handleSwap} className="w-10 h-10 rounded-full bg-white border border-slate-200 shadow-md flex items-center justify-center hover:bg-slate-50 transition-all hover:scale-110 group">
-                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-demandoo-600 md:rotate-90 group-hover:text-demandoo-500"><path d="M12 3v18"/><path d="m8 7 4-4 4 4"/><path d="m8 17 4 4 4-4"/></svg>
-                  </button>
-                </div>
+            
+            {/* COLONNE DROITE (GRANDE IMAGE DEMANDOO) */}
+            <div className="relative flex items-center justify-center order-1 lg:order-2 w-full mt-4 lg:mt-0">
+              <FadeInSection delay={400} className="w-full">
+                <div className="relative w-full flex justify-center lg:justify-end items-center animate-fade-in" style={{ animationDuration: '1s' }}>
+                  
+                  {/* Lumière radiale turquoise subtile */}
+                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80%] h-[80%] bg-demandoo-400/20 blur-[100px] rounded-full pointer-events-none"></div>
 
-                <div className="flex-1 flex items-center gap-3 bg-white/60 hover:bg-white focus-within:bg-white p-3 sm:p-4 rounded-xl transition-colors border border-slate-200">
-                  <MapPin className="w-5 h-5 text-demandoo-600 shrink-0" />
-                  <input type="text" list="cities-list" value={destination} onChange={(e) => setDestination(e.target.value)} placeholder="Destination" className="w-full bg-transparent font-bold text-slate-800 focus:outline-none placeholder-slate-400" />
+                  {/* Image Transparente Extra-Large */}
+                  <img 
+                    src="/images/UUU.png" 
+                    alt="Covoiturage Demandoo Sénégal" 
+                    className="relative z-10 w-[min(115%,600px)] lg:w-[clamp(650px,52vw,950px)] max-w-none h-auto object-contain animate-float"
+                    style={{ 
+                      filter: 'drop-shadow(0 25px 25px rgba(0,0,0,0.15))' 
+                    }}
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.src = "/hero-banner-800.webp";
+                    }}
+                  />
+                  
+                  {/* Ombre au sol (ellipse) */}
+                  <div className="absolute bottom-[5%] left-1/2 -translate-x-1/2 w-[60%] h-6 bg-black/30 blur-[12px] rounded-[100%] pointer-events-none"></div>
                 </div>
-
-                <div className="flex gap-3 md:w-auto w-full">
-                  <div className="flex-[2] md:w-36 flex items-center gap-2 bg-white/60 hover:bg-white focus-within:bg-white p-3 sm:p-4 rounded-xl transition-colors border border-slate-200">
-                    <Calendar className="w-5 h-5 text-demandoo-600 shrink-0" />
-                    <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="w-full bg-transparent font-bold text-slate-800 focus:outline-none" />
-                  </div>
-                  <div className="flex-1 md:w-24 flex items-center justify-center gap-2 bg-white/60 hover:bg-white focus-within:bg-white p-3 sm:p-4 rounded-xl transition-colors border border-slate-200">
-                    <Users className="w-5 h-5 text-demandoo-600 shrink-0" />
-                    <input type="number" min="1" max="7" value={passengers} onChange={(e) => setPassengers(e.target.value)} className="w-full bg-transparent font-bold text-slate-800 focus:outline-none text-center" />
-                  </div>
-                </div>
-
-                <button type="submit" className="md:w-auto w-full px-8 py-4 sm:py-0 rounded-xl font-black btn-premium flex items-center justify-center gap-2">
-                  <Search className="w-5 h-5" />
-                  <span className="md:hidden">Rechercher</span>
-                </button>
-              </form>
+              </FadeInSection>
             </div>
-          </FadeInSection>
-          
-          <datalist id="cities-list">
-             {INITIAL_CITIES.map(c => <option key={c} value={c} />)}
-          </datalist>
+
+          </div>
         </div>
       </section>
 

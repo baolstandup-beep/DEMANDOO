@@ -122,9 +122,58 @@ export const AdminDriversPage = () => {
           </button>
         </div>
 
-        {/* Table */}
-        <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
-          <div className="overflow-x-auto">
+        {/* Drivers List: Mobile Cards + Desktop Table */}
+        <div className="bg-white rounded-2xl sm:rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+          {/* MOBILE CARD VIEW (< md) */}
+          <div className="block lg:hidden divide-y divide-slate-100">
+            {filteredDrivers.map(driver => (
+              <div key={driver.id} className="p-4 space-y-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-demandoo-100 text-demandoo-700 flex items-center justify-center font-black shrink-0">
+                      {driver.name.charAt(0)}
+                    </div>
+                    <div>
+                      <p className="font-black text-slate-900 text-sm">{driver.name}</p>
+                      <p className="text-xs text-slate-500 font-medium">{driver.phone}</p>
+                    </div>
+                  </div>
+                  {getStatusBadge(driver.status)}
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 text-xs bg-slate-50 p-3 rounded-xl">
+                  <div>
+                    <span className="block text-[10px] font-bold text-slate-400 uppercase">Véhicule</span>
+                    <span className="font-bold text-slate-700">{driver.vehicle}</span>
+                  </div>
+                  <div>
+                    <span className="block text-[10px] font-bold text-slate-400 uppercase">Date</span>
+                    <span className="font-medium text-slate-600">{driver.submittedAt}</span>
+                  </div>
+                  <div className="col-span-2">
+                    <div className="flex items-center justify-between text-[11px] mb-1">
+                      <span className="font-bold text-slate-500">Progression</span>
+                      <span className="font-bold text-slate-700">{driver.progress}</span>
+                    </div>
+                    <div className="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                      <div className={`h-full ${driver.progress === '100%' ? 'bg-emerald-500' : 'bg-amber-400'}`} style={{width: driver.progress}} />
+                    </div>
+                  </div>
+                </div>
+
+                <Link 
+                  to={`/admin/drivers/${driver.id}`}
+                  className="w-full min-h-[44px] inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-colors shadow-sm"
+                >
+                  <Eye className="w-4 h-4" />
+                  Examiner le profil
+                </Link>
+              </div>
+            ))}
+          </div>
+
+          {/* DESKTOP TABLE VIEW (>= lg) */}
+          <div className="hidden lg:block overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead className="bg-slate-50 text-slate-500 font-bold text-xs uppercase tracking-wider border-b border-slate-200">
                 <tr>
@@ -180,13 +229,13 @@ export const AdminDriversPage = () => {
                 ))}
               </tbody>
             </table>
-            
-            {filteredDrivers.length === 0 && (
-              <div className="p-12 text-center text-slate-500 font-medium">
-                Aucun chauffeur trouvé pour ce filtre.
-              </div>
-            )}
           </div>
+          
+          {filteredDrivers.length === 0 && (
+            <div className="p-12 text-center text-slate-500 font-medium">
+              Aucun chauffeur trouvé pour ce filtre.
+            </div>
+          )}
         </div>
 
       </div>

@@ -53,19 +53,19 @@ export const PaymentModal = ({ isOpen, onClose, plan, onSuccess }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
       <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={status === 'processing' ? undefined : onClose} />
       
-      <div className="relative bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden animate-fade-in">
-        <div className="p-6 border-b border-slate-100 flex items-center justify-between">
+      <div className="relative bg-white rounded-2xl sm:rounded-3xl w-[calc(100%-24px)] max-w-md max-h-[92vh] overflow-y-auto shadow-2xl animate-fade-in">
+        <div className="p-4 sm:p-6 border-b border-slate-100 flex items-center justify-between">
           <div>
-            <h3 className="text-xl font-black text-slate-900">Paiement Sécurisé</h3>
-            <p className="text-xs text-slate-500 font-medium mt-1">Forfait {plan.name}</p>
+            <h3 className="text-lg sm:text-xl font-black text-slate-900">Paiement Sécurisé</h3>
+            <p className="text-xs text-slate-500 font-medium mt-0.5">Forfait {plan.name}</p>
           </div>
           <button 
             onClick={onClose}
             disabled={status === 'processing'}
-            className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-full transition-colors disabled:opacity-50"
+            className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-full transition-colors disabled:opacity-50 min-h-[40px] min-w-[40px] flex items-center justify-center"
           >
             <X className="w-5 h-5" />
           </button>
@@ -125,7 +125,7 @@ export const PaymentModal = ({ isOpen, onClose, plan, onSuccess }) => {
                   value={phoneNumber}
                   onChange={(e) => setPhoneNumber(e.target.value)}
                   placeholder="Ex: 77 123 45 67"
-                  className="w-full pl-12 pr-4 py-3.5 rounded-xl bg-slate-50 border border-slate-200 text-sm font-bold text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-demandoo-500 focus:ring-2 focus:ring-demandoo-500/20 transition-all outline-none"
+                  className="w-full min-h-[48px] pl-12 pr-4 py-3.5 rounded-xl bg-slate-50 border border-slate-200 text-sm font-bold text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-demandoo-500 focus:ring-2 focus:ring-demandoo-500/20 transition-all outline-none"
                   required
                 />
               </div>
@@ -140,7 +140,7 @@ export const PaymentModal = ({ isOpen, onClose, plan, onSuccess }) => {
             <button
               type="submit"
               disabled={status === 'processing' || !phoneNumber}
-              className="w-full py-4 rounded-xl font-black text-sm text-white bg-slate-900 hover:bg-slate-800 shadow-xl shadow-slate-900/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:active:scale-100"
+              className="w-full min-h-[48px] py-3.5 sm:py-4 rounded-xl font-black text-sm text-white bg-slate-900 hover:bg-slate-800 shadow-xl shadow-slate-900/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:active:scale-100"
             >
               {status === 'processing' ? (
                 <><Loader2 className="w-5 h-5 animate-spin" /> Traitement sécurisé...</>

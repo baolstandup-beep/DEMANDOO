@@ -34,7 +34,7 @@ export const SubscriptionCard = ({ user, hasActiveSub }) => {
       
       {hasActiveSub || user?.subscription_plan === 'trial' ? (
         <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <p className="text-xs font-bold text-slate-400 uppercase">Formule actuelle</p>
               <p className="text-base font-black text-slate-900">{getPlanName()}</p>
@@ -78,7 +78,7 @@ export const SubscriptionCard = ({ user, hasActiveSub }) => {
           <div className="pt-4 border-t border-slate-100 flex justify-end">
             <Link 
               to="/#abonnements" 
-              className="px-6 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-900 rounded-xl text-sm font-black transition-colors text-center w-full sm:w-auto"
+              className="px-6 py-3 min-h-[48px] flex items-center justify-center bg-slate-100 hover:bg-slate-200 text-slate-900 rounded-xl text-sm font-black transition-colors text-center w-full sm:w-auto active:scale-[0.98]"
             >
               Gérer mon abonnement
             </Link>
@@ -86,7 +86,7 @@ export const SubscriptionCard = ({ user, hasActiveSub }) => {
         </div>
       ) : (
         <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
-          <div className="space-y-1">
+          <div className="space-y-1 w-full sm:w-auto">
             <h3 className="text-base font-black text-slate-900">Aucun abonnement actif</h3>
             <p className="text-sm text-slate-500 font-medium max-w-md">
               Votre abonnement a expiré. Renouvelez-le pour continuer à publier des trajets.
@@ -94,7 +94,7 @@ export const SubscriptionCard = ({ user, hasActiveSub }) => {
           </div>
           <Link 
             to="/#abonnements" 
-            className="w-full sm:w-auto px-6 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-sm font-black transition-colors text-center shadow-sm"
+            className="w-full sm:w-auto px-6 py-3 min-h-[48px] flex items-center justify-center bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-sm font-black transition-colors text-center shadow-sm active:scale-[0.98]"
           >
             Renouveler mon abonnement
           </Link>

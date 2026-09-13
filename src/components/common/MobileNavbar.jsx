@@ -59,25 +59,25 @@ export const MobileNavbar = () => {
         <NavLink 
           to="/mes-reservations" 
           className={({ isActive }) => 
-            `flex flex-col items-center gap-0.5 py-1 px-2 sm:px-3 rounded-xl transition-all active:scale-90 active:opacity-70 ${
+            `flex flex-col items-center justify-center min-w-[50px] min-h-[44px] py-1 px-1 sm:px-2 rounded-xl transition-all active:scale-90 active:opacity-70 ${
               isActive ? 'text-demandoo-600 font-extrabold scale-105' : 'text-slate-500 hover:text-slate-900 font-semibold'
             }`
           }
         >
           <Ticket className="w-5 h-5" />
-          <span className="text-[10px]">Historique</span>
+          <span className="text-[10px] tracking-tight">Réservations</span>
         </NavLink>
 
         <NavLink 
-          to="/espace-chauffeur" 
+          to={user ? (user.role === 'driver' ? '/espace-chauffeur' : '/mes-reservations') : '/login'} 
           className={({ isActive }) => 
-            `flex flex-col items-center gap-0.5 py-1 px-2 sm:px-3 rounded-xl transition-all active:scale-90 active:opacity-70 ${
+            `flex flex-col items-center justify-center min-w-[50px] min-h-[44px] py-1 px-1 sm:px-2 rounded-xl transition-all active:scale-90 active:opacity-70 ${
               isActive ? 'text-demandoo-600 font-extrabold scale-105' : 'text-slate-500 hover:text-slate-900 font-semibold'
             }`
           }
         >
           <User className="w-5 h-5" />
-          <span className="text-[10px]">{user?.role === 'driver' ? 'Chauffeur' : 'Profil'}</span>
+          <span className="text-[10px] tracking-tight">{user ? (user.role === 'driver' ? 'Chauffeur' : 'Profil') : 'Connexion'}</span>
         </NavLink>
       </div>
     </nav>

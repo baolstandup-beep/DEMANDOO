@@ -128,16 +128,16 @@ export const NextTripCard = ({ nextTrip, canPublish, cancelTrip }) => {
           </div>
         </div>
 
-        <div className="mt-8 pt-6 border-t border-slate-100 flex flex-wrap gap-3">
+        <div className="mt-8 pt-6 border-t border-slate-100 flex flex-col sm:flex-row gap-3">
           <Link 
             to={`/trajet/${nextTrip.id}`} 
-            className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-sm font-bold transition-colors"
+            className="flex-1 min-h-[44px] px-5 py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-sm font-bold transition-colors flex items-center justify-center text-center"
           >
             Voir les demandes
           </Link>
           <Link 
             to={`/trajet/${nextTrip.id}`} 
-            className="px-5 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-xl text-sm font-bold transition-colors"
+            className="flex-1 min-h-[44px] px-5 py-3 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-xl text-sm font-bold transition-colors flex items-center justify-center text-center"
           >
             Modifier
           </Link>

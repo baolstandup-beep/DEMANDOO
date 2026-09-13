@@ -59,13 +59,13 @@ export const RequestCard = ({ booking, onAccept, onReject, driverName }) => {
           <>
             <button 
               onClick={() => onAccept(booking.id)} 
-              className="flex-1 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-colors shadow-sm"
+              className="flex-1 min-h-[44px] py-2 px-3 flex items-center justify-center bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-colors shadow-sm active:scale-[0.98]"
             >
               Accepter
             </button>
             <button 
               onClick={() => onReject(booking.id)} 
-              className="flex-1 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-bold transition-colors"
+              className="flex-1 min-h-[44px] py-2 px-3 flex items-center justify-center bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-bold transition-colors active:scale-[0.98]"
             >
               Refuser
             </button>

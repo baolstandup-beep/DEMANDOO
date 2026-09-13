@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useNotifications } from '../../context/NotificationContext';
@@ -15,7 +15,13 @@ import {
   LayoutDashboard,
   ShieldAlert,
   Sparkles,
-  CreditCard
+  CreditCard,
+  Menu,
+  X,
+  Home,
+  Ticket,
+  HelpCircle,
+  Phone
 } from 'lucide-react';
 
 export const Header = () => {
@@ -23,9 +29,17 @@ export const Header = () => {
   const { notifications, unreadCount, markAllAsRead, markAsRead } = useNotifications();
   const [showNotifs, setShowNotifs] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   
   const navigate = useNavigate();
   const location = useLocation();
+
+  // Fermer les menus lors de la navigation
+  useEffect(() => {
+    setMobileMenuOpen(false);
+    setShowUserMenu(false);
+    setShowNotifs(false);
+  }, [location.pathname]);
 
   return (
     <header className="sticky top-0 z-40 glass-nav shadow-sm transition-all">
@@ -71,8 +85,8 @@ export const Header = () => {
         {/* RIGHT ACTIONS */}
         <div className="flex items-center gap-2.5">
 
-          {/* CTA: PUBLIER UN TRAJET / DEVENIR CHAUFFEUR */}
-          {user && user.role === 'driver' && user.driver_status === 'VERIFIED' && viewMode === 'driver' ? (
+          {/* CTA: PUBLIER UN TRAJET */}
+          {user && user.role === 'driver' && user.driver_status === 'VERIFIED' && viewMode === 'driver' && (
             <Link 
               to="/publier"
               className="hidden sm:inline-flex items-center gap-2 px-4 py-2 text-xs btn-premium"
@@ -80,15 +94,7 @@ export const Header = () => {
               <PlusCircle className="w-4 h-4" />
               Publier un trajet
             </Link>
-          ) : !user ? (
-             <Link 
-              to="/login"
-              className="hidden sm:inline-flex items-center gap-2 px-4 py-2 text-xs btn-premium"
-            >
-              <User className="w-4 h-4" />
-              Devenir chauffeur
-            </Link>
-          ) : null}
+          )}
 
 
           {/* NOTIFICATION BELL */}
@@ -288,25 +294,193 @@ export const Header = () => {
               )}
             </div>
           ) : (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2">
               <Link 
                 to="/login"
-                className="px-3.5 py-2 text-xs font-extrabold text-slate-700 hover:text-demandoo-600 transition-colors"
+                className="hidden sm:inline-flex px-2.5 sm:px-3.5 py-2 text-xs font-extrabold text-slate-700 hover:text-demandoo-600 transition-colors"
               >
                 Connexion
               </Link>
               <Link 
                 to="/inscription-chauffeur"
-                className="px-4 py-2 text-xs btn-premium"
+                className="hidden sm:inline-flex px-4 py-2 text-xs btn-premium"
               >
                 Devenir chauffeur
               </Link>
             </div>
           )}
 
+          {/* HAMBURGER BUTTON (MOBILE ONLY) */}
+          <button
+            type="button"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="md:hidden p-2 rounded-xl text-slate-700 hover:bg-slate-100 transition-colors focus:outline-none"
+            aria-label={mobileMenuOpen ? "Fermer le menu" : "Ouvrir le menu"}
+          >
+            {mobileMenuOpen ? <X className="w-5 h-5 text-slate-900" /> : <Menu className="w-5 h-5" />}
+          </button>
+
         </div>
 
       </div>
+
+      {/* MOBILE DRAWER / SLIDE-DOWN MENU */}
+      {mobileMenuOpen && (
+        <div className="md:hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm animate-fade-in flex flex-col justify-end sm:justify-start">
+          <div 
+            className="bg-white w-full max-h-[88vh] rounded-t-[2rem] sm:rounded-none overflow-y-auto p-5 shadow-2xl flex flex-col border-t border-slate-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Drawer Header */}
+            <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+              <img src="/logo.png" alt="Demandoo" className="h-7 w-auto object-contain" />
+              <button 
+                onClick={() => setMobileMenuOpen(false)}
+                className="p-2 rounded-full bg-slate-100 text-slate-500 hover:text-slate-800"
+                aria-label="Fermer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Profile Info if User */}
+            {user && (
+              <div className="p-4 my-3 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <img 
+                    src={user.avatar_url || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150"} 
+                    alt={user.full_name} 
+                    className="w-10 h-10 rounded-full object-cover border-2 border-demandoo-500"
+                  />
+                  <div>
+                    <p className="text-sm font-extrabold text-slate-900 leading-tight">{user.full_name}</p>
+                    <span className="text-[10px] font-bold text-demandoo-700 bg-demandoo-50 px-2 py-0.5 rounded-full inline-block mt-0.5">
+                      {user.role === 'admin' ? 'Administrateur' : user.role === 'driver' ? 'Conducteur' : 'Passager'}
+                    </span>
+                  </div>
+                </div>
+                {user.role === 'driver' && user.driver_status === 'VERIFIED' && (
+                  <button
+                    onClick={() => { toggleViewMode(); setMobileMenuOpen(false); }}
+                    className="px-2.5 py-1.5 rounded-xl bg-demandoo-100 text-demandoo-700 text-[10px] font-black"
+                  >
+                    {viewMode === 'passenger' ? 'Mode Chauffeur' : 'Mode Passager'}
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* Navigation Links */}
+            <nav className="space-y-1.5 py-3">
+              <Link 
+                to="/" 
+                className="flex items-center gap-3 px-3.5 py-3 rounded-xl font-bold text-sm text-slate-700 hover:bg-slate-50 hover:text-demandoo-600 transition-colors"
+              >
+                <Home className="w-4 h-4 text-demandoo-600" />
+                Accueil
+              </Link>
+              <Link 
+                to="/trajets" 
+                className="flex items-center gap-3 px-3.5 py-3 rounded-xl font-bold text-sm text-slate-700 hover:bg-slate-50 hover:text-demandoo-600 transition-colors"
+              >
+                <Search className="w-4 h-4 text-demandoo-600" />
+                Trouver un trajet
+              </Link>
+              <Link 
+                to="/publier" 
+                className="flex items-center gap-3 px-3.5 py-3 rounded-xl font-bold text-sm text-slate-700 hover:bg-slate-50 hover:text-demandoo-600 transition-colors"
+              >
+                <PlusCircle className="w-4 h-4 text-demandoo-600" />
+                Publier un trajet
+              </Link>
+              <Link 
+                to="/mes-reservations" 
+                className="flex items-center gap-3 px-3.5 py-3 rounded-xl font-bold text-sm text-slate-700 hover:bg-slate-50 hover:text-demandoo-600 transition-colors"
+              >
+                <Ticket className="w-4 h-4 text-demandoo-600" />
+                Mes réservations
+              </Link>
+
+              {user?.role === 'driver' && (
+                <>
+                  <Link 
+                    to="/espace-chauffeur" 
+                    className="flex items-center gap-3 px-3.5 py-3 rounded-xl font-bold text-sm text-slate-700 hover:bg-slate-50 hover:text-demandoo-600 transition-colors"
+                  >
+                    <LayoutDashboard className="w-4 h-4 text-demandoo-600" />
+                    Espace Chauffeur
+                  </Link>
+                  <Link 
+                    to="/abonnement" 
+                    className="flex items-center gap-3 px-3.5 py-3 rounded-xl font-bold text-sm text-slate-700 hover:bg-slate-50 hover:text-demandoo-600 transition-colors"
+                  >
+                    <CreditCard className="w-4 h-4 text-demandoo-600" />
+                    Mon abonnement
+                  </Link>
+                </>
+              )}
+
+              {user?.driver_status !== 'VERIFIED' && (
+                <Link 
+                  to="/verification-chauffeur" 
+                  className="flex items-center gap-3 px-3.5 py-3 rounded-xl font-bold text-sm text-slate-700 hover:bg-slate-50 hover:text-demandoo-600 transition-colors"
+                >
+                  <Shield className="w-4 h-4 text-amber-500" />
+                  Vérification Chauffeur
+                </Link>
+              )}
+
+              {user?.role === 'admin' && (
+                <Link 
+                  to="/admin" 
+                  className="flex items-center gap-3 px-3.5 py-3 rounded-xl font-bold text-sm text-purple-700 hover:bg-purple-50 transition-colors"
+                >
+                  <ShieldAlert className="w-4 h-4 text-purple-600" />
+                  Administration
+                </Link>
+              )}
+
+              <a 
+                href="/#comment-ca-marche" 
+                className="flex items-center gap-3 px-3.5 py-3 rounded-xl font-bold text-sm text-slate-700 hover:bg-slate-50 hover:text-demandoo-600 transition-colors"
+              >
+                <HelpCircle className="w-4 h-4 text-slate-400" />
+                Comment ça marche ?
+              </a>
+            </nav>
+
+            {/* Bottom Actions */}
+            <div className="pt-4 mt-auto border-t border-slate-100 space-y-2.5">
+              {!user ? (
+                <>
+                  <Link 
+                    to="/inscription-chauffeur" 
+                    className="w-full py-3.5 rounded-xl text-xs font-black text-white btn-premium flex items-center justify-center gap-2"
+                  >
+                    <User className="w-4 h-4" />
+                    Devenir chauffeur Demandoo
+                  </Link>
+                  <Link 
+                    to="/login" 
+                    className="w-full py-3 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition-colors"
+                  >
+                    Se connecter
+                  </Link>
+                </>
+              ) : (
+                <button
+                  onClick={() => { logout(); setMobileMenuOpen(false); }}
+                  className="w-full py-3 rounded-xl text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 flex items-center justify-center gap-2 transition-colors"
+                >
+                  <LogOut className="w-4 h-4" />
+                  Déconnexion
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
     </header>
   );
 };

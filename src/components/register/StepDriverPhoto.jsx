@@ -60,11 +60,11 @@ export const StepDriverPhoto = ({ data, updateData, onNext }) => {
               className="hidden" 
             />
             
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col sm:flex-row gap-3 w-full">
               <button 
                 type="button"
                 onClick={triggerFileSelect}
-                className="flex items-center justify-center gap-2 px-6 py-3 bg-white border border-slate-200 text-slate-700 rounded-xl font-bold hover:bg-slate-50 transition-colors shadow-sm"
+                className="flex-1 min-h-[48px] flex items-center justify-center gap-2 px-6 py-3 bg-white border border-slate-200 text-slate-700 rounded-xl font-bold hover:bg-slate-50 transition-colors shadow-sm active:scale-[0.98]"
               >
                 <ImageIcon className="w-5 h-5 text-slate-400" />
                 Importer une photo
@@ -73,7 +73,7 @@ export const StepDriverPhoto = ({ data, updateData, onNext }) => {
               <button 
                 type="button"
                 onClick={triggerFileSelect}
-                className="flex items-center justify-center gap-2 px-6 py-3 bg-demandoo-50 text-demandoo-600 rounded-xl font-bold hover:bg-demandoo-100 transition-colors"
+                className="flex-1 min-h-[48px] flex items-center justify-center gap-2 px-6 py-3 bg-demandoo-50 text-demandoo-600 rounded-xl font-bold hover:bg-demandoo-100 transition-colors active:scale-[0.98]"
               >
                 <Camera className="w-5 h-5" />
                 Prendre une photo

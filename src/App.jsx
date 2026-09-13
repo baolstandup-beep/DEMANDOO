@@ -71,7 +71,7 @@ export function App() {
 
       <Header />
       
-      <main className="flex-1">
+      <main className="flex-1 w-full pb-20 md:pb-0 overflow-x-hidden">
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/trajets" element={<SearchPage />} />

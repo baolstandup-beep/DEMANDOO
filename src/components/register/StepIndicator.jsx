@@ -11,7 +11,7 @@ export const StepIndicator = ({ currentStep, totalSteps, onBack }) => {
           <button 
             type="button"
             onClick={onBack}
-            className="p-2 rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors"
+            className="w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors active:scale-95"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>

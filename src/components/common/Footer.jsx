@@ -117,14 +117,14 @@ export const Footer = () => {
 
       {/* BOTTOM FOOTER */}
       <div className="border-t border-slate-200 bg-slate-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col md:flex-row items-center justify-between gap-4">
-          <p className="text-xs font-bold text-slate-500">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-24 md:pb-6 flex flex-col md:flex-row items-center justify-between gap-4">
+          <p className="text-xs font-bold text-slate-500 text-center md:text-left">
             © {currentYear} Demandoo. Tous droits réservés.
           </p>
-          <div className="flex items-center gap-6 text-xs font-bold text-slate-500">
-            <Link to="/cgu" className="hover:text-demandoo-600 transition-colors">Conditions</Link>
-            <Link to="/confidentialite" className="hover:text-demandoo-600 transition-colors">Confidentialité</Link>
-            <Link to="/cookies" className="hover:text-demandoo-600 transition-colors">Cookies</Link>
+          <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-xs font-bold text-slate-500">
+            <Link to="/cgu" className="hover:text-demandoo-600 transition-colors py-1">Conditions</Link>
+            <Link to="/confidentialite" className="hover:text-demandoo-600 transition-colors py-1">Confidentialité</Link>
+            <Link to="/cookies" className="hover:text-demandoo-600 transition-colors py-1">Cookies</Link>
           </div>
         </div>
       </div>

@@ -4,11 +4,11 @@ export const DriverNavigation = ({ activeTab, setActiveTab, pendingRequestsCount
   return (
     <div className="bg-white border-b border-slate-100 sticky top-0 z-40 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center gap-8 overflow-x-auto no-scrollbar">
+        <div className="flex items-center gap-4 sm:gap-8 overflow-x-auto no-scrollbar py-0.5">
           
           <button 
             onClick={() => setActiveTab('dashboard')}
-            className={`py-4 text-sm font-bold border-b-2 whitespace-nowrap transition-colors ${
+            className={`py-3.5 sm:py-4 min-h-[44px] text-xs sm:text-sm font-bold border-b-2 whitespace-nowrap transition-colors ${
               activeTab === 'dashboard' 
               ? 'border-demandoo-500 text-demandoo-600' 
               : 'border-transparent text-slate-500 hover:text-slate-800'
@@ -19,7 +19,7 @@ export const DriverNavigation = ({ activeTab, setActiveTab, pendingRequestsCount
           
           <button 
             onClick={() => setActiveTab('requests')}
-            className={`py-4 text-sm font-bold border-b-2 whitespace-nowrap transition-colors flex items-center gap-2 ${
+            className={`py-3.5 sm:py-4 min-h-[44px] text-xs sm:text-sm font-bold border-b-2 whitespace-nowrap transition-colors flex items-center gap-2 ${
               activeTab === 'requests' 
               ? 'border-demandoo-500 text-demandoo-600' 
               : 'border-transparent text-slate-500 hover:text-slate-800'
@@ -37,7 +37,7 @@ export const DriverNavigation = ({ activeTab, setActiveTab, pendingRequestsCount
 
           <button 
             onClick={() => setActiveTab('trips')}
-            className={`py-4 text-sm font-bold border-b-2 whitespace-nowrap transition-colors ${
+            className={`py-3.5 sm:py-4 min-h-[44px] text-xs sm:text-sm font-bold border-b-2 whitespace-nowrap transition-colors ${
               activeTab === 'trips' 
               ? 'border-demandoo-500 text-demandoo-600' 
               : 'border-transparent text-slate-500 hover:text-slate-800'
@@ -48,7 +48,7 @@ export const DriverNavigation = ({ activeTab, setActiveTab, pendingRequestsCount
           
           <button 
             onClick={() => setActiveTab('subscription')}
-            className={`py-4 text-sm font-bold border-b-2 whitespace-nowrap transition-colors ${
+            className={`py-3.5 sm:py-4 min-h-[44px] text-xs sm:text-sm font-bold border-b-2 whitespace-nowrap transition-colors ${
               activeTab === 'subscription' 
               ? 'border-demandoo-500 text-demandoo-600' 
               : 'border-transparent text-slate-500 hover:text-slate-800'
