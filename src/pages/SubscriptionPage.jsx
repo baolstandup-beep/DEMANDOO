@@ -1,14 +1,65 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
-import { Check, Shield, Sparkles, AlertCircle, Loader2 } from 'lucide-react';
+import { Check, Shield, AlertCircle, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { PaymentModal } from '../components/common/PaymentModal';
+
+const SUBSCRIPTION_TIERS = [
+  {
+    id_fallback: 'trial',
+    name: 'Découverte',
+    price: 0,
+    description: 'Pour découvrir Demandoo et proposer votre premier trajet.',
+    features: [
+      'Création de profil gratuite.',
+      '1 trajet au total.',
+      'Zéro commission Demandoo sur vos gains.'
+    ],
+    buttonText: 'Commencer gratuitement',
+    cardStyle: 'bg-white border-slate-200 text-slate-900 shadow-sm',
+    buttonStyle: 'bg-white border-2 border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50',
+    iconColor: 'text-demandoo-600 bg-demandoo-50'
+  },
+  {
+    id_fallback: 'standard',
+    name: 'Standard',
+    price: 2400,
+    description: 'Pour proposer quelques trajets chaque mois.',
+    features: [
+      'Jusqu’à 4 trajets par mois.',
+      'Support client prioritaire.',
+      'Zéro commission Demandoo sur vos gains.'
+    ],
+    buttonText: 'Choisir Standard',
+    cardStyle: 'bg-white border-slate-200 text-slate-900 shadow-md',
+    buttonStyle: 'bg-slate-900 text-white hover:bg-slate-800',
+    iconColor: 'text-demandoo-600 bg-demandoo-50'
+  },
+  {
+    id_fallback: 'pro',
+    name: 'Pro',
+    price: 4900,
+    description: 'Pour les chauffeurs qui roulent régulièrement.',
+    badge: 'Pour les chauffeurs réguliers',
+    features: [
+      'Trajets illimités chaque mois.',
+      'Visibilité prioritaire dans les résultats.',
+      'Badge « Chauffeur Pro ».',
+      'Support client prioritaire.',
+      'Zéro commission Demandoo sur vos gains.'
+    ],
+    buttonText: 'Devenir Pro',
+    cardStyle: 'bg-demandoo-600 border-demandoo-500 text-white shadow-xl shadow-demandoo-600/20',
+    buttonStyle: 'bg-orange-500 text-white hover:bg-orange-600 border-none shadow-md shadow-orange-500/20',
+    iconColor: 'text-demandoo-600 bg-white'
+  }
+];
 
 export const SubscriptionPage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [plans, setPlans] = useState([]);
+  const [dbPlans, setDbPlans] = useState([]);
   const [loading, setLoading] = useState(true);
   const [subscribingTo, setSubscribingTo] = useState(null);
   const [selectedPlan, setSelectedPlan] = useState(null);
@@ -23,41 +74,41 @@ export const SubscriptionPage = () => {
       const { data, error } = await supabase
         .from('subscription_plans')
         .select('*')
-        .eq('active', true)
-        .order('monthly_price', { ascending: true });
+        .eq('active', true);
         
-      if (error) throw error;
-      
-      if (data && data.length > 0) {
-        setPlans(data);
-      } else {
-        setPlans([
-          { id: 'trial', name: 'Essai Chauffeur', monthly_price: 0, features: ['Accès à l\'espace chauffeur', 'Maximum 1 trajet test'] },
-          { id: 'standard', name: 'Chauffeur Standard', monthly_price: 2500, features: ['4 trajets par mois', 'Publication de trajets', 'Gestion des réservations'] },
-          { id: 'pro', name: 'Chauffeur Pro', monthly_price: 5000, features: ['Trajets illimités', 'Support prioritaire', 'Badge Pro'] }
-        ]);
+      if (!error && data) {
+        setDbPlans(data);
       }
     } catch (err) {
-      console.warn("Error fetching plans:", err);
-      setPlans([
-        { id: 'trial', name: 'Essai Chauffeur', monthly_price: 0, features: ['Accès à l\'espace chauffeur', 'Maximum 1 trajet test'] },
-        { id: 'standard', name: 'Chauffeur Standard', monthly_price: 2500, features: ['4 trajets par mois', 'Publication de trajets', 'Gestion des réservations'] },
-        { id: 'pro', name: 'Chauffeur Pro', monthly_price: 5000, features: ['Trajets illimités', 'Support prioritaire', 'Badge Pro'] }
-      ]);
+      console.warn("Error fetching plans from DB, using fallbacks:", err);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSubscribeClick = (plan) => {
+  const getPlanId = (tier) => {
+    // Try to match the hardcoded tier with a real DB UUID based on price or name if needed.
+    // For now, if there is a DB plan with matching price, use its ID.
+    const dbPlan = dbPlans.find(p => p.monthly_price === tier.price);
+    return dbPlan ? dbPlan.id : tier.id_fallback;
+  };
+
+  const handleSubscribeClick = (tier) => {
     if (!user) {
       navigate('/login');
       return;
     }
-    if (plan.monthly_price === 0) {
-      handlePaymentSuccess(plan, 'free');
+    
+    const planToProcess = {
+      id: getPlanId(tier),
+      name: tier.name,
+      monthly_price: tier.price
+    };
+
+    if (tier.price === 0) {
+      handlePaymentSuccess(planToProcess, 'free');
     } else {
-      setSelectedPlan(plan);
+      setSelectedPlan(planToProcess);
     }
   };
 
@@ -95,10 +146,7 @@ export const SubscriptionPage = () => {
         localStorage.setItem('demandoo_user_v2', JSON.stringify(parsed));
       }
       
-      // Just a quick alert to give feedback before navigating
-      alert(`Félicitations, vous êtes maintenant abonné au forfait ${plan.name} !`);
-      
-      // Ensure user state is refreshed by forcing a reload to the dashboard
+      alert(`Félicitations, vous êtes maintenant abonné à la formule ${plan.name} !`);
       window.location.href = '/espace-chauffeur';
     } catch (err) {
       console.error(err);
@@ -117,84 +165,98 @@ export const SubscriptionPage = () => {
   }
 
   return (
-    <div className="min-h-screen py-12 px-4 relative overflow-hidden bg-slate-50">
-      <div className="absolute top-0 inset-x-0 h-[400px] bg-mesh-pattern pointer-events-none" />
-      
-      <div className="max-w-6xl mx-auto relative z-10">
-        <div className="text-center max-w-2xl mx-auto mb-16">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-100 text-demandoo-700 text-xs font-black uppercase tracking-wider mb-4 border border-emerald-200">
-            <Sparkles className="w-4 h-4" />
-            Demandoo Chauffeurs
-          </div>
-          <h1 className="text-3xl md:text-5xl font-black text-white mb-4 drop-shadow-md">
-            Choisissez votre forfait
+    <div className="min-h-screen py-16 px-4 bg-slate-50 font-sans">
+      <div className="max-w-6xl mx-auto">
+        
+        {/* En-tête */}
+        <div className="text-center max-w-3xl mx-auto mb-16 space-y-4">
+          <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-slate-900 tracking-tight">
+            Choisissez votre formule chauffeur
           </h1>
-          <p className="text-white/90 text-lg font-medium drop-shadow">
-            Publiez vos trajets et trouvez des passagers fiables. Sans engagement, annulez à tout moment.
+          <p className="text-lg text-slate-600 font-medium max-w-2xl mx-auto leading-relaxed">
+            Un premier trajet ou des déplacements réguliers : trouvez l'offre adaptée à votre rythme, avec zéro commission Demandoo sur vos trajets.
           </p>
         </div>
 
         {error && (
-          <div className="max-w-2xl mx-auto mb-8 bg-red-50 p-4 rounded-xl flex items-center gap-3 text-red-600 border border-red-200">
+          <div className="max-w-2xl mx-auto mb-10 bg-red-50 p-4 rounded-xl flex items-center gap-3 text-red-700 border border-red-200 shadow-sm">
             <AlertCircle className="w-5 h-5 shrink-0" />
-            <p className="text-sm font-bold">{error}</p>
+            <p className="text-sm font-medium">{error}</p>
           </div>
         )}
 
-        <div className="grid md:grid-cols-3 gap-8 items-start">
-          {plans.map((plan, idx) => {
-            const isPopular = idx === 1; // Standard is popular
-            const features = typeof plan.features === 'string' ? JSON.parse(plan.features) : plan.features;
+        {/* Grille des offres */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
+          {SUBSCRIPTION_TIERS.map((tier) => {
+            const isPro = tier.name === 'Pro';
             
             return (
               <div 
-                key={plan.id}
-                className={`relative bg-white rounded-3xl p-8 border ${
-                  isPopular 
-                    ? 'border-demandoo-500 shadow-2xl shadow-demandoo-500/20 md:-mt-4' 
-                    : 'border-slate-200 shadow-xl shadow-slate-200/50'
-                } hover-lift`}
+                key={tier.name}
+                className={`relative flex flex-col rounded-3xl p-8 border transition-transform duration-300 hover:-translate-y-1 ${tier.cardStyle} ${isPro ? 'md:-mt-4 md:mb-4' : ''}`}
               >
-                {isPopular && (
-                  <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1 bg-gradient-to-r from-amber-400 to-amber-500 text-white text-xs font-black uppercase tracking-widest rounded-full shadow-md">
-                    Le plus choisi
+                {/* Badge Pro */}
+                {tier.badge && (
+                  <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 bg-orange-500 text-white text-xs font-bold uppercase tracking-wide rounded-full whitespace-nowrap shadow-sm">
+                    {tier.badge}
                   </div>
                 )}
                 
-                <div className="mb-8">
-                  <h3 className="text-xl font-black text-slate-900 mb-2">{plan.name}</h3>
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-4xl font-black text-demandoo-600">
-                      {plan.monthly_price === 0 ? 'Gratuit' : plan.monthly_price.toLocaleString('fr-FR')}
+                {/* En-tête de la carte */}
+                <div className={`mb-6 ${tier.badge ? 'pt-2' : ''}`}>
+                  <h3 className={`text-xl font-bold mb-3 ${isPro ? 'text-white' : 'text-slate-900'}`}>
+                    {tier.name}
+                  </h3>
+                  <div className="flex items-end gap-1.5 mb-2">
+                    <span className={`text-4xl font-black tracking-tight ${isPro ? 'text-white' : 'text-slate-900'}`}>
+                      {tier.price.toLocaleString('fr-FR')}
                     </span>
-                    {plan.monthly_price > 0 && <span className="text-slate-500 font-bold">FCFA / mois</span>}
+                    <span className={`text-lg font-bold pb-1 ${isPro ? 'text-white' : 'text-slate-900'}`}>
+                      FCFA
+                    </span>
                   </div>
+                  {tier.price > 0 && (
+                    <div className={`text-sm font-medium ${isPro ? 'text-demandoo-100' : 'text-slate-500'}`}>
+                      / mois
+                    </div>
+                  )}
+                  {tier.price === 0 && (
+                    <div className="text-sm font-medium text-slate-500">
+                      Gratuit, sans engagement
+                    </div>
+                  )}
                 </div>
 
-                <ul className="space-y-4 mb-8">
-                  {features.map((feat, i) => (
-                    <li key={i} className="flex items-start gap-3 text-sm font-medium text-slate-700">
-                      <div className="mt-0.5 shrink-0 bg-emerald-100 p-1 rounded-full text-demandoo-600">
-                        <Check className="w-3 h-3" />
+                <div className={`text-sm font-medium mb-8 ${isPro ? 'text-demandoo-50' : 'text-slate-600'}`}>
+                  {tier.description}
+                </div>
+
+                <div className="w-full h-px bg-current opacity-10 mb-8" />
+
+                {/* Avantages */}
+                <ul className="space-y-4 mb-10 flex-grow">
+                  {tier.features.map((feat, i) => (
+                    <li key={i} className="flex items-start gap-3 text-sm font-medium leading-snug">
+                      <div className={`mt-0.5 shrink-0 p-1 rounded-full ${tier.iconColor}`}>
+                        <Check className="w-3.5 h-3.5" />
                       </div>
-                      {feat}
+                      <span className={isPro ? 'text-white' : 'text-slate-700'}>
+                        {feat}
+                      </span>
                     </li>
                   ))}
                 </ul>
 
+                {/* Bouton d'action */}
                 <button
-                  onClick={() => handleSubscribeClick(plan)}
+                  onClick={() => handleSubscribeClick(tier)}
                   disabled={subscribingTo !== null}
-                  className={`w-full py-3.5 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 ${
-                    isPopular
-                      ? 'btn-premium text-white'
-                      : 'bg-slate-100 hover:bg-slate-200 text-slate-800'
-                  }`}
+                  className={`w-full py-3.5 rounded-xl text-sm font-bold transition-colors flex items-center justify-center gap-2 mt-auto ${tier.buttonStyle}`}
                 >
-                  {subscribingTo === plan.id ? (
+                  {subscribingTo === tier.id_fallback || (subscribingTo && subscribingTo === getPlanId(tier)) ? (
                     <><Loader2 className="w-5 h-5 animate-spin" /> Traitement...</>
                   ) : (
-                    <>S'abonner maintenant</>
+                    tier.buttonText
                   )}
                 </button>
               </div>
@@ -202,9 +264,16 @@ export const SubscriptionPage = () => {
           })}
         </div>
         
-        <div className="mt-16 text-center text-slate-500 text-xs font-medium max-w-2xl mx-auto">
-          <Shield className="w-8 h-8 mx-auto text-slate-300 mb-2" />
-          Paiements sécurisés par Wave et Orange Money. En vous abonnant, vous acceptez nos conditions générales de service.
+        {/* Note informative */}
+        <div className="mt-16 text-center max-w-2xl mx-auto">
+          <div className="flex justify-center mb-3">
+            <Shield className="w-6 h-6 text-slate-400" />
+          </div>
+          <p className="text-slate-500 text-sm font-medium">
+            Paiements sécurisés par Wave et Orange Money. 
+            <br className="hidden sm:block" />
+            Le nombre de trajets inclut les trajets publiés et réalisés.
+          </p>
         </div>
       </div>
       
@@ -217,3 +286,4 @@ export const SubscriptionPage = () => {
     </div>
   );
 };
+
