@@ -117,14 +117,14 @@ export const HomePage = () => {
       <section className="relative min-h-[90vh] bg-[#0A0A0A] flex flex-col justify-center items-center overflow-hidden pt-20 pb-24">
         
         {/* Image de fond Demandoo */}
-        <div className="absolute inset-0 z-0">
+        <div className="absolute inset-0 z-0 overflow-hidden">
           <img 
             src="/images/demandoo-hero.png" 
             alt="Demandoo — Yombalna Sa Tukki — Covoiturage Touba Sénégal" 
-            className="w-full h-full object-cover object-top"
-            style={{ objectPosition: 'center 30%' }}
+            className="w-full h-full object-cover scale-[2.2]"
+            style={{ objectPosition: 'center 40%', transformOrigin: 'center 40%' }}
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-slate-900/70 via-slate-900/50 to-[#F9FAFB]" />
+          <div className="absolute inset-0 bg-gradient-to-b from-slate-900/65 via-slate-900/50 to-[#F9FAFB]" />
         </div>
 
         {/* Abstract Dark Glows (conservés pour l'effet SaaS) */}
