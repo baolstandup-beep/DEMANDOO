@@ -67,7 +67,7 @@ export function App() {
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900 font-sans selection:bg-demandoo-500 selection:text-white">
       {/* Initialisation silencieuse des push notifications (mobile uniquement) */}
-      <PushNotificationsSetup onNotificationReceived={addNotification} />
+      {/* <PushNotificationsSetup onNotificationReceived={addNotification} /> */}
 
       <Header />
       
