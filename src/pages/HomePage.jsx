@@ -121,7 +121,7 @@ export const HomePage = () => {
           <img 
             src="/images/demandoo-hero.png" 
             alt="Demandoo — Yombalna Sa Tukki — Covoiturage Touba Sénégal" 
-            className="w-full h-full object-cover scale-[1.4]"
+            className="w-full h-full object-cover scale-[1.2]"
             style={{ objectPosition: 'center 40%', transformOrigin: 'center 40%' }}
           />
           <div className="absolute inset-0 bg-gradient-to-b from-slate-900/65 via-slate-900/50 to-[#F9FAFB]" />
