@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useTrips } from '../context/TripContext';
 import { INITIAL_CITIES } from '../lib/mockData';
+import InteractiveMap from '../components/common/InteractiveMap';
 import { 
   Search, 
   MapPin, 
@@ -281,34 +282,8 @@ export const HomePage = () => {
         </div>
       </section>
 
-      {/* 5. DESTINATIONS POPULAIRES */}
-      <section className="py-16 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        <FadeInSection>
-          <h2 className="text-3xl font-black text-slate-900 text-center mb-10">Destinations populaires</h2>
-        </FadeInSection>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {[
-            { dest: 'Dakar', img: 'https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?auto=format&fit=crop&q=80&w=400' },
-            { dest: 'Thiès', img: 'https://images.unsplash.com/photo-1549429158-b64ec069f257?auto=format&fit=crop&q=80&w=400' },
-            { dest: 'Mbour', img: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&q=80&w=400' },
-            { dest: 'Saint-Louis', img: 'https://images.unsplash.com/photo-1498307833015-e7b400441eb8?auto=format&fit=crop&q=80&w=400' },
-            { dest: 'Ziguinchor', img: 'https://images.unsplash.com/photo-1528277342758-f1d7613953a2?auto=format&fit=crop&q=80&w=400' },
-            { dest: 'Diourbel', img: 'https://images.unsplash.com/photo-1517457373958-b7bdd4587205?auto=format&fit=crop&q=80&w=400' },
-            { dest: 'Kaolack', img: 'https://images.unsplash.com/photo-1523805009345-7448845a9e53?auto=format&fit=crop&q=80&w=400' },
-            { dest: 'Rufisque', img: 'https://images.unsplash.com/photo-1473625247510-8ceb1760943f?auto=format&fit=crop&q=80&w=400' }
-          ].map((d, idx) => (
-            <FadeInSection key={d.dest} delay={idx * 50}>
-              <div onClick={() => setPopularRoute('Touba', d.dest)} className="relative h-32 rounded-2xl overflow-hidden cursor-pointer group shadow-sm hover:shadow-md transition-shadow">
-                <img src={d.img} alt={`Touba - ${d.dest}`} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                <div className="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-colors" />
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-white font-black text-lg">Vers {d.dest}</span>
-                </div>
-              </div>
-            </FadeInSection>
-          ))}
-        </div>
-      </section>
+      {/* 5. CARTE INTERACTIVE */}
+      <InteractiveMap />
 
       {/* 6. INFORMATIONS DE CONFIANCE */}
       <section className="py-16 bg-slate-50 border-y border-slate-100">
