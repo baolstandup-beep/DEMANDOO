@@ -114,16 +114,17 @@ export const HomePage = () => {
       {/* ===================================================
           1. HERO SECTION (Abib Digit Style: Massive Dark Hero)
          =================================================== */}
-      <section className="relative min-h-[90vh] bg-[#0A0A0A] flex flex-col justify-center items-center overflow-hidden pt-20 pb-24">
+      <section className="relative min-h-[70vh] bg-[#0A1E4A] flex flex-col justify-center items-center overflow-hidden pt-20 pb-20">
         
-        {/* Image de fond premium */}
+        {/* Image de fond Demandoo */}
         <div className="absolute inset-0 z-0">
           <img 
-            src="https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&q=80&w=2000" 
-            alt="Route ensoleillée" 
-            className="w-full h-full object-cover opacity-80"
+            src="/images/demandoo-hero.png" 
+            alt="Demandoo — Yombalna Sa Tukki — Covoiturage Touba Sénégal" 
+            className="w-full h-full object-cover"
+            style={{ objectPosition: 'center' }}
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-slate-900/40 via-slate-900/60 to-[#F9FAFB]" />
+          <div className="absolute inset-0 bg-gradient-to-b from-slate-900/70 via-slate-900/50 to-[#F9FAFB]" />
         </div>
 
         {/* Abstract Dark Glows (conservés pour l'effet SaaS) */}
