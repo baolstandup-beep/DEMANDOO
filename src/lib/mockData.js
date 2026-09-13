@@ -256,6 +256,25 @@ export const INITIAL_TRIPS = [
     rules_smoking: false,
     cancellation_policy: "Annulation gratuite jusqu'à 24h",
     status: "scheduled"
+  },
+  {
+    id: "trip-106",
+    driver_id: "drv-001",
+    driver: INITIAL_DRIVERS[0],
+    departure_city: "Dakar",
+    departure_address: "Gare de Pompier",
+    arrival_city: "Thiès",
+    arrival_address: "Place de France",
+    departure_datetime: new Date(Date.now() + 86400000 * 1.5).toISOString(),
+    estimated_duration: "1h 30m",
+    seats_total: 4,
+    seats_available: 2,
+    price_per_seat: 2500,
+    rules_luggage: "Petits bagages acceptés",
+    rules_pets: false,
+    rules_smoking: false,
+    cancellation_policy: "Annulation non remboursable à moins de 6h",
+    status: "scheduled"
   }
 ];
 

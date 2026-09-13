@@ -1,8 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useTrips } from '../context/TripContext';
 import { INITIAL_CITIES } from '../lib/mockData';
-import { NationalCoverageSection } from '../components/common/InteractiveMap';
 import { 
   Search, 
   MapPin, 
@@ -10,80 +9,53 @@ import {
   Users, 
   ArrowRight, 
   ShieldCheck,
-  CheckCircle,
-  Quote,
-  TrendingUp,
-  Map,
-  BadgeCheck,
-  Star,
-  Loader2
+  MessageCircle,
+  HelpCircle,
+  Phone,
+  Car,
+  Star
 } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
-import { useNotifications } from '../context/NotificationContext';
-import { createWaveCheckout } from '../services/afrotoolsService';
+
+const FadeInSection = ({ children, delay = 0, className = "" }) => {
+  const [isVisible, setVisible] = useState(false);
+  const domRef = useRef();
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          setVisible(true);
+        }
+      });
+    }, { threshold: 0.1 });
+    const current = domRef.current;
+    if (current) observer.observe(current);
+    return () => {
+      if (current) observer.unobserve(current);
+    };
+  }, []);
+
+  return (
+    <div
+      ref={domRef}
+      className={`transition-all duration-1000 ease-out transform ${
+        isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'
+      } ${className}`}
+      style={{ transitionDelay: `${delay}ms` }}
+    >
+      {children}
+    </div>
+  );
+};
 
 export const HomePage = () => {
   const navigate = useNavigate();
-
-  const { trips, partners = [], reviews = [] } = useTrips();
-  const { user, subscribeDriver } = useAuth();
-  const { addNotification } = useNotifications();
+  const { trips } = useTrips();
 
   const [departure, setDeparture] = useState('Touba');
   const [destination, setDestination] = useState('');
   const [date, setDate] = useState('');
   const [passengers, setPassengers] = useState(1);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [processingPlan, setProcessingPlan] = useState(null);
-
-  const handleSubscribe = async (planId, price, tripLimit) => {
-    if (!user) {
-      navigate('/login');
-      return;
-    }
-    
-    if (user.role === 'passenger') {
-      addNotification({ title: 'Accès refusé', message: 'Seuls les chauffeurs peuvent souscrire à un abonnement.', type: 'error' });
-      return;
-    }
-
-    if (user.driver_status !== 'VERIFIED') {
-      addNotification({ title: "Vérification requise", message: "Votre profil chauffeur doit être vérifié avant de souscrire.", type: "error" });
-      navigate('/verification-chauffeur');
-      return;
-    }
-
-    setIsProcessing(true);
-    setProcessingPlan(planId);
-
-    try {
-      if (price > 0) {
-        await createWaveCheckout({
-          amount: price,
-          clientReference: `demandoo_sub_${planId}_${user.id}_${Date.now()}`,
-          clientPhone: user.phone || ''
-        });
-      }
-
-      const result = await subscribeDriver(planId, 'monthly', tripLimit);
-      
-      if (result.success) {
-        addNotification({
-          title: "Abonnement activé !",
-          message: price === 0 ? "Votre accès Découverte est actif." : `Votre abonnement a été réglé avec succès via Wave et est actif.`,
-          type: "success"
-        });
-        navigate('/espace-chauffeur');
-      } else {
-        throw new Error("Erreur de souscription");
-      }
-    } catch (error) {
-      addNotification({ title: "Erreur", message: "Une erreur est survenue lors de l'activation.", type: "error" });
-    } finally {
-      setIsProcessing(false);
-      setProcessingPlan(null);
-    }
-  };
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
@@ -92,7 +64,6 @@ export const HomePage = () => {
     if (destination) query.set('destination', destination);
     if (date) query.set('date', date);
     if (passengers > 1) query.set('passengers', passengers.toString());
-
     navigate(`/trajets?${query.toString()}`);
   };
 
@@ -107,615 +78,318 @@ export const HomePage = () => {
     setDeparture(destination);
     setDestination(temp);
   };
+  
+  // Real trips only
+  const availableTrips = trips.filter(t => t.status === 'scheduled').slice(0, 6);
 
   return (
     <div className="font-sans bg-[#F9FAFB]">
-      
-      {/* ===================================================
-          1. HERO SECTION (Abib Digit Style: Massive Dark Hero)
-         =================================================== */}
-      <section className="relative min-h-[70vh] bg-[#0A1E4A] flex flex-col justify-center items-center overflow-hidden pt-20 pb-20">
+      {/* 2. PREMIER ÉCRAN (Hero Section) */}
+      <section className="relative overflow-hidden bg-mesh-pattern pt-20 pb-28 border-b border-slate-800">
+        <div className="absolute inset-0 bg-gradient-to-t from-[#060f29] via-transparent to-transparent"></div>
         
-        {/* Image de fond Demandoo */}
-        <div className="absolute inset-0 z-0 bg-[#02182D]">
-          <img 
-            src="/images/demandoo-hero-new.jpg" 
-            alt="Demandoo — Yombalna Sa Tukki — Covoiturage Touba Sénégal" 
-            className="w-full h-full object-contain"
-            style={{ objectPosition: 'center top' }}
-          />
-          {/* Léger dégradé uniquement en bas pour la transition vers le blanc */}
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-slate-900/10 to-[#F9FAFB]" />
-        </div>
-
-        {/* Abstract Dark Glows (conservés pour l'effet SaaS) */}
-        <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-demandoo-600/20 rounded-full blur-[120px] pointer-events-none -translate-x-1/2 -translate-y-1/2 z-0" />
-        <div className="absolute bottom-0 right-0 w-[600px] h-[600px] bg-emerald-500/10 rounded-full blur-[150px] pointer-events-none translate-x-1/3 translate-y-1/3 z-0" />
-
-        <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 w-full space-y-12">
-          
-          <div className="text-center space-y-4 mb-4 sm:mb-8">
-            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight">
-              Trouvez votre trajet,<br className="hidden sm:block" />
-              <span className="text-demandoo-400"> contactez le chauffeur</span>.
+        <div className="relative max-w-6xl mx-auto px-4 text-center space-y-8 z-10">
+          <FadeInSection delay={100}>
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/20 backdrop-blur-md mb-4 text-sm font-bold text-emerald-300">
+              <Star className="w-4 h-4" fill="currentColor" /> N°1 du covoiturage au Sénégal
+            </div>
+            <h1 className="text-4xl sm:text-5xl md:text-6xl font-black text-white tracking-tight leading-tight mb-6 drop-shadow-lg">
+              Depuis Touba,<br/>
+              <span className="gradient-text-gold">trouvez votre trajet au Sénégal.</span>
             </h1>
-            <p className="text-base sm:text-lg text-slate-300 font-medium max-w-2xl mx-auto px-4">
-              Convenez ensemble des modalités du voyage. Plateforme 100% gratuite de mise en relation de gré à gré.
+            <p className="text-lg sm:text-xl text-slate-300 font-medium pb-8 max-w-2xl mx-auto leading-relaxed">
+              Demandoo met en relation passagers et chauffeurs. Les modalités du voyage et le paiement se règlent directement entre vous, en toute simplicité.
             </p>
-          </div>
-
-        {/* SEARCH BAR (White Card Style) */}
-          <div className="max-w-5xl mx-auto w-full">
-            <div className="bg-white p-3 sm:p-4 rounded-[2rem] shadow-2xl border border-slate-100 relative">
-              <form onSubmit={handleSearchSubmit} className="flex flex-col sm:flex-row items-center">
+          </FadeInSection>
+          
+          <FadeInSection delay={150}>
+            <div className="glass-card p-3 sm:p-4 rounded-[2rem] max-w-3xl mx-auto text-left relative z-20 mx-4 sm:mx-auto">
+              <form onSubmit={handleSearchSubmit} className="flex flex-col md:flex-row gap-3">
+                <div className="flex-1 flex items-center gap-3 bg-white/60 hover:bg-white focus-within:bg-white p-3 sm:p-4 rounded-xl transition-colors border border-slate-200">
+                  <MapPin className="w-5 h-5 text-demandoo-600 shrink-0" />
+                  <input type="text" value={departure} onChange={(e) => setDeparture(e.target.value)} placeholder="Départ" className="w-full bg-transparent font-bold text-slate-800 focus:outline-none placeholder-slate-400" />
+                </div>
                 
-                {/* Départ */}
-                <div className="flex-1 w-full relative flex items-center group px-2 sm:px-4 py-2 hover:bg-slate-50 rounded-2xl transition-colors">
-                  <MapPin className="w-5 h-5 text-slate-400 group-hover:text-demandoo-500 transition-colors" />
-                  <input
-                    type="text"
-                    value={departure}
-                    onChange={(e) => setDeparture(e.target.value)}
-                    placeholder="Départ"
-                    className="w-full pl-3 pr-4 py-3 bg-transparent text-slate-900 font-extrabold placeholder:text-slate-400 focus:outline-none text-lg"
-                  />
-                </div>
-
-                {/* Swap Button (Absolute center on desktop) */}
-                <div className="hidden sm:flex items-center justify-center relative w-0 z-10">
-                  <button 
-                    type="button" 
-                    onClick={handleSwap}
-                    className="absolute left-1/2 -translate-x-1/2 w-10 h-10 rounded-full bg-white border border-slate-200 text-slate-400 hover:text-demandoo-600 hover:border-demandoo-300 hover:shadow-md hover:scale-110 active:scale-95 transition-all flex items-center justify-center"
-                    title="Inverser"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-arrow-left-right"><path d="M8 3 4 7l4 4"/><path d="M4 7h16"/><path d="m16 21 4-4-4-4"/><path d="M20 17H4"/></svg>
+                <div className="flex justify-center -my-4 md:my-0 md:-mx-4 relative z-10 md:self-center">
+                  <button type="button" onClick={handleSwap} className="w-10 h-10 rounded-full bg-white border border-slate-200 shadow-md flex items-center justify-center hover:bg-slate-50 transition-all hover:scale-110 group">
+                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-demandoo-600 md:rotate-90 group-hover:text-demandoo-500"><path d="M12 3v18"/><path d="m8 7 4-4 4 4"/><path d="m8 17 4 4 4-4"/></svg>
                   </button>
                 </div>
 
-                <div className="hidden sm:block w-px h-12 bg-slate-200" />
-
-                {/* Destination */}
-                <div className="flex-1 w-full relative flex items-center group px-2 sm:px-4 py-2 hover:bg-slate-50 rounded-2xl transition-colors">
-                  <MapPin className="w-5 h-5 text-slate-400 group-hover:text-demandoo-500 transition-colors" />
-                  <input
-                    type="text"
-                    list="cities-list"
-                    value={destination}
-                    onChange={(e) => setDestination(e.target.value)}
-                    placeholder="Destination"
-                    className="w-full pl-3 pr-4 py-3 bg-transparent text-slate-900 font-extrabold placeholder:text-slate-400 focus:outline-none text-lg"
-                  />
+                <div className="flex-1 flex items-center gap-3 bg-white/60 hover:bg-white focus-within:bg-white p-3 sm:p-4 rounded-xl transition-colors border border-slate-200">
+                  <MapPin className="w-5 h-5 text-demandoo-600 shrink-0" />
+                  <input type="text" list="cities-list" value={destination} onChange={(e) => setDestination(e.target.value)} placeholder="Destination" className="w-full bg-transparent font-bold text-slate-800 focus:outline-none placeholder-slate-400" />
                 </div>
 
-                <div className="hidden sm:block w-px h-12 bg-slate-200" />
-
-                {/* Date */}
-                <div className="flex-1 w-full relative flex items-center group px-2 sm:px-4 py-2 hover:bg-slate-50 rounded-2xl transition-colors">
-                  <Calendar className="w-5 h-5 text-slate-400 group-hover:text-demandoo-500 transition-colors" />
-                  <input
-                    type="date"
-                    value={date}
-                    onChange={(e) => setDate(e.target.value)}
-                    className="w-full pl-3 pr-4 py-3 bg-transparent text-slate-900 font-extrabold focus:outline-none text-lg"
-                  />
+                <div className="flex gap-3 md:w-auto w-full">
+                  <div className="flex-[2] md:w-36 flex items-center gap-2 bg-white/60 hover:bg-white focus-within:bg-white p-3 sm:p-4 rounded-xl transition-colors border border-slate-200">
+                    <Calendar className="w-5 h-5 text-demandoo-600 shrink-0" />
+                    <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="w-full bg-transparent font-bold text-slate-800 focus:outline-none" />
+                  </div>
+                  <div className="flex-1 md:w-24 flex items-center justify-center gap-2 bg-white/60 hover:bg-white focus-within:bg-white p-3 sm:p-4 rounded-xl transition-colors border border-slate-200">
+                    <Users className="w-5 h-5 text-demandoo-600 shrink-0" />
+                    <input type="number" min="1" max="7" value={passengers} onChange={(e) => setPassengers(e.target.value)} className="w-full bg-transparent font-bold text-slate-800 focus:outline-none text-center" />
+                  </div>
                 </div>
 
-                <div className="hidden sm:block w-px h-12 bg-slate-200" />
-
-                {/* Passagers */}
-                <div className="w-full sm:w-32 relative flex items-center group px-2 sm:px-4 py-2 hover:bg-slate-50 rounded-2xl transition-colors">
-                  <Users className="w-5 h-5 text-slate-400 group-hover:text-demandoo-500 transition-colors" />
-                  <input
-                    type="number"
-                    min="1"
-                    max="7"
-                    value={passengers}
-                    onChange={(e) => setPassengers(e.target.value)}
-                    className="w-full pl-3 pr-2 py-3 bg-transparent text-slate-900 font-extrabold focus:outline-none text-lg"
-                  />
-                </div>
-
-                {/* Search Button */}
-                <div className="w-full sm:w-auto mt-4 sm:mt-0 sm:ml-2">
-                  <button
-                    type="submit"
-                    className="w-full sm:w-auto px-8 py-5 rounded-2xl text-base font-black text-white bg-demandoo-600 hover:bg-demandoo-700 shadow-lg shadow-demandoo-500/30 active:scale-95 transition-all flex items-center justify-center gap-2"
-                  >
-                    <Search className="w-5 h-5" />
-                    Rechercher
-                  </button>
-                </div>
-
-                <datalist id="cities-list">
-                  {INITIAL_CITIES.map(c => <option key={c} value={c} />)}
-                </datalist>
+                <button type="submit" className="md:w-auto w-full px-8 py-4 sm:py-0 rounded-xl font-black btn-premium flex items-center justify-center gap-2">
+                  <Search className="w-5 h-5" />
+                  <span className="md:hidden">Rechercher</span>
+                </button>
               </form>
             </div>
-            
-            {/* CTA Devenir Chauffeur */}
-            <div className="mt-6 flex justify-center">
-              <Link
-                to="/publier"
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold backdrop-blur-md transition-all hover:scale-105"
-              >
-                Vous êtes conducteur ? Publiez un trajet
-                <ArrowRight className="w-4 h-4" />
-              </Link>
-            </div>
-          </div>
-        </div>
-        {/* Scroll indicator */}
-        <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-slate-500 animate-pulse">
-          <span className="text-[10px] font-bold uppercase tracking-[0.2em]">Découvrir</span>
-          <div className="w-px h-8 bg-gradient-to-b from-slate-500 to-transparent" />
+          </FadeInSection>
+          
+          <datalist id="cities-list">
+             {INITIAL_CITIES.map(c => <option key={c} value={c} />)}
+          </datalist>
         </div>
       </section>
 
-      {/* ===================================================
-          2. DERNIERS TRAJETS PUBLIÉS (DYNAMIC)
-         =================================================== */}
-      <section className="py-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-16">
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="space-y-4">
-            <h2 className="text-4xl sm:text-5xl font-black text-slate-900 tracking-tight">Trajets récents</h2>
-            <p className="text-lg text-slate-500 font-medium max-w-2xl">
-              Découvrez les derniers trajets ajoutés par notre communauté de chauffeurs vérifiés.
-            </p>
+      {/* PARTENAIRES */}
+      <section className="bg-white py-8 border-b border-slate-100 overflow-hidden relative">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <p className="text-center text-sm font-bold text-slate-400 uppercase tracking-widest mb-6 relative z-10">Ils nous font confiance</p>
+        </div>
+        
+        {/* Container pour le défilement (Marquee) */}
+        <div className="flex whitespace-nowrap overflow-hidden relative">
+          {/* Dégradés sur les bords pour l'effet de fondu */}
+          <div className="absolute left-0 top-0 bottom-0 w-24 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none"></div>
+          <div className="absolute right-0 top-0 bottom-0 w-24 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none"></div>
+          
+          {/* Le contenu animé qui défile */}
+          <div className="flex items-center gap-16 md:gap-24 opacity-60 animate-marquee hover:opacity-100 transition-opacity duration-300 w-max pl-16">
+            {/* On duplique la liste plusieurs fois pour l'effet infini */}
+            {[...Array(4)].map((_, arrayIndex) => (
+              <React.Fragment key={arrayIndex}>
+                {['BAOL OFFICES', 'RESTAURANT MBECKTE MII', 'BAOLVISION', 'TOUBA CA KANAM'].map((partner, i) => (
+                  <div key={`${arrayIndex}-${i}`} className="text-2xl font-black text-slate-700 tracking-tighter shrink-0 cursor-default">
+                    {partner}
+                  </div>
+                ))}
+              </React.Fragment>
+            ))}
           </div>
-          <Link to="/trajets" className="shrink-0 px-6 py-3 rounded-xl bg-demandoo-50 text-demandoo-700 font-bold hover:bg-demandoo-100 transition-colors flex items-center gap-2">
-            Voir tout <ArrowRight className="w-4 h-4" />
-          </Link>
+        </div>
+      </section>
+
+      {/* 3. TRAJETS DISPONIBLES */}
+      <section className="py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-10">
+          <FadeInSection>
+            <h2 className="text-3xl font-black text-slate-900">Trajets disponibles</h2>
+          </FadeInSection>
+          <FadeInSection delay={150}>
+            <Link to="/trajets" className="px-5 py-2.5 rounded-xl bg-demandoo-50 text-demandoo-700 font-bold hover:bg-demandoo-100 transition-colors flex items-center gap-2">
+              Voir tout <ArrowRight className="w-4 h-4" />
+            </Link>
+          </FadeInSection>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {trips.filter(t => t.status === 'scheduled').slice(0, 3).map(trip => (
-            <div key={trip.id} className="bg-white rounded-[2rem] p-6 border border-slate-100 shadow-lg shadow-slate-200/50 hover:-translate-y-1 transition-all flex flex-col justify-between space-y-6">
-              <div className="flex justify-between items-start">
-                <div className="flex items-center gap-3">
-                  <img src={trip.driver?.avatar_url} alt={trip.driver?.full_name} className="w-12 h-12 rounded-full object-cover border-2 border-demandoo-500 shadow-sm" />
-                  <div>
-                    <h4 className="font-black text-slate-900 text-sm flex items-center gap-1">
-                      {trip.driver?.full_name}
-                      {trip.driver?.is_identity_verified && <ShieldCheck className="w-3.5 h-3.5 text-demandoo-500" />}
-                    </h4>
-                    <p className="text-xs text-slate-500 font-medium flex items-center gap-1">
-                      <Star className="w-3 h-3 fill-amber-400 text-amber-400" /> {trip.driver?.rating} • {trip.driver?.total_trips} trajets
-                    </p>
+        {availableTrips.length === 0 ? (
+          <div className="bg-white p-8 rounded-[2rem] text-center border border-slate-100 shadow-sm">
+            <h3 className="text-lg font-bold text-slate-700 mb-2">Aucun trajet à venir pour le moment</h3>
+            <p className="text-slate-500 mb-4">Soyez le premier à proposer un trajet ou modifiez vos critères de recherche.</p>
+            <Link to="/publier" className="inline-block px-6 py-3 rounded-xl bg-demandoo-600 text-white font-bold">Proposer un trajet</Link>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {availableTrips.map((trip, idx) => (
+              <FadeInSection key={trip.id} delay={idx * 100}>
+                <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm hover:shadow-md transition-all flex flex-col justify-between space-y-4">
+                <div className="flex justify-between items-start">
+                  <div className="flex items-center gap-3">
+                    <img src={trip.driver?.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150'} alt={trip.driver?.full_name} className="w-12 h-12 rounded-full object-cover border-2 border-demandoo-50 shadow-sm" />
+                    <div>
+                      <h4 className="font-black text-slate-900 text-sm flex items-center gap-1">
+                        {trip.driver?.full_name}
+                        {trip.driver?.driver_status === 'VERIFIED' && <ShieldCheck className="w-3.5 h-3.5 text-demandoo-500" title="Profil vérifié" />}
+                      </h4>
+                      <p className="text-xs text-slate-500 font-medium">{new Date(trip.departure_datetime).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })}</p>
+                    </div>
+                  </div>
+                  <div className="bg-slate-50 px-3 py-1 rounded-full text-slate-600 font-bold text-xs border border-slate-100">
+                    {trip.seats_available} places
                   </div>
                 </div>
-                <div className="bg-emerald-50 px-3 py-1 rounded-full text-emerald-700 font-black text-xs">
-                  {trip.seats_available} places
-                </div>
-              </div>
 
-              <div className="relative pl-6 space-y-4 border-l-2 border-slate-100">
-                <div className="relative">
-                  <div className="absolute -left-[29px] top-1 w-4 h-4 rounded-full bg-demandoo-500 border-4 border-white shadow-sm" />
-                  <p className="font-black text-slate-900">{trip.departure_city}</p>
-                  <p className="text-xs text-slate-500">{new Date(trip.departure_datetime).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</p>
+                <div className="relative pl-6 space-y-4 my-2 border-l-2 border-slate-100">
+                  <div className="relative">
+                    <div className="absolute -left-[29px] top-1 w-4 h-4 rounded-full bg-demandoo-500 border-4 border-white shadow-sm" />
+                    <p className="font-black text-slate-900">{trip.departure_city}</p>
+                    <p className="text-xs text-slate-500 font-medium">{new Date(trip.departure_datetime).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</p>
+                  </div>
+                  <div className="relative">
+                    <div className="absolute -left-[29px] top-1 w-4 h-4 rounded-full bg-slate-800 border-4 border-white shadow-sm" />
+                    <p className="font-black text-slate-900">{trip.arrival_city}</p>
+                  </div>
                 </div>
-                <div className="relative">
-                  <div className="absolute -left-[29px] top-1 w-4 h-4 rounded-full bg-slate-800 border-4 border-white shadow-sm" />
-                  <p className="font-black text-slate-900">{trip.arrival_city}</p>
-                </div>
-              </div>
 
-              <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
-                <p className="text-2xl font-black text-demandoo-600">{trip.price_per_seat.toLocaleString('fr-FR')} FCFA</p>
-                <Link to={`/trajet/${trip.id}`} className="px-5 py-2.5 rounded-xl bg-slate-900 text-white text-xs font-black hover:bg-slate-800 transition-colors">
-                  Réserver
-                </Link>
+                <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
+                  <p className="text-xl font-black text-demandoo-600">{trip.price_per_seat.toLocaleString('fr-FR')} FCFA</p>
+                  <Link to={`/trajet/${trip.id}`} className="px-5 py-2.5 rounded-xl bg-slate-900 text-white text-xs font-black hover:bg-slate-800 transition-colors">
+                    Voir le trajet
+                  </Link>
+                </div>
               </div>
+              </FadeInSection>
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* 4. COMMENT ÇA MARCHE */}
+      <section id="comment-ca-marche" className="py-16 bg-white border-y border-slate-100">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-12">
+          <FadeInSection>
+            <div className="space-y-4 max-w-2xl mx-auto">
+              <h2 className="text-3xl font-black text-slate-900">Comment ça marche ?</h2>
+              <p className="text-slate-600 font-medium">Demandoo facilite la mise en relation. L’accord et le paiement se font directement entre le passager et le chauffeur.</p>
             </div>
+          </FadeInSection>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <FadeInSection delay={100}>
+              <div className="space-y-4">
+              <div className="w-16 h-16 mx-auto rounded-2xl bg-demandoo-50 text-demandoo-600 flex items-center justify-center">
+                <Search className="w-8 h-8" />
+              </div>
+              <h3 className="text-xl font-black text-slate-900">1. Cherchez votre trajet</h3>
+              <p className="text-slate-500 text-sm font-medium">Choisissez votre destination et votre date parmi les trajets publiés.</p>
+            </div>
+            </FadeInSection>
+            <FadeInSection delay={200}>
+            <div className="space-y-4">
+              <div className="w-16 h-16 mx-auto rounded-2xl bg-demandoo-50 text-demandoo-600 flex items-center justify-center">
+                <MessageCircle className="w-8 h-8" />
+              </div>
+              <h3 className="text-xl font-black text-slate-900">2. Contactez le chauffeur</h3>
+              <p className="text-slate-500 text-sm font-medium">Échangez directement avec le chauffeur par téléphone ou WhatsApp.</p>
+            </div>
+            </FadeInSection>
+            <FadeInSection delay={300}>
+            <div className="space-y-4">
+              <div className="w-16 h-16 mx-auto rounded-2xl bg-demandoo-50 text-demandoo-600 flex items-center justify-center">
+                <ShieldCheck className="w-8 h-8" />
+              </div>
+              <h3 className="text-xl font-black text-slate-900">3. Convenez du voyage</h3>
+              <p className="text-slate-500 text-sm font-medium">Confirmez ensemble la disponibilité, le lieu de rendez-vous et le prix (en espèces).</p>
+            </div>
+            </FadeInSection>
+          </div>
+        </div>
+      </section>
+
+      {/* 5. DESTINATIONS POPULAIRES */}
+      <section className="py-16 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <FadeInSection>
+          <h2 className="text-3xl font-black text-slate-900 text-center mb-10">Destinations populaires</h2>
+        </FadeInSection>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {[
+            { dest: 'Dakar', img: 'https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?auto=format&fit=crop&q=80&w=400' },
+            { dest: 'Thiès', img: 'https://images.unsplash.com/photo-1549429158-b64ec069f257?auto=format&fit=crop&q=80&w=400' },
+            { dest: 'Mbour', img: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&q=80&w=400' },
+            { dest: 'Saint-Louis', img: 'https://images.unsplash.com/photo-1498307833015-e7b400441eb8?auto=format&fit=crop&q=80&w=400' },
+            { dest: 'Ziguinchor', img: 'https://images.unsplash.com/photo-1528277342758-f1d7613953a2?auto=format&fit=crop&q=80&w=400' },
+            { dest: 'Diourbel', img: 'https://images.unsplash.com/photo-1517457373958-b7bdd4587205?auto=format&fit=crop&q=80&w=400' },
+            { dest: 'Kaolack', img: 'https://images.unsplash.com/photo-1523805009345-7448845a9e53?auto=format&fit=crop&q=80&w=400' },
+            { dest: 'Rufisque', img: 'https://images.unsplash.com/photo-1473625247510-8ceb1760943f?auto=format&fit=crop&q=80&w=400' }
+          ].map((d, idx) => (
+            <FadeInSection key={d.dest} delay={idx * 50}>
+              <div onClick={() => setPopularRoute('Touba', d.dest)} className="relative h-32 rounded-2xl overflow-hidden cursor-pointer group shadow-sm hover:shadow-md transition-shadow">
+                <img src={d.img} alt={`Touba - ${d.dest}`} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                <div className="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-colors" />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="text-white font-black text-lg">Vers {d.dest}</span>
+                </div>
+              </div>
+            </FadeInSection>
           ))}
         </div>
       </section>
 
-      {/* ===================================================
-          3. NOS RÉALISATIONS (POPULAR ROUTES PORTFOLIO)
-         =================================================== */}
-      <section className="py-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-16 border-t border-slate-100">
-        <div className="text-center space-y-4">
-          <h2 className="text-4xl sm:text-5xl font-black text-slate-900 tracking-tight">Trajets Phares</h2>
-          <p className="text-lg text-slate-500 font-medium max-w-2xl mx-auto">
-            Découvrez nos itinéraires les plus populaires. Des voyages quotidiens connectant tout le pays.
+      {/* 6. INFORMATIONS DE CONFIANCE */}
+      <section className="py-16 bg-slate-50 border-y border-slate-100">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6">
+          <ShieldCheck className="w-12 h-12 text-demandoo-600 mx-auto" />
+          <h2 className="text-3xl font-black text-slate-900">Des profils vérifiés</h2>
+          <p className="text-slate-600 font-medium text-lg leading-relaxed">
+            Sur Demandoo, la confiance est primordiale. Les chauffeurs possédant un badge de vérification ont fourni une pièce d'identité (CNI) et un permis de conduire valides, contrôlés par notre équipe.
           </p>
         </div>
-
-        {/* Grille : 3 par ligne sur grand écran (2 colonnes/lignes) */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          
-          {/* Project 1 */}
-          <div 
-            onClick={() => setPopularRoute('Touba', 'Dakar')}
-            className="group relative h-[220px] sm:h-[260px] rounded-[2rem] overflow-hidden cursor-pointer shadow-lg shadow-slate-200/50 w-full"
-          >
-            <img 
-              src="https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?auto=format&fit=crop&q=80&w=800" 
-              onError={(e) => {e.target.src="https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&q=80&w=800"}}
-              alt="Touba - Dakar (Monument de la Renaissance)" 
-              className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0A]/90 via-[#0A0A0A]/30 to-transparent transition-opacity group-hover:opacity-90" />
-            
-            <div className="absolute bottom-0 left-0 p-5 w-full flex items-end justify-between">
-              <div>
-                <span className="text-demandoo-400 font-black text-[10px] uppercase tracking-widest block mb-1 opacity-0 group-hover:opacity-100 transition-opacity translate-y-4 group-hover:translate-y-0 duration-500">
-                  Ligne Express
-                </span>
-                <h3 className="text-xl font-black text-white">Touba → Dakar</h3>
-              </div>
-              <div className="w-8 h-8 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-all translate-x-4 group-hover:translate-x-0 duration-500 delay-100 shrink-0">
-                <ArrowRight className="w-4 h-4" />
-              </div>
-            </div>
-          </div>
-
-          {/* Project 2 */}
-          <div 
-            onClick={() => setPopularRoute('Touba', 'Thiès')}
-            className="group relative h-[220px] sm:h-[260px] rounded-[2rem] overflow-hidden cursor-pointer shadow-lg shadow-slate-200/50 w-full"
-          >
-            <img 
-              src="https://images.unsplash.com/photo-1549429158-b64ec069f257?auto=format&fit=crop&q=80&w=800" 
-              onError={(e) => {e.target.src="https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&q=80&w=800"}}
-              alt="Touba - Thiès (Statue Lat Dior)" 
-              className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-              style={{ objectPosition: 'center 22%' }}
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0A]/90 via-[#0A0A0A]/30 to-transparent transition-opacity group-hover:opacity-90" />
-            
-            <div className="absolute bottom-0 left-0 p-5 w-full flex items-end justify-between">
-              <div>
-                <span className="text-demandoo-400 font-black text-[10px] uppercase tracking-widest block mb-1 opacity-0 group-hover:opacity-100 transition-opacity translate-y-4 group-hover:translate-y-0 duration-500">
-                  Idéal Étudiants
-                </span>
-                <h3 className="text-xl font-black text-white">Touba → Thiès</h3>
-              </div>
-              <div className="w-8 h-8 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-all translate-x-4 group-hover:translate-x-0 duration-500 delay-100 shrink-0">
-                <ArrowRight className="w-4 h-4" />
-              </div>
-            </div>
-          </div>
-
-          {/* Project 3 */}
-          <div 
-            onClick={() => setPopularRoute('Touba', 'Mbour')}
-            className="group relative h-[220px] sm:h-[260px] rounded-[2rem] overflow-hidden cursor-pointer shadow-lg shadow-slate-200/50 w-full"
-          >
-            <img 
-              src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&q=80&w=800" 
-              onError={(e) => {e.target.src="https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&q=80&w=800"}}
-              alt="Touba - Mbour (Saly & Plage de Mbour)" 
-              className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0A]/90 via-[#0A0A0A]/30 to-transparent transition-opacity group-hover:opacity-90" />
-            
-            <div className="absolute bottom-0 left-0 p-5 w-full flex items-end justify-between">
-              <div>
-                <span className="text-demandoo-400 font-black text-[10px] uppercase tracking-widest block mb-1 opacity-0 group-hover:opacity-100 transition-opacity translate-y-4 group-hover:translate-y-0 duration-500">
-                  Trajet Côtier
-                </span>
-                <h3 className="text-xl font-black text-white">Touba → Mbour</h3>
-              </div>
-              <div className="w-8 h-8 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-all translate-x-4 group-hover:translate-x-0 duration-500 delay-100 shrink-0">
-                <ArrowRight className="w-4 h-4" />
-              </div>
-            </div>
-          </div>
-
-          {/* Project 4 */}
-          <div 
-            onClick={() => setPopularRoute('Touba', 'Saint-Louis')}
-            className="group relative h-[220px] sm:h-[260px] rounded-[2rem] overflow-hidden cursor-pointer shadow-lg shadow-slate-200/50 w-full"
-          >
-            <img 
-              src="https://images.unsplash.com/photo-1498307833015-e7b400441eb8?auto=format&fit=crop&q=80&w=800" 
-              onError={(e) => {e.target.src="https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&q=80&w=800"}}
-              alt="Touba - Saint-Louis (Pont Faidherbe)" 
-              className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0A]/90 via-[#0A0A0A]/30 to-transparent transition-opacity group-hover:opacity-90" />
-            
-            <div className="absolute bottom-0 left-0 p-5 w-full flex items-end justify-between">
-              <div>
-                <span className="text-demandoo-400 font-black text-[10px] uppercase tracking-widest block mb-1 opacity-0 group-hover:opacity-100 transition-opacity translate-y-4 group-hover:translate-y-0 duration-500">
-                  Le Nord
-                </span>
-                <h3 className="text-xl font-black text-white">Touba → Saint-Louis</h3>
-              </div>
-              <div className="w-8 h-8 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-all translate-x-4 group-hover:translate-x-0 duration-500 delay-100 shrink-0">
-                <ArrowRight className="w-4 h-4" />
-              </div>
-            </div>
-          </div>
-
-          {/* Project 5 */}
-          <div 
-            onClick={() => setPopularRoute('Touba', 'Kaolack')}
-            className="group relative h-[220px] sm:h-[260px] rounded-[2rem] overflow-hidden cursor-pointer shadow-lg shadow-slate-200/50 w-full"
-          >
-            <img 
-              src="https://images.unsplash.com/photo-1548050689-d4cc2fbfa3fa?auto=format&fit=crop&q=80&w=800" 
-              onError={(e) => {e.target.src="https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&q=80&w=800"}}
-              alt="Touba - Kaolack" 
-              className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0A]/90 via-[#0A0A0A]/30 to-transparent transition-opacity group-hover:opacity-90" />
-            
-            <div className="absolute bottom-0 left-0 p-5 w-full flex items-end justify-between">
-              <div>
-                <span className="text-demandoo-400 font-black text-[10px] uppercase tracking-widest block mb-1 opacity-0 group-hover:opacity-100 transition-opacity translate-y-4 group-hover:translate-y-0 duration-500">
-                  Le Centre
-                </span>
-                <h3 className="text-xl font-black text-white">Touba → Kaolack</h3>
-              </div>
-              <div className="w-8 h-8 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-all translate-x-4 group-hover:translate-x-0 duration-500 delay-100 shrink-0">
-                <ArrowRight className="w-4 h-4" />
-              </div>
-            </div>
-          </div>
-
-          {/* Project 6 */}
-          <div 
-            onClick={() => setPopularRoute('Touba', 'Ziguinchor')}
-            className="group relative h-[220px] sm:h-[260px] rounded-[2rem] overflow-hidden cursor-pointer shadow-lg shadow-slate-200/50 w-full"
-          >
-            <img 
-              src="https://images.unsplash.com/photo-1528277342758-f1d7613953a2?auto=format&fit=crop&q=80&w=800" 
-              onError={(e) => {e.target.src="https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&q=80&w=800"}}
-              alt="Touba - Ziguinchor" 
-              className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0A]/90 via-[#0A0A0A]/30 to-transparent transition-opacity group-hover:opacity-90" />
-            
-            <div className="absolute bottom-0 left-0 p-5 w-full flex items-end justify-between">
-              <div>
-                <span className="text-demandoo-400 font-black text-[10px] uppercase tracking-widest block mb-1 opacity-0 group-hover:opacity-100 transition-opacity translate-y-4 group-hover:translate-y-0 duration-500">
-                  Le Sud
-                </span>
-                <h3 className="text-xl font-black text-white">Touba → Ziguinchor</h3>
-              </div>
-              <div className="w-8 h-8 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-all translate-x-4 group-hover:translate-x-0 duration-500 delay-100 shrink-0">
-                <ArrowRight className="w-4 h-4" />
-              </div>
-            </div>
-          </div>
-
-        </div>
       </section>
 
-      {/* ===================================================
-          3.5 CARTE INTERACTIVE (NationalCoverageSection)
-         =================================================== */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <NationalCoverageSection />
-      </div>
-
-      {/* ===================================================
-          3. MISSION & ATOUTS (AGENCY BENTO GRID)
-         =================================================== */}
-      <section className="py-24 bg-white border-y border-slate-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
-          <div className="text-center space-y-4">
-            <h2 className="text-4xl sm:text-5xl font-black text-slate-900 tracking-tight">Mission et Vision</h2>
-            <p className="text-lg text-slate-500 font-medium max-w-2xl mx-auto">
-              En tant que plateforme leader au Sénégal, notre mission est de vous assister pleinement dans vos déplacements quotidiens avec un niveau d'exigence sans compromis.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            
-            {/* Card 1: Sécurité */}
-            <div className="md:col-span-2 bg-white rounded-[2rem] p-10 sm:p-12 relative overflow-hidden group shadow-sm hover:shadow-xl hover:shadow-slate-200/50 border border-slate-200 transition-all duration-500 hover:-translate-y-1">
-              <div className="absolute top-0 right-0 w-64 h-64 bg-demandoo-50 rounded-full blur-[80px] -translate-y-1/2 translate-x-1/2 group-hover:scale-150 transition-transform duration-700" />
-              <div className="relative z-10 flex flex-col h-full justify-between gap-12">
-                <div className="w-16 h-16 rounded-2xl bg-slate-50 flex items-center justify-center border border-slate-100 group-hover:scale-110 group-hover:bg-demandoo-50 transition-all duration-500">
-                  <ShieldCheck className="w-8 h-8 text-demandoo-600" />
+      {/* 7. TÉMOIGNAGES */}
+      <section className="py-16 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <FadeInSection>
+          <h2 className="text-3xl font-black text-slate-900 text-center mb-10">Ce qu'en disent nos utilisateurs</h2>
+        </FadeInSection>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {[
+            { name: "Fatou D.", role: "Passagère", img: "https://images.unsplash.com/photo-1531123897727-8f129e1bf38c?auto=format&fit=crop&q=80&w=150", text: "J'ai trouvé un trajet pour Dakar très rapidement. Le chauffeur était ponctuel et sympathique. C'est vraiment simple de s'arranger directement !" },
+            { name: "Modou S.", role: "Chauffeur", img: "https://images.unsplash.com/photo-1506277886164-e25aa3f4ef7f?auto=format&fit=crop&q=80&w=150", text: "Depuis que j'utilise Demandoo, je ne fais plus mes trajets vers Saint-Louis à vide. Je suis contacté facilement et je remplis ma voiture à chaque fois." },
+            { name: "Aïssatou N.", role: "Passagère", img: "https://images.unsplash.com/photo-1589156229687-496a31ad1d1f?auto=format&fit=crop&q=80&w=150", text: "Ce que j'aime, c'est la transparence. Pas de commission, on paye directement en entrant dans le véhicule. Très pratique pour mes déplacements réguliers." },
+            { name: "Cheikh T.", role: "Passager", img: "https://images.unsplash.com/photo-1522529599102-193c0d76b5b6?auto=format&fit=crop&q=80&w=150", text: "L'application est très intuitive. J'ai pu contacter mon chauffeur via WhatsApp en deux clics. Je recommande vivement pour voyager tranquille." },
+            { name: "Ousmane F.", role: "Chauffeur", img: "https://images.unsplash.com/photo-1531384441138-2736e62e0919?auto=format&fit=crop&q=80&w=150", text: "Je publie mes trajets Touba - Dakar chaque semaine. Ça me rembourse le carburant et les passagers sont toujours ponctuels." },
+            { name: "Mariama B.", role: "Passagère", img: "https://images.unsplash.com/photo-1489424731084-a5d8b219a5bb?auto=format&fit=crop&q=80&w=150", text: "Fini les longues attentes à la gare routière ! Je trouve mon trajet à l'avance, on s'arrange sur le point de rendez-vous et on y va." }
+          ].map((testimonial, i) => (
+            <FadeInSection key={i} delay={i * 100}>
+              <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between h-full hover:-translate-y-1 transition-transform">
+                <div className="space-y-4 mb-6">
+                  <div className="flex gap-1">
+                    {[1,2,3,4,5].map(star => <Star key={star} className="w-4 h-4 fill-amber-400 text-amber-400" />)}
+                  </div>
+                  <p className="text-slate-600 font-medium italic">"{testimonial.text}"</p>
                 </div>
-                <div>
-                  <h3 className="text-3xl font-black text-slate-900 mb-4 group-hover:text-demandoo-600 transition-colors duration-300">Sécurité Maximale</h3>
-                  <p className="text-slate-500 font-medium max-w-md text-lg leading-relaxed">
-                    Chaque chauffeur est rigoureusement vérifié (CNI, Permis). Votre sécurité est la fondation absolue de notre réseau.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Card 2: Économique */}
-            <div className="bg-slate-50 rounded-[2rem] p-10 sm:p-12 relative overflow-hidden group shadow-sm hover:shadow-xl hover:shadow-slate-200/50 border border-slate-200 transition-all duration-500 hover:-translate-y-1">
-              <div className="relative z-10 flex flex-col h-full justify-between gap-12">
-                <div className="w-16 h-16 rounded-2xl bg-white flex items-center justify-center border border-slate-100 group-hover:rotate-12 transition-transform duration-500">
-                  <TrendingUp className="w-8 h-8 text-emerald-500" />
-                </div>
-                <div>
-                  <h3 className="text-2xl font-black text-slate-900 mb-4">Économique</h3>
-                  <p className="text-slate-500 font-medium text-lg leading-relaxed">
-                    Partagez les frais de route. Le moyen le plus abordable et convivial de voyager.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Card 3: Couverture */}
-            <div className="bg-slate-50 rounded-[2rem] p-10 sm:p-12 relative overflow-hidden group shadow-sm hover:shadow-xl hover:shadow-slate-200/50 border border-slate-200 transition-all duration-500 hover:-translate-y-1">
-              <div className="relative z-10 flex flex-col h-full justify-between gap-12">
-                <div className="w-16 h-16 rounded-2xl bg-white flex items-center justify-center border border-slate-100 group-hover:-rotate-12 transition-transform duration-500">
-                  <Map className="w-8 h-8 text-blue-500" />
-                </div>
-                <div>
-                  <h3 className="text-2xl font-black text-slate-900 mb-4">Couverture</h3>
-                  <p className="text-slate-500 font-medium text-lg leading-relaxed">
-                    De Saint-Louis à Ziguinchor, trouvez un trajet partout dans le pays.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Card 4: Support */}
-            <div className="md:col-span-2 bg-white rounded-[2rem] p-10 sm:p-12 relative overflow-hidden group shadow-sm hover:shadow-xl hover:shadow-slate-200/50 border border-slate-200 transition-all duration-500 hover:-translate-y-1">
-              <div className="absolute bottom-0 right-0 w-80 h-80 bg-emerald-50 rounded-full blur-[100px] translate-y-1/3 translate-x-1/3 group-hover:scale-150 transition-transform duration-700" />
-              <div className="relative z-10 flex flex-col h-full justify-between gap-12">
-                <div className="w-16 h-16 rounded-2xl bg-slate-50 flex items-center justify-center border border-slate-100 group-hover:scale-110 transition-transform duration-500">
-                  <BadgeCheck className="w-8 h-8 text-emerald-600" />
-                </div>
-                <div className="max-w-xl">
-                  <h3 className="text-3xl font-black text-slate-900 mb-4 group-hover:text-emerald-600 transition-colors duration-300">Support 24/7 & Assistance</h3>
-                  <p className="text-slate-500 font-medium text-lg leading-relaxed">
-                    Notre équipe est disponible à tout moment. Vous n'êtes jamais seul sur la route, Demandoo veille sur votre trajet de A à Z.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-          </div>
-        </div>
-      </section>
-
-
-
-      {/* ===================================================
-          4. TÉMOIGNAGES (CEO QUOTE STYLE)
-         =================================================== */}
-      <section className="py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
-        <div className="text-center space-y-4">
-          <h2 className="text-4xl sm:text-5xl font-black text-slate-900 tracking-tight">Témoignages</h2>
-          <p className="text-lg text-slate-500 font-medium max-w-2xl mx-auto">
-            Ce que disent nos utilisateurs de leur expérience Demandoo.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          
-          <div className="bg-white p-6 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 flex flex-col justify-between space-y-4 hover:-translate-y-1 transition-transform">
-            <Quote className="w-8 h-8 text-demandoo-200" />
-            <p className="text-sm font-bold text-slate-700 leading-relaxed italic flex-1">
-              "Exceptionnel pour sécuriser nos trajets. Compétents et très pros. Un réel plaisir pour mes déplacements."
-            </p>
-            <div className="flex items-center gap-3 pt-4 border-t border-slate-100">
-              <div className="w-10 h-10 bg-slate-200 rounded-full overflow-hidden shrink-0">
-                <img src="https://i.pravatar.cc/150?u=1" alt="Passager" className="w-full h-full object-cover" />
-              </div>
-              <div>
-                <h4 className="font-black text-slate-900 text-xs">Mamadou Ndiaye</h4>
-                <p className="text-[10px] text-demandoo-600 font-bold uppercase tracking-wider">Passager</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white p-6 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 flex flex-col justify-between space-y-4 hover:-translate-y-1 transition-transform">
-            <Quote className="w-8 h-8 text-demandoo-200" />
-            <p className="text-sm font-bold text-slate-700 leading-relaxed italic flex-1">
-              "Profonde gratitude envers l'équipe. Mon véhicule ne voyage plus jamais à vide et l'app est fluide."
-            </p>
-            <div className="flex items-center gap-3 pt-4 border-t border-slate-100">
-              <div className="w-10 h-10 bg-slate-200 rounded-full overflow-hidden shrink-0">
-                <img src="https://i.pravatar.cc/150?u=2" alt="Chauffeur" className="w-full h-full object-cover" />
-              </div>
-              <div>
-                <h4 className="font-black text-slate-900 text-xs">Ousmane Diop</h4>
-                <p className="text-[10px] text-demandoo-600 font-bold uppercase tracking-wider">Chauffeur</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white p-6 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 flex flex-col justify-between space-y-4 hover:-translate-y-1 transition-transform">
-            <Quote className="w-8 h-8 text-demandoo-200" />
-            <p className="text-sm font-bold text-slate-700 leading-relaxed italic flex-1">
-              "Je gagne un temps fou pour trouver un taxi fiable. Les tarifs sont justes et la sécurité est au top."
-            </p>
-            <div className="flex items-center gap-3 pt-4 border-t border-slate-100">
-              <div className="w-10 h-10 bg-slate-200 rounded-full overflow-hidden shrink-0">
-                <img src="https://i.pravatar.cc/150?u=3" alt="Passager" className="w-full h-full object-cover" />
-              </div>
-              <div>
-                <h4 className="font-black text-slate-900 text-xs">Awa Sy</h4>
-                <p className="text-[10px] text-demandoo-600 font-bold uppercase tracking-wider">Étudiante</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white p-6 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 flex flex-col justify-between space-y-4 hover:-translate-y-1 transition-transform">
-            <Quote className="w-8 h-8 text-demandoo-200" />
-            <p className="text-sm font-bold text-slate-700 leading-relaxed italic flex-1">
-              "L'application est très intuitive. Le support client est réactif et les passagers toujours ponctuels."
-            </p>
-            <div className="flex items-center gap-3 pt-4 border-t border-slate-100">
-              <div className="w-10 h-10 bg-slate-200 rounded-full overflow-hidden shrink-0">
-                <img src="https://i.pravatar.cc/150?u=4" alt="Passager" className="w-full h-full object-cover" />
-              </div>
-              <div>
-                <h4 className="font-black text-slate-900 text-xs">Cheikh Kane</h4>
-                <p className="text-[10px] text-demandoo-600 font-bold uppercase tracking-wider">Passager</p>
-              </div>
-            </div>
-          </div>
-
-        </div>
-      </section>
-
-      {/* CTA FOOTER PRE-FOOTER */}
-      <section className="bg-demandoo-600 py-20 text-center px-4">
-        <div className="max-w-3xl mx-auto space-y-8">
-          <h2 className="text-3xl sm:text-5xl font-black text-white tracking-tight">Collaborez avec Demandoo</h2>
-          <p className="text-demandoo-100 font-medium text-lg">
-            Rejoignez-nous dès aujourd'hui. Que vous soyez passager ou chauffeur, faites partie de notre aventure pour façonner la mobilité de demain au Sénégal.
-          </p>
-          <div className="flex flex-col sm:flex-row justify-center gap-4 pt-4">
-            <Link to="/publier" className="px-8 py-4 rounded-2xl bg-slate-900 text-white font-black hover:bg-slate-800 transition-colors">
-              Devenir Chauffeur
-            </Link>
-            <Link to="/trajets" className="px-8 py-4 rounded-2xl bg-white text-demandoo-600 font-black hover:bg-slate-50 transition-colors">
-              Rechercher un trajet
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* ===================================================
-          5. NOS PARTENAIRES
-         =================================================== */}
-      <section className="py-24 bg-slate-50 border-t border-slate-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
-          <div className="text-center space-y-4">
-            <h2 className="text-4xl sm:text-5xl font-black text-slate-900 tracking-tight">Nos partenaires</h2>
-            <div className="w-16 h-1 bg-demandoo-500 mx-auto rounded-full mt-2 mb-6"></div>
-            <p className="text-lg text-slate-700 font-bold max-w-2xl mx-auto">
-              Ensemble, nous construisons une mobilité plus simple, accessible et fiable au Sénégal.
-            </p>
-            <p className="text-sm text-slate-500 font-medium max-w-2xl mx-auto">
-              Demandoo collabore avec des acteurs de confiance pour améliorer l’expérience de nos passagers et conducteurs.
-            </p>
-          </div>
-
-          {/* Carrousel de Partenaires (Défilement continu vers la gauche) */}
-          <div className="relative overflow-hidden w-full flex">
-            {/* Dégradés pour masquer les bords (facultatif mais plus premium) */}
-            <div className="absolute left-0 top-0 bottom-0 w-24 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none" />
-            <div className="absolute right-0 top-0 bottom-0 w-24 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none" />
-
-            <div className="flex gap-6 animate-marquee min-w-max">
-              {[
-                "Wave Sénégal", 
-                "Orange Money", 
-                "LigdiCash", 
-                "Bictorys", 
-                "Free Money", 
-                "TotalEnergies", 
-                "Touba Transport"
-              ].map((partner, index) => (
-                <div 
-                  key={index}
-                  className="bg-white border border-slate-100 rounded-2xl p-8 flex items-center justify-center w-48 sm:w-64 h-32 shadow-sm hover:shadow-md hover:border-demandoo-300 transition-all duration-300 group shrink-0 cursor-default"
-                >
-                  <div className="text-center space-y-2 opacity-50 group-hover:opacity-100 transition-opacity">
-                    <p className="text-lg font-black text-slate-800">{partner}</p>
-                    <p className="text-[10px] font-bold text-demandoo-600 uppercase tracking-widest">Partenaire</p>
+                <div className="flex items-center gap-3">
+                  <img src={testimonial.img} alt={testimonial.name} className="w-10 h-10 rounded-full object-cover border border-slate-100 shadow-sm" />
+                  <div>
+                    <p className="font-black text-slate-900">{testimonial.name}</p>
+                    <p className="text-sm font-bold text-demandoo-600">{testimonial.role}</p>
                   </div>
                 </div>
-              ))}
-            </div>
+              </div>
+            </FadeInSection>
+          ))}
+        </div>
+      </section>
+
+      {/* 8. FAQ COURTE */}
+      <section className="py-16 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <FadeInSection>
+          <h2 className="text-3xl font-black text-slate-900 text-center mb-10">Foire aux questions</h2>
+        </FadeInSection>
+        <div className="space-y-4">
+          {[
+            { q: "Faut-il un compte pour chercher un trajet ?", a: "Non, les passagers peuvent chercher des trajets et contacter les chauffeurs sans avoir de compte." },
+            { q: "Comment contacter un chauffeur ?", a: "Vous pouvez cliquer sur 'Contacter via WhatsApp' ou appeler le numéro de téléphone indiqué sur la fiche détaillée d'un trajet." },
+            { q: "Est-ce que Demandoo réserve ma place ?", a: "Non, Demandoo est uniquement une plateforme de mise en relation. Vous devez contacter le chauffeur pour confirmer qu'il a bien une place disponible pour vous." },
+            { q: "Comment se passe le paiement ?", a: "Il n'y a aucun paiement en ligne sur Demandoo. Vous réglez le prix du voyage directement en espèces avec le chauffeur, selon l'accord convenu avec lui." },
+            { q: "Comment proposer un trajet ?", a: "Vous devez créer un compte en cliquant sur 'Devenir chauffeur', vérifier votre profil, puis publier votre trajet." }
+          ].map((faq, i) => (
+            <FadeInSection key={i} delay={i * 100}>
+              <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm hover:border-demandoo-200 transition-colors">
+                <h3 className="font-black text-slate-900 flex items-center gap-2 mb-2"><HelpCircle className="w-4 h-4 text-demandoo-500 shrink-0" /> {faq.q}</h3>
+                <p className="text-slate-600 text-sm font-medium leading-relaxed pl-6">{faq.a}</p>
+              </div>
+            </FadeInSection>
+          ))}
+        </div>
+      </section>
+
+      {/* 7. ESPACE CHAUFFEUR (CTA) */}
+      <section className="bg-slate-900 py-16 text-center px-4">
+        <div className="max-w-2xl mx-auto space-y-6">
+          <h2 className="text-3xl font-black text-white">Vous partez ? Faites connaître votre trajet.</h2>
+          <p className="text-slate-400 font-medium text-lg">
+            Publiez votre trajet pour permettre aux passagers intéressés de vous contacter directement.
+          </p>
+          <div className="pt-4">
+            <Link to="/login" className="inline-block px-8 py-4 rounded-xl bg-demandoo-600 text-white font-black hover:bg-demandoo-500 transition-colors">
+              Devenir chauffeur
+            </Link>
           </div>
         </div>
       </section>

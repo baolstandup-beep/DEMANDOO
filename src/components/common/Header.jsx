@@ -40,18 +40,7 @@ export const Header = () => {
           />
         </Link>
 
-        {/* DESKTOP NAVIGATION */}
         <nav className="hidden md:flex items-center gap-1.5 bg-slate-100/70 p-1 rounded-2xl border border-slate-200/50">
-          <Link 
-            to="/" 
-            className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all ${
-              location.pathname === '/' 
-                ? 'bg-white text-demandoo-600 shadow-sm' 
-                : 'text-slate-600 hover:text-demandoo-600 hover:bg-white/50'
-            }`}
-          >
-            Accueil
-          </Link>
           <Link 
             to="/trajets" 
             className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
@@ -63,32 +52,43 @@ export const Header = () => {
             <Search className="w-3.5 h-3.5" />
             Trouver un trajet
           </Link>
-          <Link 
-            to="/espace-chauffeur" 
-            className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
-              location.pathname.startsWith('/espace-chauffeur') 
-                ? 'bg-white text-demandoo-600 shadow-sm' 
-                : 'text-slate-600 hover:text-demandoo-600 hover:bg-white/50'
-            }`}
+          <a 
+            href="/#comment-ca-marche" 
+            className="px-4 py-1.5 rounded-xl text-xs font-bold transition-all text-slate-600 hover:text-demandoo-600 hover:bg-white/50"
           >
-            <LayoutDashboard className="w-3.5 h-3.5" />
-            Espace Chauffeur
-          </Link>
+            Comment ça marche
+          </a>
+          {!user && (
+            <Link 
+              to="/login" 
+              className="px-4 py-1.5 rounded-xl text-xs font-bold transition-all text-slate-600 hover:text-demandoo-600 hover:bg-white/50"
+            >
+              Connexion
+            </Link>
+          )}
         </nav>
 
         {/* RIGHT ACTIONS */}
         <div className="flex items-center gap-2.5">
 
-          {/* CTA: PUBLIER UN TRAJET */}
-          {user && user.role === 'driver' && user.driver_status === 'VERIFIED' && viewMode === 'driver' && (
+          {/* CTA: PUBLIER UN TRAJET / DEVENIR CHAUFFEUR */}
+          {user && user.role === 'driver' && user.driver_status === 'VERIFIED' && viewMode === 'driver' ? (
             <Link 
-              to={user.subscription_status === 'active' || user.subscription_status === 'trial' ? "/publier" : "/abonnement"}
+              to="/publier"
               className="hidden sm:inline-flex items-center gap-2 px-4 py-2 text-xs btn-premium"
             >
               <PlusCircle className="w-4 h-4" />
               Publier un trajet
             </Link>
-          )}
+          ) : !user ? (
+             <Link 
+              to="/login"
+              className="hidden sm:inline-flex items-center gap-2 px-4 py-2 text-xs btn-premium"
+            >
+              <User className="w-4 h-4" />
+              Devenir chauffeur
+            </Link>
+          ) : null}
 
 
           {/* NOTIFICATION BELL */}
