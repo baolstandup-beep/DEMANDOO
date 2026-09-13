@@ -2,12 +2,20 @@ import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { Home, Search, PlusCircle, Ticket, User } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { isIOS, isNative } from '../../capacitor/index';
 
 export const MobileNavbar = () => {
   const { user } = useAuth();
 
+  // Safe area pour les iPhones avec encoche / Dynamic Island / barre home
+  // env(safe-area-inset-bottom) est supporté nativement dans la WebView Capacitor
+  const safePaddingStyle = isIOS() ? { paddingBottom: 'env(safe-area-inset-bottom, 8px)' } : {};
+
   return (
-    <nav className="md:hidden fixed bottom-3 left-3 right-3 z-40 bg-white/90 backdrop-blur-xl border border-slate-200/80 rounded-2xl px-3 py-2 pb-safe shadow-elevated">
+    <nav
+      className="md:hidden fixed bottom-3 left-3 right-3 z-40 bg-white/90 backdrop-blur-xl border border-slate-200/80 rounded-2xl px-3 py-2 shadow-elevated"
+      style={safePaddingStyle}
+    >
       <div className="flex items-center justify-between max-w-md mx-auto">
         <NavLink 
           to="/" 

@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { translateAuthError } from '../lib/authErrors';
+import { isNative } from '../capacitor/index';
 
 const AuthContext = createContext();
 
@@ -188,11 +189,16 @@ export const AuthProvider = ({ children }) => {
     const safeRole = VALID_ROLES.includes(role) ? role : 'passenger';
     localStorage.setItem('demandoo_intended_role', safeRole);
 
+    // Sur mobile natif : utiliser le deep link de l'app pour le retour après Google
+    // Sur web : utiliser l'origine standard
+    // ⚠️ Configurer sn.demandoo.app://auth/callback dans Supabase > Auth > URL Configuration
+    const redirectTo = isNative()
+      ? 'sn.demandoo.app://auth/callback'
+      : `${window.location.origin}/auth/callback`;
+
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-      }
+      options: { redirectTo }
     });
 
     if (error) throw error;

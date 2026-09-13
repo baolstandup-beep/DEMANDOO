@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Routes, Route, useLocation } from 'react-router-dom';
+import { Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import { Header } from './components/common/Header';
 import { MobileNavbar } from './components/common/MobileNavbar';
 import { Footer } from './components/common/Footer';
@@ -21,11 +21,16 @@ import { SubscriptionPage } from './pages/SubscriptionPage';
 import { DriverRouteGuard } from './components/common/DriverRouteGuard';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { AuthCallbackPage } from './pages/AuthCallbackPage';
+import { PushNotificationsSetup } from './capacitor/PushNotifications';
+import { registerAndroidBackButton } from './capacitor/index';
+import { useNotifications } from './context/NotificationContext';
 
 export function App() {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { addNotification } = useNotifications();
 
-  // Dynamic SEO Title updates
+  // SEO dynamique
   useEffect(() => {
     const path = location.pathname;
     if (path === '/') {
@@ -53,8 +58,17 @@ export function App() {
     }
   }, [location]);
 
+  // Bouton retour Android — enregistrer/désenregistrer à chaque changement de route
+  useEffect(() => {
+    const cleanup = registerAndroidBackButton(navigate, location);
+    return cleanup;
+  }, [location, navigate]);
+
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900 font-sans selection:bg-demandoo-500 selection:text-white">
+      {/* Initialisation silencieuse des push notifications (mobile uniquement) */}
+      <PushNotificationsSetup onNotificationReceived={addNotification} />
+
       <Header />
       
       <main className="flex-1">
