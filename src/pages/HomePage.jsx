@@ -119,7 +119,7 @@ export const HomePage = () => {
         {/* Image de fond Demandoo */}
         <div className="absolute inset-0 z-0">
           <img 
-            src="/images/demandoo-hero.png" 
+            src="/images/demandoo-hero-new.jpg" 
             alt="Demandoo — Yombalna Sa Tukki — Covoiturage Touba Sénégal" 
             className="w-full h-full object-cover"
             style={{ objectPosition: 'center' }}
