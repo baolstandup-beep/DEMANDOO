@@ -121,9 +121,10 @@ export const HomePage = () => {
           <img 
             src="/images/demandoo-hero.png" 
             alt="Demandoo — Yombalna Sa Tukki — Covoiturage Touba Sénégal" 
-            className="w-full h-full object-cover object-center opacity-90"
+            className="w-full h-full object-cover object-top"
+            style={{ objectPosition: 'center 30%' }}
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-slate-900/30 via-slate-900/50 to-[#F9FAFB]" />
+          <div className="absolute inset-0 bg-gradient-to-b from-slate-900/70 via-slate-900/50 to-[#F9FAFB]" />
         </div>
 
         {/* Abstract Dark Glows (conservés pour l'effet SaaS) */}
