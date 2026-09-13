@@ -377,8 +377,74 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const updateDriverStatus = () => {};
-  const incrementTripsUsed = () => {};
+  const updateDriverStatus = async (isActive) => {
+    if (!user) return { success: false };
+    
+    // Fallback mode if Supabase not configured
+    const isMockUser = !user.id || typeof user.id !== 'string' || user.id.startsWith('usr-');
+    if (!isSupabaseConfigured || isMockUser) {
+      const updated = { ...user, is_driver_active: isActive };
+      setUser(updated);
+      localStorage.setItem('demandoo_user_v2', JSON.stringify(updated));
+      return { success: true, user: updated };
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .update({ is_driver_active: isActive })
+        .eq('id', user.id)
+        .select()
+        .single();
+      if (error) throw error;
+      setUser(data);
+      localStorage.setItem('demandoo_user_v2', JSON.stringify(data));
+      return { success: true, user: data };
+    } catch (err) {
+      console.warn("Failed to update driver status:", err);
+      const updated = { ...user, is_driver_active: isActive };
+      setUser(updated);
+      localStorage.setItem('demandoo_user_v2', JSON.stringify(updated));
+      return { success: true, user: updated };
+    }
+  };
+
+  const incrementTripsUsed = async () => {
+    if (!user) return { success: false };
+    
+    const isMockUser = !user.id || typeof user.id !== 'string' || user.id.startsWith('usr-');
+    if (!isSupabaseConfigured || isMockUser) {
+      const updatedUser = { ...user, subscription_trips_used: (user.subscription_trips_used || 0) + 1 };
+      setUser(updatedUser);
+      localStorage.setItem('demandoo_user_v2', JSON.stringify(updatedUser));
+      return { success: true, user: updatedUser };
+    }
+
+    try {
+      const newTripsUsed = (user.subscription_trips_used || 0) + 1;
+      
+      const { error } = await supabase
+        .from('driver_subscriptions')
+        .update({ trips_used: newTripsUsed })
+        .eq('driver_id', user.id)
+        .in('status', ['active', 'trial']);
+        
+      if (error) {
+         await supabase.from('profiles').update({ subscription_trips_used: newTripsUsed }).eq('id', user.id);
+      }
+      
+      const updatedUser = { ...user, subscription_trips_used: newTripsUsed };
+      setUser(updatedUser);
+      localStorage.setItem('demandoo_user_v2', JSON.stringify(updatedUser));
+      return { success: true, user: updatedUser };
+    } catch (err) {
+      console.warn("Failed to increment trips used:", err);
+      const updatedUser = { ...user, subscription_trips_used: (user.subscription_trips_used || 0) + 1 };
+      setUser(updatedUser);
+      localStorage.setItem('demandoo_user_v2', JSON.stringify(updatedUser));
+      return { success: true, user: updatedUser };
+    }
+  };
 
   const login = async (identifier, password, role = 'passenger') => {
     const isDemoAccount = !isSupabaseConfigured ||

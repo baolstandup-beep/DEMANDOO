@@ -46,6 +46,7 @@ export default {
           },
           card: '#ffffff',
           accent: '#f59e0b',
+          'accent-glow': '#fbbf24',
         },
         brand: {
           blue: '#183e94',
@@ -64,6 +65,8 @@ export default {
       animation: {
         'fade-in': 'fadeIn 0.3s ease-in-out',
         'pulse-subtle': 'pulseSubtle 3s infinite ease-in-out',
+        'float': 'float 6s ease-in-out infinite',
+        'mesh': 'mesh 15s ease infinite',
       },
       keyframes: {
         fadeIn: {
@@ -73,6 +76,14 @@ export default {
         pulseSubtle: {
           '0%, 100%': { opacity: '1' },
           '50%': { opacity: '0.85' },
+        },
+        float: {
+          '0%, 100%': { transform: 'translateY(0)' },
+          '50%': { transform: 'translateY(-10px)' },
+        },
+        mesh: {
+          '0%, 100%': { backgroundPosition: '0% 50%' },
+          '50%': { backgroundPosition: '100% 50%' },
         },
       },
     },

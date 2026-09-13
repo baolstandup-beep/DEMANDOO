@@ -16,6 +16,7 @@ import { AdminDriverReviewPage } from './pages/AdminDriverReviewPage';
 import { MyBookingsPage } from './pages/MyBookingsPage';
 import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
+import { SubscriptionPage } from './pages/SubscriptionPage';
 
 import { DriverRouteGuard } from './components/common/DriverRouteGuard';
 import { NotFoundPage } from './pages/NotFoundPage';
@@ -63,6 +64,12 @@ export function App() {
           <Route path="/trajet/:id" element={<TripDetailsPage />} />
           <Route path="/chauffeur/:driverId" element={<DriverProfilePage />} />
           <Route path="/inscription-chauffeur" element={<RegisterPage />} />
+
+          <Route path="/abonnement" element={
+            <DriverRouteGuard allowedStatuses={['VERIFIED']}>
+              <SubscriptionPage />
+            </DriverRouteGuard>
+          } />
 
           <Route path="/publier" element={
             <DriverRouteGuard allowedStatuses={['VERIFIED']}>

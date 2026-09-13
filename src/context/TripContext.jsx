@@ -281,10 +281,56 @@ export const TripProvider = ({ children }) => {
   };
 
   // Remaining stubs for now
-  const submitDriverVerification = () => {};
-  const reviewDriverVerification = () => {};
-  const addReview = () => {};
-  const createSearchAlert = () => {};
+  const submitDriverVerification = async (userId, data) => {
+    if (!isSupabaseConfigured) return { success: true };
+    try {
+      const { error } = await supabase.from('profiles').update({ kyc_status: 'pending' }).eq('id', userId);
+      if (error) throw error;
+      return { success: true };
+    } catch (err) {
+      console.warn("Failed submitDriverVerification:", err);
+      return { success: false, error: err };
+    }
+  };
+
+  const reviewDriverVerification = async (driverId, status) => {
+    if (!isSupabaseConfigured) return { success: true };
+    try {
+      const { error } = await supabase.from('profiles').update({ driver_status: status, kyc_status: status === 'VERIFIED' ? 'verified' : 'rejected' }).eq('id', driverId);
+      if (error) throw error;
+      return { success: true };
+    } catch (err) {
+      console.warn("Failed reviewDriverVerification:", err);
+      return { success: false, error: err };
+    }
+  };
+
+  const addReview = async (reviewData) => {
+    if (!isSupabaseConfigured) {
+      const newReview = { id: Date.now().toString(), ...reviewData, created_at: new Date().toISOString() };
+      setReviews(prev => [newReview, ...prev]);
+      return { success: true, data: newReview };
+    }
+    try {
+      const { data, error } = await supabase.from('reviews').insert([reviewData]).select().single();
+      if (error) throw error;
+      setReviews(prev => [data, ...prev]);
+      return { success: true, data };
+    } catch (err) {
+      console.warn("Failed addReview:", err);
+      return { success: false, error: err };
+    }
+  };
+
+  const createSearchAlert = (alertData) => {
+    const newAlert = { id: Date.now().toString(), ...alertData, created_at: new Date().toISOString() };
+    setSearchAlerts(prev => {
+      const updated = [newAlert, ...prev];
+      localStorage.setItem('demandoo_search_alerts', JSON.stringify(updated));
+      return updated;
+    });
+    return { success: true, alert: newAlert };
+  };
 
   return (
     <TripContext.Provider value={{

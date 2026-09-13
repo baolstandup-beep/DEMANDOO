@@ -14,7 +14,8 @@ import {
   ChevronDown,
   LayoutDashboard,
   ShieldAlert,
-  Sparkles
+  Sparkles,
+  CreditCard
 } from 'lucide-react';
 
 export const Header = () => {
@@ -82,7 +83,7 @@ export const Header = () => {
           {user && user.role === 'driver' && user.driver_status === 'VERIFIED' && viewMode === 'driver' && (
             <Link 
               to={user.subscription_status === 'active' || user.subscription_status === 'trial' ? "/publier" : "/abonnement"}
-              className="hidden sm:inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-extrabold text-white bg-gradient-to-r from-demandoo-500 to-demandoo-600 hover:from-demandoo-600 hover:to-demandoo-700 shadow-md shadow-demandoo-500/20 active:scale-95 transition-all"
+              className="hidden sm:inline-flex items-center gap-2 px-4 py-2 text-xs btn-premium"
             >
               <PlusCircle className="w-4 h-4" />
               Publier un trajet
@@ -242,6 +243,15 @@ export const Header = () => {
                         <LayoutDashboard className="w-4 h-4 text-demandoo-600" />
                         Espace Conducteur
                       </Link>
+
+                      <Link 
+                        to="/abonnement" 
+                        onClick={() => setShowUserMenu(false)}
+                        className="flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-emerald-50/60 transition-colors"
+                      >
+                        <CreditCard className="w-4 h-4 text-demandoo-600" />
+                        Mon Abonnement (SaaS)
+                      </Link>
                       
                       {user.driver_status !== 'VERIFIED' && (
                         <Link 
@@ -287,7 +297,7 @@ export const Header = () => {
               </Link>
               <Link 
                 to="/inscription-chauffeur"
-                className="px-4 py-2 rounded-xl text-xs font-extrabold text-white bg-demandoo-500 hover:bg-demandoo-600 shadow-sm transition-all"
+                className="px-4 py-2 text-xs btn-premium"
               >
                 S'inscrire
               </Link>
