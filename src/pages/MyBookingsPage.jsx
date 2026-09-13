@@ -59,18 +59,18 @@ export const MyBookingsPage = () => {
       
       <div className="border-b border-slate-200/80 pb-4">
         <h1 className="text-2xl sm:text-3xl font-black text-demandoo-dark tracking-tight">
-          Mes Réservations de Covoiturage
+          Mes Trajets
         </h1>
         <p className="text-xs text-slate-500 font-medium mt-1">
-          Retrouvez vos billets électroniques et l'historique de vos déplacements
+          Retrouvez l'historique de vos trajets et vos contacts récents
         </p>
       </div>
 
       {myBookings.length === 0 ? (
         <div className="glass-card rounded-3xl p-10 text-center border border-slate-200/80 space-y-4 max-w-md mx-auto shadow-md">
           <Ticket className="w-12 h-12 text-slate-300 mx-auto" />
-          <h3 className="text-base font-black text-demandoo-dark">Aucune réservation trouvée</h3>
-          <p className="text-xs text-slate-500 font-medium">Vous n'avez pas encore réservé de trajet de covoiturage.</p>
+          <h3 className="text-base font-black text-demandoo-dark">Aucun trajet trouvé</h3>
+          <p className="text-xs text-slate-500 font-medium">Vous n'avez pas encore d'historique de trajets.</p>
           <Link to="/trajets" className="inline-block px-5 py-2.5 rounded-xl font-black text-xs text-white bg-gradient-to-r from-demandoo-500 to-demandoo-600 hover:from-demandoo-600 hover:to-demandoo-700 shadow-md shadow-demandoo-500/20">
             Trouver un trajet
           </Link>
@@ -84,7 +84,7 @@ export const MyBookingsPage = () => {
                 
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
                   <div>
-                    <span className="text-[10px] text-slate-400 font-extrabold uppercase tracking-wider">Réf. Billet : {b.id}</span>
+                    <span className="text-[10px] text-slate-400 font-extrabold uppercase tracking-wider">Réf : {b.id}</span>
                     <h3 className="text-base font-black text-demandoo-dark">
                       {b.trip?.departure_city} → {b.trip?.arrival_city}
                     </h3>

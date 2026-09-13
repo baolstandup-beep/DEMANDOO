@@ -22,12 +22,21 @@ import {
 export const TripDetailsPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { getTripById, bookings } = useTrips();
+  const { getTripById, bookings, loading } = useTrips();
   const { user } = useAuth();
 
   const trip = getTripById(id);
   const existingBooking = bookings.find(b => b.trip_id === trip?.id && b.passenger_id === user?.id);
   const isAccepted = existingBooking && ['accepted', 'completed'].includes(existingBooking.status);
+
+  if (loading && !trip) {
+    return (
+      <div className="max-w-3xl mx-auto px-4 py-16 text-center space-y-4">
+        <Loader2 className="w-8 h-8 animate-spin mx-auto text-demandoo-500" />
+        <h2 className="text-xl font-bold text-slate-900">Chargement du trajet...</h2>
+      </div>
+    );
+  }
 
   if (!trip) {
     return (
@@ -51,12 +60,15 @@ export const TripDetailsPage = () => {
     return `${plate.substring(0, 2)}-***-${plate.substring(plate.length - 2)}`;
   };
 
-  const handleBookClick = () => {
-    if (!user) {
-      navigate('/login');
-      return;
-    }
-    navigate(`/reservation/${trip.id}`);
+  const generateWhatsAppLink = () => {
+    const phone = trip.driver?.phone || '+221770000000'; // Default if missing
+    // Format the phone number (remove spaces, ensure country code)
+    let formattedPhone = phone.replace(/[^0-9+]/g, '');
+    if (formattedPhone.startsWith('00')) formattedPhone = '+' + formattedPhone.substring(2);
+    if (!formattedPhone.startsWith('+')) formattedPhone = '+221' + formattedPhone;
+    
+    const message = `Bonjour, je suis intéressé par votre trajet ${trip.departure_city} - ${trip.arrival_city} prévu le ${new Date(trip.departure_datetime).toLocaleDateString('fr-FR')}. Reste-t-il de la place ?`;
+    return `https://wa.me/${formattedPhone.replace('+', '')}?text=${encodeURIComponent(message)}`;
   };
 
   return (
@@ -158,9 +170,13 @@ export const TripDetailsPage = () => {
                 </div>
 
                 <div className="flex flex-wrap gap-2 pt-1">
-                  <IdentityVerifiedBadge />
-                  <PhoneVerifiedBadge />
-                  <VehicleVerifiedBadge />
+                  {trip.driver?.driver_status === 'VERIFIED' && (
+                    <>
+                      <IdentityVerifiedBadge />
+                      <PhoneVerifiedBadge />
+                      <VehicleVerifiedBadge />
+                    </>
+                  )}
                 </div>
               </div>
             </div>
@@ -245,12 +261,15 @@ export const TripDetailsPage = () => {
               </div>
             </div>
 
-            <button
-              onClick={() => navigate(`/chauffeur/${trip.driver_id}?tripId=${trip.id}`)}
-              className="w-full py-4 rounded-2xl text-sm font-black text-white bg-slate-900 hover:bg-slate-800 shadow-lg shadow-slate-900/30 active:scale-95 transition-all flex items-center justify-center gap-2"
+            <a
+              href={generateWhatsAppLink()}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full py-4 rounded-2xl text-sm font-black text-white bg-emerald-600 hover:bg-emerald-700 shadow-lg shadow-emerald-600/30 active:scale-95 transition-all flex items-center justify-center gap-2"
             >
-              Voir le profil & Contacter
-            </button>
+              <Phone className="w-4 h-4" />
+              Contacter via WhatsApp
+            </a>
 
             <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 text-[11px] text-slate-500 space-y-1 font-medium mt-3">
               <div className="flex items-center gap-1.5 font-bold text-slate-700">

@@ -134,14 +134,18 @@ export const HomePage = () => {
 
         <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 w-full space-y-12">
           
-          {/* Texte caché visuellement mais conservé pour le SEO car l'image contient déjà le texte */}
-          <div className="sr-only">
-            <h1>Le covoiturage de confiance de Touba vers tout le Sénégal.</h1>
-            <p>Réservez ou proposez des trajets partagés sûrs et abordables vers Dakar, Thiès, Saint-Louis, Mbacké et bien d'autres villes.</p>
+          <div className="text-center space-y-4 mb-4 sm:mb-8">
+            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight">
+              Trouvez votre trajet,<br className="hidden sm:block" />
+              <span className="text-demandoo-400"> contactez le chauffeur</span>.
+            </h1>
+            <p className="text-base sm:text-lg text-slate-300 font-medium max-w-2xl mx-auto px-4">
+              Convenez ensemble des modalités du voyage. Plateforme 100% gratuite de mise en relation de gré à gré.
+            </p>
           </div>
 
         {/* SEARCH BAR (White Card Style) */}
-          <div className="max-w-5xl mx-auto">
+          <div className="max-w-5xl mx-auto w-full">
             <div className="bg-white p-3 sm:p-4 rounded-[2rem] shadow-2xl border border-slate-100 relative">
               <form onSubmit={handleSearchSubmit} className="flex flex-col sm:flex-row items-center">
                 

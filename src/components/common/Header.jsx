@@ -216,7 +216,7 @@ export const Header = () => {
                         className="flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-emerald-50/60 transition-colors"
                       >
                         <Car className="w-4 h-4 text-demandoo-600" />
-                        Mes Réservations
+                        Mes Trajets
                       </Link>
                       
                       {user.role === 'passenger' && (
@@ -299,7 +299,7 @@ export const Header = () => {
                 to="/inscription-chauffeur"
                 className="px-4 py-2 text-xs btn-premium"
               >
-                S'inscrire
+                Devenir chauffeur
               </Link>
             </div>
           )}

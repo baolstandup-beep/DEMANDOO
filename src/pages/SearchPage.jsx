@@ -312,7 +312,7 @@ export const SearchPage = () => {
                           alt={trip.driver?.full_name}
                           className="w-14 h-14 rounded-2xl object-cover shadow-sm border-2 border-emerald-100"
                         />
-                        {trip.driver?.kyc_status === 'verified' && (
+                        {trip.driver?.driver_status === 'VERIFIED' && (
                           <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-emerald-500 border-2 border-white flex items-center justify-center">
                             <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />
                           </div>
@@ -322,12 +322,22 @@ export const SearchPage = () => {
                         <div className="flex items-center gap-1.5">
                           <span className="font-extrabold text-slate-900 text-sm">{trip.driver?.full_name}</span>
                         </div>
-                        <div className="flex items-center gap-1.5 text-xs mt-0.5">
-                          <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-                          <span className="font-bold text-slate-700">{trip.driver?.rating}</span>
-                          <span className="text-slate-400">•</span>
-                          <span className="text-slate-500 font-medium">{trip.driver?.total_trips} trajets</span>
-                        </div>
+                        {(trip.driver?.rating != null || trip.driver?.total_trips != null) && (
+                          <div className="flex items-center gap-1.5 text-xs mt-0.5">
+                            {trip.driver?.rating != null && (
+                              <>
+                                <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                                <span className="font-bold text-slate-700">{trip.driver.rating}</span>
+                              </>
+                            )}
+                            {trip.driver?.rating != null && trip.driver?.total_trips != null && (
+                              <span className="text-slate-400">•</span>
+                            )}
+                            {trip.driver?.total_trips != null && (
+                              <span className="text-slate-500 font-medium">{trip.driver.total_trips} trajets</span>
+                            )}
+                          </div>
+                        )}
                         <p className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
                           <Car className="w-3 h-3 text-emerald-500" />
                           {trip.driver?.vehicle?.make} {trip.driver?.vehicle?.model}
@@ -383,7 +393,7 @@ export const SearchPage = () => {
                         to={`/trajet/${trip.id}`}
                         className="flex items-center gap-1.5 px-5 py-3 rounded-2xl text-xs font-black text-white bg-gradient-to-r from-emerald-600 to-teal-600 shadow-lg shadow-emerald-600/20 hover:from-emerald-500 hover:to-teal-500 active:scale-[0.97] transition-all mt-2"
                       >
-                        Voir & Réserver
+                        Voir le trajet
                         <ArrowRight className="w-3.5 h-3.5" />
                       </Link>
                     </div>

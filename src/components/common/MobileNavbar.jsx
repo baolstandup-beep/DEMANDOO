@@ -21,7 +21,7 @@ export const MobileNavbar = () => {
           to="/" 
           end
           className={({ isActive }) => 
-            `flex flex-col items-center gap-0.5 py-1 px-3 rounded-xl transition-all active:scale-90 active:opacity-70 ${
+            `flex flex-col items-center gap-0.5 py-1 px-2 sm:px-3 rounded-xl transition-all active:scale-90 active:opacity-70 ${
               isActive ? 'text-demandoo-600 font-extrabold scale-105' : 'text-slate-500 hover:text-slate-900 font-semibold'
             }`
           }
@@ -33,7 +33,7 @@ export const MobileNavbar = () => {
         <NavLink 
           to="/trajets" 
           className={({ isActive }) => 
-            `flex flex-col items-center gap-0.5 py-1 px-3 rounded-xl transition-all active:scale-90 active:opacity-70 ${
+            `flex flex-col items-center gap-0.5 py-1 px-2 sm:px-3 rounded-xl transition-all active:scale-90 active:opacity-70 ${
               isActive ? 'text-demandoo-600 font-extrabold scale-105' : 'text-slate-500 hover:text-slate-900 font-semibold'
             }`
           }
@@ -45,7 +45,7 @@ export const MobileNavbar = () => {
         <NavLink 
           to="/publier" 
           className={({ isActive }) => 
-            `flex flex-col items-center gap-0.5 py-1 px-3 rounded-xl transition-all active:scale-90 active:opacity-70 ${
+            `flex flex-col items-center gap-0.5 py-1 px-2 sm:px-3 rounded-xl transition-all active:scale-90 active:opacity-70 ${
               isActive ? 'text-demandoo-600 font-extrabold' : 'text-demandoo-500 font-bold'
             }`
           }
@@ -59,19 +59,19 @@ export const MobileNavbar = () => {
         <NavLink 
           to="/mes-reservations" 
           className={({ isActive }) => 
-            `flex flex-col items-center gap-0.5 py-1 px-3 rounded-xl transition-all active:scale-90 active:opacity-70 ${
+            `flex flex-col items-center gap-0.5 py-1 px-2 sm:px-3 rounded-xl transition-all active:scale-90 active:opacity-70 ${
               isActive ? 'text-demandoo-600 font-extrabold scale-105' : 'text-slate-500 hover:text-slate-900 font-semibold'
             }`
           }
         >
           <Ticket className="w-5 h-5" />
-          <span className="text-[10px]">Réservations</span>
+          <span className="text-[10px]">Historique</span>
         </NavLink>
 
         <NavLink 
           to="/espace-chauffeur" 
           className={({ isActive }) => 
-            `flex flex-col items-center gap-0.5 py-1 px-3 rounded-xl transition-all active:scale-90 active:opacity-70 ${
+            `flex flex-col items-center gap-0.5 py-1 px-2 sm:px-3 rounded-xl transition-all active:scale-90 active:opacity-70 ${
               isActive ? 'text-demandoo-600 font-extrabold scale-105' : 'text-slate-500 hover:text-slate-900 font-semibold'
             }`
           }

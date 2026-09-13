@@ -33,10 +33,6 @@ export const Footer = () => {
                 <span>Profils vérifiés</span>
               </div>
               <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-xl shadow-sm border border-slate-100">
-                <CreditCard className="w-5 h-5 text-demandoo-500" />
-                <span>Paiements sécurisés</span>
-              </div>
-              <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-xl shadow-sm border border-slate-100">
                 <MessageCircle className="w-5 h-5 text-demandoo-500" />
                 <span>Avis de la communauté</span>
               </div>
@@ -90,7 +86,7 @@ export const Footer = () => {
               <li><Link to="/mes-reservations" className="text-slate-600 hover:text-demandoo-600 hover:translate-x-1 transition-all inline-block">Espace passager</Link></li>
               <li><Link to="/espace-chauffeur" className="text-slate-600 hover:text-demandoo-600 hover:translate-x-1 transition-all inline-block">Espace conducteur</Link></li>
               <li><Link to="/trajets" className="text-slate-600 hover:text-demandoo-600 hover:translate-x-1 transition-all inline-block">Mes trajets</Link></li>
-              <li><Link to="/mes-reservations" className="text-slate-600 hover:text-demandoo-600 hover:translate-x-1 transition-all inline-block">Mes réservations</Link></li>
+              <li><Link to="/mes-reservations" className="text-slate-600 hover:text-demandoo-600 hover:translate-x-1 transition-all inline-block">Historique trajets</Link></li>
             </ul>
           </div>
 
