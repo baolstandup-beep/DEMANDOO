@@ -255,9 +255,20 @@ export const Header = () => {
                         onClick={() => setShowUserMenu(false)}
                         className="flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-emerald-50/60 transition-colors"
                       >
-                        <LayoutDashboard className="w-4 h-4 text-demandoo-600" />
-                        Espace Conducteur
+                        <User className="w-4 h-4 text-demandoo-600" />
+                        Mon Profil
                       </Link>
+
+                      {user.driver_status === 'VERIFIED' && (
+                        <Link 
+                          to="/publier" 
+                          onClick={() => setShowUserMenu(false)}
+                          className="flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-emerald-50/60 transition-colors"
+                        >
+                          <PlusCircle className="w-4 h-4 text-demandoo-600" />
+                          Publier un trajet
+                        </Link>
+                      )}
 
                       <Link 
                         to="/abonnement" 
