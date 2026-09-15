@@ -1,5 +1,5 @@
 import React from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useTrips } from '../context/TripContext';
 import { useAuth } from '../context/AuthContext';
 import { VerifiedDriverBadge, PhoneVerifiedBadge, IdentityVerifiedBadge, VehicleVerifiedBadge } from '../components/common/Badge';
