@@ -31,6 +31,7 @@ export function App() {
   const location = useLocation();
   const navigate = useNavigate();
   const { addNotification } = useNotifications();
+  const isAdminRoute = location.pathname.startsWith('/admin');
 
   // SEO dynamique
   useEffect(() => {
