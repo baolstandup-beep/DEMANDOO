@@ -47,8 +47,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   async function chargerConducteurs() {
     try {
       const { data: conducteurs, error } = await supabase
-        .from('conducteurs')
+        .from('profiles')
         .select('*')
+        .eq('role', 'driver')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -65,25 +66,23 @@ document.addEventListener('DOMContentLoaded', async () => {
         const tr = document.createElement('tr');
         
         const dateFormatted = new Date(c.created_at).toLocaleDateString('fr-FR');
-        const badgeClass = c.statut === 'valide' ? 'badge-success' : 
-                           c.statut === 'suspendu' ? 'badge-danger' : 'badge-warning';
-        const statutLabel = c.statut === 'valide' ? 'Validé' : 
-                            c.statut === 'suspendu' ? 'Suspendu' : 'En attente';
+        const badgeClass = c.driver_status === 'VERIFIED' ? 'badge-success' : 
+                           c.driver_status === 'SUSPENDED' ? 'badge-danger' : 'badge-warning';
+        const statutLabel = c.driver_status === 'VERIFIED' ? 'Validé' : 
+                            c.driver_status === 'SUSPENDED' ? 'Suspendu' : 'En attente';
 
         tr.innerHTML = `
-          <td><strong>${escapeHtml(c.prenom)} ${escapeHtml(c.nom)}</strong></td>
-          <td>${escapeHtml(c.telephone)}</td>
-          <td><span class="tag">${escapeHtml(c.vehicule_type.toUpperCase())}</span></td>
-          <td>${escapeHtml(c.ville)}</td>
-          <td><code>${escapeHtml(c.permis_numero)}</code></td>
-          <td>
-            ${c.permis_image_url ? `<a href="${c.permis_image_url}" target="_blank" class="btn-link">📄 Voir</a>` : '-'}
-          </td>
+          <td><strong>${escapeHtml(c.full_name)}</strong></td>
+          <td>${escapeHtml(c.phone)}</td>
+          <td><span class="tag">Chauffeur</span></td>
+          <td>-</td>
+          <td><code>${escapeHtml(c.license_number || '-')}</code></td>
+          <td>-</td>
           <td><span class="badge ${badgeClass}" id="badge-${c.id}">${statutLabel}</span></td>
           <td><small>${dateFormatted}</small></td>
           <td style="display:flex; gap:8px;">
-            <button class="btn" style="padding:4px 8px; font-size:12px; background:var(--success)" onclick="changerStatut('${c.id}', 'valide')">Valider</button>
-            <button class="btn" style="padding:4px 8px; font-size:12px; background:var(--danger)" onclick="changerStatut('${c.id}', 'suspendu')">Suspendre</button>
+            <button class="btn" style="padding:4px 8px; font-size:12px; background:var(--success)" onclick="changerStatut('${c.id}', 'VERIFIED')">Valider</button>
+            <button class="btn" style="padding:4px 8px; font-size:12px; background:var(--danger)" onclick="changerStatut('${c.id}', 'SUSPENDED')">Suspendre</button>
           </td>
         `;
         driversList.appendChild(tr);
@@ -99,8 +98,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     try {
       const { error } = await supabase
-        .from('conducteurs')
-        .update({ statut: nouveauStatut })
+        .from('profiles')
+        .update({ driver_status: nouveauStatut, is_driver_active: nouveauStatut === 'VERIFIED' })
         .eq('id', id);
 
       if (error) throw error;
