@@ -139,7 +139,10 @@ export const SubscriptionPage = () => {
       
       // Update profile subscription info locally & in DB
       await supabase.from('profiles').update({ 
-        subscription_status: plan.monthly_price === 0 ? 'trial' : 'active'
+        subscription_status: plan.monthly_price === 0 ? 'trial' : 'active',
+        driver_status: 'VERIFIED',
+        is_driver_active: true,
+        kyc_status: 'verified'
       }).eq('id', user.id);
       
       // Force localStorage update for AuthContext
@@ -147,6 +150,9 @@ export const SubscriptionPage = () => {
       if (stored) {
         const parsed = JSON.parse(stored);
         parsed.subscription_status = plan.monthly_price === 0 ? 'trial' : 'active';
+        parsed.driver_status = 'VERIFIED';
+        parsed.is_driver_active = true;
+        parsed.kyc_status = 'verified';
         localStorage.setItem('demandoo_user_v2', JSON.stringify(parsed));
       }
       

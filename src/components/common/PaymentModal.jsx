@@ -21,8 +21,8 @@ export const PaymentModal = ({ isOpen, onClose, plan, onSuccess }) => {
     
     try {
       const clientReference = `sub_${user?.id}_${Date.now()}`;
-      const successUrl = `${window.location.origin}/espace-chauffeur/abonnement?payment=success&plan_id=${plan.id}`;
-      const errorUrl = `${window.location.origin}/espace-chauffeur/abonnement?payment=cancelled`;
+      const successUrl = `${window.location.origin}/abonnement?payment=success&plan_id=${plan.id}`;
+      const errorUrl = `${window.location.origin}/abonnement?payment=cancelled`;
 
       // 1. Appel dynamique à la passerelle Afrotools
       let redirectUrl = null;
