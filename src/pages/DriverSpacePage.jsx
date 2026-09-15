@@ -12,6 +12,7 @@ import { TripQuotaProgress } from '../components/driver/TripQuotaProgress';
 import { DriverStats } from '../components/driver/DriverStats';
 import { NextTripCard } from '../components/driver/NextTripCard';
 import { RecentRequests } from '../components/driver/RecentRequests';
+import { MapView } from '../components/common/MapView';
 
 // We import some icons for tabs that might need it if we put them inline, but navigation is extracted.
 import { Car, Ticket, AlertCircle } from 'lucide-react';
@@ -144,6 +145,25 @@ export const DriverSpacePage = () => {
               offeredSeats={offeredSeats}
               acceptedBookingsCount={acceptedBookingsCount}
             />
+
+            {/* Suivi GPS en Temps Réel */}
+            {user?.is_driver_active && user?.latitude && user?.longitude && (
+              <div className="bg-white rounded-3xl p-6 shadow-xl shadow-slate-200/40 border border-slate-100">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h3 className="text-lg font-black text-slate-900">Suivi GPS (En direct)</h3>
+                    <p className="text-xs text-slate-500 font-medium mt-1">
+                      Votre position est partagée avec les passagers car vous êtes "En ligne".
+                    </p>
+                  </div>
+                  <div className="px-3 py-1 bg-emerald-50 text-emerald-600 rounded-full text-xs font-black uppercase tracking-widest flex items-center gap-1.5 animate-pulse">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                    Actif
+                  </div>
+                </div>
+                <MapView latitude={user.latitude} longitude={user.longitude} label="Vous êtes ici" height="300px" />
+              </div>
+            )}
 
             {/* Next Trip & Recent Requests Row */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 pt-4">

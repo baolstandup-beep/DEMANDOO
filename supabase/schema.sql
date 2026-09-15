@@ -17,6 +17,9 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   is_phone_verified BOOLEAN DEFAULT FALSE,
   is_identity_verified BOOLEAN DEFAULT FALSE,
   is_driver_active BOOLEAN DEFAULT FALSE,
+  latitude FLOAT,
+  longitude FLOAT,
+  last_location_update TIMESTAMPTZ,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );

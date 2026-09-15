@@ -17,6 +17,7 @@ import { MyBookingsPage } from './pages/MyBookingsPage';
 import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
 import { SubscriptionPage } from './pages/SubscriptionPage';
+import { LocationTracker } from './components/common/LocationTracker';
 
 import { DriverRouteGuard } from './components/common/DriverRouteGuard';
 import { AdminRouteGuard } from './components/common/AdminRouteGuard';
@@ -66,7 +67,9 @@ export function App() {
   }, [location, navigate]);
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900 font-sans selection:bg-demandoo-500 selection:text-white">
+    <div className={`min-h-screen ${isAdminRoute ? 'bg-slate-50' : 'bg-slate-50/50'} flex flex-col font-sans relative selection:bg-demandoo-500 selection:text-white`}>
+      <LocationTracker />
+      <PushNotificationsSetup />
       {/* Initialisation silencieuse des push notifications (mobile uniquement) */}
       {/* <PushNotificationsSetup onNotificationReceived={addNotification} /> */}
 
