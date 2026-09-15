@@ -511,11 +511,11 @@ export const AuthProvider = ({ children }) => {
     }
 
     // Générer un email depuis le numéro de téléphone si non fourni
-    // Ex: 773033196 → 221773033196@demandoo-users.sn
-    const phoneClean = (userData.phone || '').replace(/[\s\-\(\)]/g, '');
-    const generatedEmail = userData.email && userData.email.includes('@')
+    // Ex: 773033196 → 221773033196@demandoo.com
+    const phoneClean = (userData.phone || '').replace(/[\s\-\(\)]/g, '').trim();
+    const generatedEmail = (userData.email && userData.email.includes('@')
       ? userData.email
-      : `221${phoneClean}@demandoo-users.sn`;
+      : `221${phoneClean}@demandoo.com`).trim();
 
     try {
       // Bloquer onAuthStateChange pendant l'inscription pour éviter une navigation prématurée
