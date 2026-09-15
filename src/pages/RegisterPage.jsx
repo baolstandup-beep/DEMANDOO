@@ -4,7 +4,6 @@ import { useAuth } from '../context/AuthContext';
 import { StepIndicator } from '../components/register/StepIndicator';
 import { StepIdentity } from '../components/register/StepIdentity';
 import { StepDriverPhoto } from '../components/register/StepDriverPhoto';
-import { StepDocuments } from '../components/register/StepDocuments';
 import { StepVehicleInfo } from '../components/register/StepVehicleInfo';
 import { StepVehiclePhotos } from '../components/register/StepVehiclePhotos';
 import { StepSummary } from '../components/register/StepSummary';
@@ -108,7 +107,7 @@ export const RegisterPage = () => {
     }
 
     window.scrollTo(0, 0);
-    setCurrentStep((prev) => Math.min(prev + 1, 6));
+    setCurrentStep((prev) => Math.min(prev + 1, 5));
   };
 
   const prevStep = () => {
@@ -170,7 +169,7 @@ export const RegisterPage = () => {
           </Link>
         </div>
 
-        <StepIndicator currentStep={currentStep} totalSteps={6} onBack={prevStep} />
+        <StepIndicator currentStep={currentStep} totalSteps={5} onBack={prevStep} />
 
         <div className="min-h-[400px]">
           {currentStep === 1 && (
@@ -191,18 +190,14 @@ export const RegisterPage = () => {
           )}
 
           {currentStep === 3 && (
-            <StepDocuments data={formData} updateData={updateData} onNext={nextStep} />
-          )}
-
-          {currentStep === 4 && (
             <StepVehicleInfo data={formData} updateData={updateData} onNext={nextStep} />
           )}
 
-          {currentStep === 5 && (
+          {currentStep === 4 && (
             <StepVehiclePhotos data={formData} updateData={updateData} onNext={nextStep} />
           )}
 
-          {currentStep === 6 && (
+          {currentStep === 5 && (
             <StepSummary data={formData} updateData={updateData} onSubmit={handleSubmit} isLoading={isLoading} />
           )}
         </div>
