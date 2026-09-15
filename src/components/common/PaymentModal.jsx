@@ -20,33 +20,60 @@ export const PaymentModal = ({ isOpen, onClose, plan, onSuccess }) => {
     setErrorMsg('');
     
     try {
-      // 1. Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 2500));
-      
-      // 2. Insert payment record into Supabase
-      if (user && user.id && plan.id.length === 36) {
-        const { error: paymentError } = await supabase
-          .from('payments')
-          .insert([{
-            driver_id: user.id,
-            provider: provider,
-            provider_transaction_id: `txn_${Date.now()}_${Math.floor(Math.random()*1000)}`,
-            amount: plan.monthly_price,
-            currency: 'XOF',
-            status: 'paid',
-            confirmed_at: new Date().toISOString()
-          }]);
-          
-        if (paymentError) throw paymentError;
+      const clientReference = `sub_${user?.id}_${Date.now()}`;
+      const successUrl = `${window.location.origin}/espace-chauffeur/abonnement?payment=success&plan_id=${plan.id}`;
+      const errorUrl = `${window.location.origin}/espace-chauffeur/abonnement?payment=cancelled`;
+
+      // 1. Appel dynamique à la passerelle Afrotools
+      let redirectUrl = null;
+
+      if (provider === 'wave') {
+        const { createWaveCheckout } = await import('../../services/afrotoolsService');
+        const response = await createWaveCheckout({
+          amount: plan.monthly_price,
+          clientReference,
+          clientPhone: phoneNumber,
+          successUrl,
+          errorUrl
+        });
+        
+        // Mode Simulation Sandbox de Afrotools: L'URL retournée est une fausse URL (pay.wave.com/m/...). 
+        // Si c'est le cas, on contourne et on redirige directement vers le succès pour la démo.
+        if (response.wave_launch_url && response.wave_launch_url.includes('wave_')) {
+            redirectUrl = successUrl;
+        } else {
+            redirectUrl = response.wave_launch_url;
+        }
+      } else {
+        const { createBictorysCharge } = await import('../../services/afrotoolsService');
+        const response = await createBictorysCharge({
+          amount: plan.monthly_price,
+          clientReference,
+          customerName: user?.full_name || 'Chauffeur',
+          customerPhone: phoneNumber,
+          customerEmail: user?.email,
+          paymentType: provider === 'orange_money' ? 'orange_money' : undefined,
+          successUrl,
+          errorUrl
+        });
+
+        // Mode Simulation Sandbox Bictorys
+        if (response.link && response.link.includes('bictorys_chg_')) {
+            redirectUrl = successUrl;
+        } else {
+            redirectUrl = response.link;
+        }
+      }
+
+      // 2. Redirection vers la plateforme de paiement ou l'URL de succès
+      if (redirectUrl) {
+        window.location.href = redirectUrl;
+      } else {
+        throw new Error("L'URL de paiement n'a pas pu être générée.");
       }
       
-      setStatus('success');
-      setTimeout(() => {
-        onSuccess(plan, provider);
-      }, 1500);
-      
     } catch (err) {
-      console.error(err);
+      console.error("Erreur de paiement Afrotools:", err);
       setStatus('error');
       setErrorMsg("La transaction a échoué. Veuillez vérifier votre solde et réessayer.");
     }

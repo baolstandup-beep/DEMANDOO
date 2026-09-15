@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
 import { Check, Shield, AlertCircle, Loader2 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { PaymentModal } from '../components/common/PaymentModal';
 
 const SUBSCRIPTION_TIERS = [
@@ -65,9 +65,13 @@ export const SubscriptionPage = () => {
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [error, setError] = useState('');
 
+  const location = useLocation();
+
   useEffect(() => {
     fetchPlans();
   }, []);
+
+
 
   const fetchPlans = async () => {
     try {
@@ -149,12 +153,44 @@ export const SubscriptionPage = () => {
       alert(`Félicitations, vous êtes maintenant abonné à la formule ${plan.name} !`);
       window.location.href = '/espace-chauffeur';
     } catch (err) {
-      console.error(err);
-      setError("Une erreur est survenue lors de l'abonnement. Veuillez réessayer.");
+      console.error('Error recording subscription:', err);
+      setError("Une erreur est survenue lors de l'activation de votre abonnement.");
     } finally {
       setSubscribingTo(null);
     }
   };
+
+  // Intercepter le retour de paiement depuis Afrotools
+  useEffect(() => {
+    if (!loading && dbPlans.length > 0 && user) {
+      const params = new URLSearchParams(location.search);
+      const paymentStatus = params.get('payment');
+      const planId = params.get('plan_id');
+      
+      if (paymentStatus === 'success' && planId) {
+        // Retrouver les infos du plan depuis dbPlans ou le fallback
+        let matchedPlan = dbPlans.find(p => p.id === planId);
+        if (!matchedPlan) {
+          // Chercher dans les fallbacks si ce n'est pas un plan DB
+          const fallbackTier = SUBSCRIPTION_TIERS.find(t => t.id_fallback === planId);
+          if (fallbackTier) {
+            matchedPlan = {
+              id: fallbackTier.id_fallback,
+              name: fallbackTier.name,
+              monthly_price: fallbackTier.price
+            };
+          }
+        }
+        
+        if (matchedPlan) {
+          handlePaymentSuccess(matchedPlan, 'afrotools');
+          
+          // Nettoyer l'URL pour ne pas réexécuter si l'utilisateur rafraîchit
+          window.history.replaceState({}, document.title, window.location.pathname);
+        }
+      }
+    }
+  }, [location.search, loading, dbPlans, user]);
 
   if (loading) {
     return (
