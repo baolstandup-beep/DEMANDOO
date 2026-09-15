@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   latitude FLOAT,
   longitude FLOAT,
   last_location_update TIMESTAMPTZ,
+  fcm_token TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -259,3 +260,40 @@ DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
+-- ===================================================
+-- 11. REVIEWS (AVIS)
+-- ===================================================
+CREATE TABLE IF NOT EXISTS public.reviews (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  trip_id UUID NOT NULL REFERENCES public.trips(id) ON DELETE CASCADE,
+  driver_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  passenger_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  rating INT NOT NULL CHECK (rating >= 1 AND rating <= 5),
+  comment TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(trip_id, passenger_id) -- Un seul avis par trajet et par passager
+);
+
+ALTER TABLE public.reviews ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public reviews view" ON public.reviews FOR SELECT USING (true);
+CREATE POLICY "Passengers can leave review" ON public.reviews FOR INSERT WITH CHECK (passenger_id = auth.uid());
+
+-- Function & Trigger to update driver rating automatically
+CREATE OR REPLACE FUNCTION update_driver_rating()
+RETURNS TRIGGER AS $$
+BEGIN
+  UPDATE public.driver_profiles
+  SET rating = (
+    SELECT ROUND(AVG(rating)::numeric, 2)
+    FROM public.reviews
+    WHERE driver_id = NEW.driver_id
+  )
+  WHERE user_id = NEW.driver_id;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE OR REPLACE TRIGGER trigger_update_driver_rating
+AFTER INSERT OR UPDATE ON public.reviews
+FOR EACH ROW EXECUTE FUNCTION update_driver_rating();

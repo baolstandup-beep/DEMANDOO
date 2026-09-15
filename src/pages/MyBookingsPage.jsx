@@ -34,10 +34,9 @@ export const MyBookingsPage = () => {
 
     try {
       addReview({
-        bookingId: reviewBooking.id,
-        tripId: reviewBooking.trip_id,
-        reviewerId: user?.id,
-        revieweeId: reviewBooking.trip?.driver_id || 'drv-001',
+        trip_id: reviewBooking.trip_id,
+        passenger_id: user?.id,
+        driver_id: reviewBooking.trip?.driver_id,
         rating: rating,
         comment: comment
       });
@@ -78,7 +77,7 @@ export const MyBookingsPage = () => {
       ) : (
         <div className="space-y-4">
           {myBookings.map(b => {
-            const hasReviewed = reviews.some(r => r.booking_id === b.id);
+            const hasReviewed = reviews.some(r => r.trip_id === b.trip_id && r.passenger_id === user?.id);
             return (
               <div key={b.id} className="glass-card rounded-2xl sm:rounded-3xl p-4 sm:p-6 border border-slate-200/80 shadow-soft hover-lift space-y-4">
                 
