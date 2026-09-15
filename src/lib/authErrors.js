@@ -50,6 +50,10 @@ export function translateAuthError(error) {
   if (message.includes('signup is disabled')) {
     return "Les inscriptions sont temporairement désactivées. Réessayez plus tard.";
   }
+  
+  if (message === '{}' || message === '[object object]' || message === '') {
+    return "Inscription impossible. Veuillez vérifier vos informations (il est possible que ce numéro soit déjà utilisé).";
+  }
 
   return `Impossible de traiter votre demande (${error?.message || 'Erreur inconnue'}). Veuillez réessayer.`;
 }
