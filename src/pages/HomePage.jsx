@@ -481,7 +481,74 @@ export const HomePage = () => {
         </div>
       </section>
 
-      {/* 10. ESPACE CHAUFFEUR (CTA) */}
+      {/* 10. ABONNEMENTS CHAUFFEURS */}
+      <section id="abonnements" className="py-16 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <Reveal>
+          <div className="text-center max-w-3xl mx-auto mb-12">
+            <h2 className="text-3xl font-black text-slate-900 mb-4">Des offres adaptées à votre rythme</h2>
+            <p className="text-slate-600 font-medium">Zéro commission sur vos trajets. Vous payez uniquement l'abonnement qui correspond à vos besoins.</p>
+          </div>
+        </Reveal>
+        
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Découverte */}
+          <Reveal delay={100}>
+            <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm flex flex-col h-full hover:border-slate-300 transition-colors">
+              <h3 className="text-xl font-bold text-slate-900 mb-2">Découverte</h3>
+              <div className="flex items-end gap-1 mb-4">
+                <span className="text-4xl font-black text-slate-900">0</span>
+                <span className="text-lg font-bold text-slate-900 pb-1">FCFA</span>
+              </div>
+              <p className="text-sm font-medium text-slate-500 mb-6 flex-grow">Pour tester Demandoo et proposer votre premier trajet.</p>
+              <ul className="space-y-3 mb-8">
+                <li className="flex items-center gap-2 text-sm text-slate-700 font-medium">✅ 1 trajet au total</li>
+                <li className="flex items-center gap-2 text-sm text-slate-700 font-medium">✅ Zéro commission</li>
+              </ul>
+              <Link to="/abonnement" className="w-full block text-center py-3 rounded-xl border-2 border-slate-200 font-bold text-slate-700 hover:bg-slate-50 transition-colors">Commencer</Link>
+            </div>
+          </Reveal>
+
+          {/* Standard */}
+          <Reveal delay={200}>
+            <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-md flex flex-col h-full relative hover:border-slate-300 transition-colors">
+              <h3 className="text-xl font-bold text-slate-900 mb-2">Standard</h3>
+              <div className="flex items-end gap-1 mb-4">
+                <span className="text-4xl font-black text-slate-900">2 400</span>
+                <span className="text-lg font-bold text-slate-900 pb-1">FCFA</span>
+                <span className="text-sm text-slate-500 font-medium ml-1">/mois</span>
+              </div>
+              <p className="text-sm font-medium text-slate-500 mb-6 flex-grow">Pour proposer quelques trajets occasionnels chaque mois.</p>
+              <ul className="space-y-3 mb-8">
+                <li className="flex items-center gap-2 text-sm text-slate-700 font-medium">✅ Jusqu'à 4 trajets / mois</li>
+                <li className="flex items-center gap-2 text-sm text-slate-700 font-medium">✅ Zéro commission</li>
+              </ul>
+              <Link to="/abonnement" className="w-full block text-center py-3 rounded-xl bg-slate-900 text-white font-bold hover:bg-slate-800 transition-colors">Choisir Standard</Link>
+            </div>
+          </Reveal>
+
+          {/* Pro */}
+          <Reveal delay={300}>
+            <div className="bg-demandoo-600 p-8 rounded-3xl border border-demandoo-500 shadow-xl shadow-demandoo-600/20 flex flex-col h-full relative md:-mt-4 md:mb-4">
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-orange-500 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide">Le plus choisi</div>
+              <h3 className="text-xl font-bold text-white mb-2">Pro</h3>
+              <div className="flex items-end gap-1 mb-4">
+                <span className="text-4xl font-black text-white">4 900</span>
+                <span className="text-lg font-bold text-white pb-1">FCFA</span>
+                <span className="text-sm text-demandoo-100 font-medium ml-1">/mois</span>
+              </div>
+              <p className="text-sm font-medium text-demandoo-50 mb-6 flex-grow">Pour les chauffeurs qui roulent régulièrement.</p>
+              <ul className="space-y-3 mb-8">
+                <li className="flex items-center gap-2 text-sm text-white font-medium">✅ Trajets illimités</li>
+                <li className="flex items-center gap-2 text-sm text-white font-medium">✅ Visibilité prioritaire</li>
+                <li className="flex items-center gap-2 text-sm text-white font-medium">✅ Badge "Chauffeur Pro"</li>
+              </ul>
+              <Link to="/abonnement" className="w-full block text-center py-3 rounded-xl bg-orange-500 text-white font-bold hover:bg-orange-600 shadow-md transition-colors">Devenir Pro</Link>
+            </div>
+          </Reveal>
+        </div>
+      </section>
+
+      {/* 11. ESPACE CHAUFFEUR (CTA) */}
       <section className="bg-slate-900 py-16 text-center px-4">
         <div className="max-w-2xl mx-auto space-y-6">
           <h2 className="text-3xl font-black text-white">Vous partez ? Faites connaître votre trajet.</h2>
