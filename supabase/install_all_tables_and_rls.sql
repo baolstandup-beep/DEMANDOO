@@ -336,20 +336,11 @@ CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 DECLARE
   v_role TEXT;
-  v_driver_status TEXT;
 BEGIN
-  -- Lire le rôle depuis les métadonnées utilisateur
-  -- On force 'driver' car il n'y a plus de compte passager.
+  -- On force 'driver' car il n'y a plus de compte passager par défaut.
   v_role := 'driver';
 
-  -- Définir le statut chauffeur selon le rôle
-  IF v_role = 'driver' THEN
-    v_driver_status := 'PENDING';
-  ELSE
-    v_driver_status := 'INCOMPLETE';
-  END IF;
-
-  INSERT INTO public.profiles (id, full_name, email, avatar_url, role, driver_status, phone)
+  INSERT INTO public.profiles (id, full_name, email, avatar_url, role, driver_status, is_driver_active, phone)
   VALUES (
     new.id, 
     COALESCE(
@@ -364,7 +355,8 @@ BEGIN
     new.email, 
     COALESCE(new.raw_user_meta_data->>'avatar_url', ''),
     v_role,
-    v_driver_status,
+    'VERIFIED', -- Automatiquement validé
+    true,       -- Chauffeur actif instantanément
     new.raw_user_meta_data->>'phone'
   )
   ON CONFLICT (id) DO NOTHING;
