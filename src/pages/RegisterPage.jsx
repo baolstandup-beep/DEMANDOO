@@ -66,9 +66,22 @@ export const RegisterPage = () => {
 
   // Sauvegarder le brouillon à chaque modification
   useEffect(() => {
-    // Ne pas sauvegarder le mot de passe pour des raisons de sécurité
-    const { password, confirmPassword, ...draftData } = formData;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(draftData));
+    // Ne pas sauvegarder le mot de passe (sécurité) ni les images en base64 pour éviter de saturer le localStorage
+    const { 
+      password, 
+      confirmPassword, 
+      avatarBase64, 
+      licenseFrontBase64, 
+      licenseBackBase64, 
+      vehiclePhotos, 
+      ...draftData 
+    } = formData;
+    
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(draftData));
+    } catch (error) {
+      console.warn("Impossible de sauvegarder le brouillon: quota dépassé", error);
+    }
   }, [formData]);
 
   const updateData = (newData) => {
