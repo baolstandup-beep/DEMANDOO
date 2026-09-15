@@ -9,7 +9,7 @@ export const LoginPage = () => {
   const navigate = useNavigate();
   const { login, loginWithGoogle } = useAuth();
 
-  const [identifier, setIdentifier] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
@@ -21,7 +21,7 @@ export const LoginPage = () => {
     setError('');
     setIsLoading(true);
 
-    const result = await login(identifier, password, 'driver');
+    const result = await login(email, password, 'driver');
     setIsLoading(false);
 
     if (result && result.user) {
@@ -33,21 +33,6 @@ export const LoginPage = () => {
   };
 
 
-  const handleQuickLogin = async (role) => {
-    setError('');
-    setIsLoading(true);
-    const email = role === 'driver' ? 'modou.diop@demandoo.sn' : role === 'admin' ? 'admin@demandoo.sn' : 'passager@demandoo.sn';
-    const result = await login(email, 'demo123', role);
-    setIsLoading(false);
-    
-    if (result && result.user) {
-      if (role === 'admin') navigate('/admin');
-      else navigate('/espace-chauffeur');
-    } else {
-      setError(result?.error || `Impossible de se connecter avec le compte ${role}. Ce compte n'existe peut-être pas dans votre base de données.`);
-    }
-  };
-
   return (
     <div className="min-h-screen flex items-center justify-center px-4 py-12 font-sans relative overflow-hidden bg-[#0A0A0A]">
       
@@ -55,14 +40,14 @@ export const LoginPage = () => {
       <div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-demandoo-600/20 rounded-full blur-[120px] pointer-events-none -translate-x-1/2 -translate-y-1/2 animate-pulse" />
       <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-emerald-500/10 rounded-full blur-[150px] pointer-events-none translate-x-1/2 translate-y-1/2" />
       
-      <div className="relative z-10 bg-white/5 backdrop-blur-2xl rounded-2xl sm:rounded-[2.5rem] p-5 sm:p-8 lg:p-10 max-w-[450px] w-full border border-white/10 shadow-2xl shadow-black/50">
+      <div className="relative z-10 bg-white/5 backdrop-blur-2xl rounded-2xl sm:rounded-[2.5rem] p-6 sm:p-8 max-w-[400px] w-full border border-white/10 shadow-2xl shadow-black/50">
         
         <div className="text-center space-y-3 sm:space-y-4 mb-6 sm:mb-8">
           <Link to="/" className="inline-block p-2.5 sm:p-3 rounded-2xl bg-white shadow-xl shadow-black/25 hover:scale-105 transition-transform mx-auto mb-2 sm:mb-3">
             <img src="/logo.png" alt="Demandoo — Covoiturage Sénégal" className="h-9 sm:h-10 w-auto object-contain" />
           </Link>
           <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white tracking-tight">Espace Chauffeur</h1>
-          <p className="text-xs sm:text-sm text-slate-400 font-medium">Connectez-vous pour gérer vos trajets.</p>
+          <p className="text-xs sm:text-sm text-slate-400 font-medium">Connectez-vous pour gérer vos trajets et votre profil.</p>
         </div>
 
         {error && (
@@ -71,29 +56,7 @@ export const LoginPage = () => {
           </div>
         )}
 
-        <div className="mb-6 p-3 sm:p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-center space-y-2">
-          <div className="inline-flex items-center gap-2 text-xs font-black text-emerald-400">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span>⚡ Accès Démo Rapide (1 Clic)</span>
-          </div>
-          <p className="text-[11px] text-slate-400">Testez directement les différents rôles de la plateforme :</p>
-          <div className="flex gap-2 pt-1 justify-center">
-            <button 
-              type="button" 
-              onClick={() => handleQuickLogin('driver')} 
-              className="min-h-[36px] py-1.5 px-3 rounded-xl bg-demandoo-500/30 hover:bg-demandoo-500/50 text-demandoo-300 text-xs font-bold transition-all active:scale-95"
-            >
-              Chauffeur
-            </button>
-            <button 
-              type="button" 
-              onClick={() => handleQuickLogin('admin')} 
-              className="min-h-[36px] py-1.5 px-3 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 text-xs font-bold transition-all active:scale-95"
-            >
-              Admin
-            </button>
-          </div>
-        </div>
+
 
         {/* Bouton Google OAuth */}
         <button
@@ -131,14 +94,14 @@ export const LoginPage = () => {
         <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-6">
 
           <div className="space-y-2">
-            <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest block ml-1">Adresse email ou téléphone</label>
+            <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest block ml-1">Adresse email</label>
             <div className="relative">
               <User className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
               <input
-                type="text"
-                value={identifier}
-                onChange={(e) => setIdentifier(e.target.value)}
-                placeholder="Ex: ousmane@email.com ou 77..."
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Ex: ousmane@email.com"
                 className="w-full min-h-[48px] pl-11 pr-4 py-3 rounded-2xl bg-white/5 border border-white/10 text-sm font-bold text-white placeholder:text-slate-500 focus:bg-white/10 focus:border-demandoo-500 focus:ring-2 focus:ring-demandoo-500/50 transition-all outline-none"
                 required
               />
@@ -188,12 +151,17 @@ export const LoginPage = () => {
           </div>
         </form>
 
-        <p className="text-sm text-center text-slate-400 font-medium mt-8">
-          Vous n'avez pas de compte ?{' '}
-          <Link to="/inscription-chauffeur" className="font-black text-demandoo-400 hover:text-demandoo-300 transition-colors">
-            Devenir chauffeur
+        <div className="mt-8 space-y-4 text-center">
+          <p className="text-sm text-slate-400 font-medium leading-relaxed">
+            Vous êtes chauffeur et vous n'avez pas encore de compte ?
+          </p>
+          <Link 
+            to="/inscription-chauffeur" 
+            className="inline-block px-5 py-2.5 rounded-xl border border-white/10 hover:bg-white/5 font-black text-demandoo-400 hover:text-demandoo-300 transition-all active:scale-95"
+          >
+            Créer mon compte chauffeur
           </Link>
-        </p>
+        </div>
 
       </div>
     </div>

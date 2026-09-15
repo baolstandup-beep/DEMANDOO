@@ -19,6 +19,7 @@ import { RegisterPage } from './pages/RegisterPage';
 import { SubscriptionPage } from './pages/SubscriptionPage';
 
 import { DriverRouteGuard } from './components/common/DriverRouteGuard';
+import { AdminRouteGuard } from './components/common/AdminRouteGuard';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { AuthCallbackPage } from './pages/AuthCallbackPage';
 import { PushNotificationsSetup } from './capacitor/PushNotifications';
@@ -98,9 +99,21 @@ export function App() {
           } />
 
           
-          <Route path="/admin" element={<AdminDashboardPage />} />
-          <Route path="/admin/drivers" element={<AdminDriversPage />} />
-          <Route path="/admin/drivers/:id" element={<AdminDriverReviewPage />} />
+          <Route path="/admin" element={
+            <AdminRouteGuard>
+              <AdminDashboardPage />
+            </AdminRouteGuard>
+          } />
+          <Route path="/admin/drivers" element={
+            <AdminRouteGuard>
+              <AdminDriversPage />
+            </AdminRouteGuard>
+          } />
+          <Route path="/admin/drivers/:id" element={
+            <AdminRouteGuard>
+              <AdminDriverReviewPage />
+            </AdminRouteGuard>
+          } />
           
           <Route path="/mes-reservations" element={<MyBookingsPage />} />
           <Route path="/login" element={<LoginPage />} />

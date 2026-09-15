@@ -11,6 +11,7 @@ import {
   ShieldCheck, 
   Star, 
   Phone, 
+  MessageCircle,
   Info, 
   ArrowLeft, 
   CheckCircle, 
@@ -261,15 +262,24 @@ export const TripDetailsPage = () => {
               </div>
             </div>
 
-            <a
-              href={generateWhatsAppLink()}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-full min-h-[48px] py-3.5 sm:py-4 px-4 rounded-2xl text-sm sm:text-base font-black text-white bg-emerald-600 hover:bg-emerald-700 shadow-lg shadow-emerald-600/30 active:scale-[0.98] transition-all flex items-center justify-center gap-2 text-center"
-            >
-              <Phone className="w-5 h-5 shrink-0" />
-              <span>Contacter via WhatsApp</span>
-            </a>
+            <div className="flex flex-col gap-3">
+              <a
+                href={generateWhatsAppLink()}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full min-h-[48px] py-3.5 sm:py-4 px-4 rounded-2xl text-sm sm:text-base font-black text-white bg-emerald-600 hover:bg-emerald-700 shadow-lg shadow-emerald-600/30 active:scale-[0.98] transition-all flex items-center justify-center gap-2 text-center"
+              >
+                <MessageCircle className="w-5 h-5 shrink-0" />
+                <span>Contacter via WhatsApp</span>
+              </a>
+              <a
+                href={`tel:${trip.driver?.phone}`}
+                className="w-full min-h-[48px] py-3.5 sm:py-4 px-4 rounded-2xl text-sm sm:text-base font-black text-slate-700 bg-slate-50 border border-slate-200 hover:bg-slate-100 hover:border-slate-300 active:scale-[0.98] transition-all flex items-center justify-center gap-2 text-center"
+              >
+                <Phone className="w-5 h-5 shrink-0" />
+                <span>Appeler le chauffeur</span>
+              </a>
+            </div>
 
             <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-100 text-[11px] text-slate-500 space-y-1 font-medium">
               <div className="flex items-center gap-1.5 font-bold text-slate-700">

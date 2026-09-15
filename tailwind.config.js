@@ -62,6 +62,15 @@ export default {
         'elevated': '0 10px 30px -5px rgba(15, 23, 42, 0.08)',
         'glass': '0 8px 32px 0 rgba(31, 38, 135, 0.07)',
       },
+      transitionDuration: {
+        'fast': 'var(--anim-fast)',
+        'normal': 'var(--anim-normal)',
+        'slow': 'var(--anim-slow)',
+      },
+      transitionTimingFunction: {
+        'out-soft': 'var(--ease-out-soft)',
+        'in-out-soft': 'var(--ease-in-out-soft)',
+      },
       animation: {
         'fade-in': 'fadeIn 0.3s ease-in-out',
         'pulse-subtle': 'pulseSubtle 3s infinite ease-in-out',

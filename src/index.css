@@ -3,6 +3,14 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    --anim-fast: 150ms;
+    --anim-normal: 250ms;
+    --anim-slow: 400ms;
+    --ease-out-soft: cubic-bezier(0.2, 0.8, 0.2, 1);
+    --ease-in-out-soft: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
   html {
     scroll-behavior: smooth;
     -webkit-tap-highlight-color: transparent;
@@ -22,6 +30,22 @@
     overflow-x: hidden;
     width: 100%;
     min-height: 100vh;
+  }
+
+  /* Accessibility: Reduce motion if requested by OS */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    ::before,
+    ::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+    
+    html {
+      scroll-behavior: auto;
+    }
   }
 }
 
@@ -93,23 +117,29 @@
 
 /* Card Hover Lift & Micro-Animations */
 .hover-lift {
-  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform var(--anim-normal) var(--ease-out-soft), box-shadow var(--anim-normal) var(--ease-out-soft);
 }
 
 .hover-lift:hover {
-  transform: translateY(-6px) scale(1.01) rotateX(2deg);
-  box-shadow: 0 25px 40px -10px rgba(7, 156, 148, 0.2), 0 10px 20px -6px rgba(16, 42, 67, 0.1);
+  transform: translateY(-4px) scale(1.005);
+  box-shadow: 0 15px 30px -10px rgba(7, 156, 148, 0.15), 0 8px 15px -6px rgba(16, 42, 67, 0.08);
 }
 
 /* Premium Button */
 .btn-premium {
-  @apply relative overflow-hidden transition-all duration-300 transform font-semibold text-white bg-gradient-to-r from-demandoo-500 to-demandoo-400 rounded-xl shadow-lg;
-  box-shadow: 0 10px 20px -5px rgba(0, 133, 119, 0.4);
+  @apply relative overflow-hidden font-semibold text-white bg-gradient-to-r from-demandoo-500 to-demandoo-400 rounded-xl shadow-lg;
+  transition: transform var(--anim-fast) var(--ease-out-soft), box-shadow var(--anim-fast) var(--ease-out-soft);
+  box-shadow: 0 8px 16px -4px rgba(0, 133, 119, 0.3);
 }
 
 .btn-premium:hover {
-  @apply from-demandoo-400 to-demandoo-300 scale-105;
-  box-shadow: 0 15px 25px -5px rgba(0, 133, 119, 0.6), 0 0 15px rgba(251, 191, 36, 0.4);
+  @apply from-demandoo-400 to-demandoo-300;
+  transform: scale(1.02);
+  box-shadow: 0 12px 20px -4px rgba(0, 133, 119, 0.4), 0 0 10px rgba(251, 191, 36, 0.2);
+}
+
+.btn-premium:active {
+  transform: scale(0.98);
 }
 
 .btn-premium::after {

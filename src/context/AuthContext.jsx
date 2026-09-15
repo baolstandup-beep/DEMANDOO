@@ -118,8 +118,6 @@ export const AuthProvider = ({ children }) => {
         }
         profile = insertedProfile;
 
-      } else if (error) {
-        throw error;
       } else if (profile && safeRole && profile.role !== safeRole && safeRole === 'driver') {
         // Profil existant mais veut devenir chauffeur — mettre à jour
         const { data: updatedProfile, error: updateError } = await supabase
@@ -435,10 +433,7 @@ export const AuthProvider = ({ children }) => {
         .eq('driver_id', user.id)
         .in('status', ['active', 'trial']);
         
-      if (error) {
-         await supabase.from('profiles').update({ subscription_trips_used: newTripsUsed }).eq('id', user.id);
-      }
-      
+      if (error) throw error;
       const updatedUser = { ...user, subscription_trips_used: newTripsUsed };
       setUser(updatedUser);
       localStorage.setItem('demandoo_user_v2', JSON.stringify(updatedUser));
@@ -453,52 +448,18 @@ export const AuthProvider = ({ children }) => {
   };
 
   const login = async (identifier, password, role = 'passenger') => {
-    const isDemoAccount = !isSupabaseConfigured ||
-      identifier?.toLowerCase().includes('demandoo.sn') ||
-      password === 'demo123' ||
-      role === 'admin' ||
-      identifier?.toLowerCase().includes('admin') ||
-      identifier?.toLowerCase().includes('driver') ||
-      identifier?.toLowerCase().includes('modou');
-
-    if (isDemoAccount) {
-      let mockUser;
-      if (role === 'driver' || identifier?.toLowerCase().includes('driver') || identifier?.toLowerCase().includes('modou')) {
-        mockUser = {
-          id: 'drv-001',
-          email: identifier || 'modou.diop@demandoo.sn',
-          full_name: 'Modou Diop',
-          phone: '+221 77 450 12 34',
-          avatar_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=250',
-          role: 'driver',
-          driver_status: 'VERIFIED',
-          is_driver_active: true,
-          is_driver_verified: true,
-          subscription_status: 'active',
-          subscription_plan: 'pro',
-          vehicle: { make: 'Peugeot', model: '508 GT', plate_number: 'DK-8492-BC', seats_count: 4 }
-        };
-        setViewMode('driver');
-        localStorage.setItem('demandoo_view_mode', 'driver');
-      } else if (role === 'admin' || identifier?.toLowerCase().includes('admin')) {
-        mockUser = {
-          id: 'admin-001',
-          email: identifier || 'admin@demandoo.sn',
-          full_name: 'Administrateur DEMANDOO',
-          role: 'admin'
-        };
-      } else {
-        mockUser = {
-          id: 'pass-001',
-          email: identifier || 'passager@demandoo.sn',
-          full_name: identifier?.split('@')[0] || 'Passager Démo',
-          phone: '+221 77 123 45 67',
-          role: 'passenger'
-        };
-        setViewMode('passenger');
-      }
+    // Si Supabase n'est pas configuré, mode hors-ligne basique (uniquement pour le développement)
+    if (!isSupabaseConfigured) {
+      const mockUser = {
+        id: 'mock-user-1',
+        email: identifier,
+        full_name: 'Utilisateur Démo',
+        role: role,
+        driver_status: role === 'driver' ? 'VERIFIED' : null,
+      };
       setUser(mockUser);
       localStorage.setItem('demandoo_user_v2', JSON.stringify(mockUser));
+      if (role === 'driver') setViewMode('driver');
       return { user: mockUser };
     }
 
@@ -508,26 +469,7 @@ export const AuthProvider = ({ children }) => {
         email: identifier,
         password
       });
-
       if (error) {
-        if (identifier === 'modou.diop@demandoo.sn' || identifier === 'admin@demandoo.sn' || identifier === 'passager@demandoo.sn') {
-          console.warn("Real login failed, falling back to mock user for demo purposes.");
-          let mockUser = {
-            id: role === 'driver' ? 'driver-123' : role === 'admin' ? 'admin-123' : 'pass-123',
-            email: identifier,
-            role: role,
-            full_name: role === 'driver' ? 'Modou Diop' : role === 'admin' ? 'Admin' : 'Aminata Sow',
-            driver_status: role === 'driver' ? 'VERIFIED' : null,
-            subscription_status: role === 'driver' ? 'trial' : null,
-            subscription_trip_limit: role === 'driver' ? 1 : null,
-            subscription_trips_used: 0
-          };
-          setUser(mockUser);
-          setViewMode(role === 'driver' ? 'driver' : 'passenger');
-          localStorage.setItem('demandoo_user_v2', JSON.stringify(mockUser));
-          localStorage.setItem('demandoo_intended_role', role);
-          return { user: mockUser };
-        }
         return { error: translateAuthError(error) };
       }
       const { data: profile } = await supabase.from('profiles').select('*').eq('id', data.user.id).single();

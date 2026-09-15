@@ -41,9 +41,18 @@ export const Header = () => {
     setShowNotifs(false);
   }, [location.pathname]);
 
+  const [isScrolled, setIsScrolled] = useState(false);
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 20);
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   return (
-    <header className="sticky top-0 z-40 glass-nav shadow-sm transition-all">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+    <header className={`sticky top-0 z-40 transition-all duration-normal ease-out-soft ${isScrolled ? 'glass-nav shadow-sm' : 'bg-transparent'}`}>
+      <div className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between transition-all duration-normal ease-out-soft ${isScrolled ? 'h-14' : 'h-16 md:h-20'}`}>
         
         {/* LOGO */}
         <Link to="/" className="flex items-center gap-2 group py-1">

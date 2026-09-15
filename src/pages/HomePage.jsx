@@ -4,50 +4,44 @@ import { useTrips } from '../context/TripContext';
 import { INITIAL_CITIES } from '../lib/mockData';
 import InteractiveMap from '../components/common/InteractiveMap';
 import { 
-  Search, 
-  MapPin, 
-  Calendar, 
-  Users, 
-  ArrowRight, 
-  ShieldCheck,
+  Search,
   MessageCircle,
+  ShieldCheck,
+  ArrowRight,
   HelpCircle,
-  Phone,
+  MapPin,
+  Calendar,
+  Users,
+  ChevronDown,
+  Star,
   Car,
-  Star
+  Phone
 } from 'lucide-react';
 
-const FadeInSection = ({ children, delay = 0, className = "" }) => {
-  const [isVisible, setVisible] = useState(false);
-  const domRef = useRef();
+import { Reveal } from '../components/common/Reveal';
+import { AnimatedCounter } from '../components/common/AnimatedCounter';
+import { useIntersectionObserver } from '../hooks/useIntersectionObserver';
+import { TripCard } from '../components/common/TripCard';
+
+const AnimatedBackground = () => {
+  const [ref, isVisible] = useIntersectionObserver({ threshold: 0, triggerOnce: false });
+  const [isActive, setIsActive] = useState(true);
 
   useEffect(() => {
-    const observer = new IntersectionObserver(entries => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          setVisible(true);
-        }
-      });
-    }, { threshold: 0.1 });
-    const current = domRef.current;
-    if (current) observer.observe(current);
-    return () => {
-      if (current) observer.unobserve(current);
-    };
+    const handleVisibilityChange = () => setIsActive(!document.hidden);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
   }, []);
 
   return (
-    <div
-      ref={domRef}
-      className={`transition-all duration-1000 ease-out transform ${
-        isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'
-      } ${className}`}
-      style={{ transitionDelay: `${delay}ms` }}
-    >
-      {children}
-    </div>
+    <div 
+      ref={ref}
+      className="absolute inset-0 bg-mesh-pattern opacity-20 pointer-events-none mix-blend-overlay"
+      style={{ animationPlayState: (isVisible && isActive) ? 'running' : 'paused' }}
+    ></div>
   );
 };
+
 
 export const HomePage = () => {
   const navigate = useNavigate();
@@ -87,7 +81,7 @@ export const HomePage = () => {
     <div className="font-sans bg-[#F9FAFB]">
       {/* 2. PREMIER ÉCRAN (Hero Section Premium) */}
       <section className="relative overflow-x-clip bg-gradient-to-b from-[#073444] to-[#07132E] min-h-[780px] flex items-center pt-24 pb-16 lg:pt-0 lg:pb-0 border-b border-slate-800">
-        <div className="absolute inset-0 bg-mesh-pattern opacity-20 pointer-events-none mix-blend-overlay"></div>
+        <AnimatedBackground />
         
         <div className="relative w-[92%] max-w-[1500px] mx-auto z-10">
           <div className="grid grid-cols-1 lg:grid-cols-[52%_48%] items-center justify-center min-h-[780px] gap-12 lg:gap-0">
@@ -96,31 +90,31 @@ export const HomePage = () => {
             <div className="flex flex-col items-center lg:items-start text-center lg:text-left space-y-7 order-2 lg:order-1 w-full max-w-[720px] mx-auto lg:mx-0">
               
               {/* Badge */}
-              <FadeInSection delay={100}>
+              <Reveal delay={100}>
                 <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-md text-xs sm:text-sm font-bold text-emerald-300 shadow-sm animate-fade-in">
                   <Star className="w-4 h-4 shrink-0" fill="currentColor" />
                   <span>★ Le covoiturage de confiance au Sénégal</span>
                 </div>
-              </FadeInSection>
+              </Reveal>
 
               {/* Titre Principal */}
-              <FadeInSection delay={200} className="w-full">
+              <Reveal delay={200} className="w-full">
                 <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-[4rem] font-black text-white tracking-tight leading-[1.1] break-words">
                   Depuis Touba,<br />
                   trouvez votre trajet <br className="hidden sm:block" />
                   <span className="text-amber-500">partout au Sénégal.</span>
                 </h1>
-              </FadeInSection>
+              </Reveal>
 
               {/* Description */}
-              <FadeInSection delay={300} className="w-full">
+              <Reveal delay={300} className="w-full">
                 <p className="text-base sm:text-lg lg:text-xl text-slate-300 font-medium leading-relaxed">
                   Demandoo met en relation passagers et chauffeurs. Vous organisez ensemble votre trajet et son règlement, simplement et directement.
                 </p>
-              </FadeInSection>
+              </Reveal>
               
               {/* FORMULAIRE DE RECHERCHE */}
-              <FadeInSection delay={400} className="w-full">
+              <Reveal delay={400} className="w-full">
                 <div className="bg-white/95 backdrop-blur-xl p-4 sm:p-5 lg:p-6 rounded-[24px] w-full shadow-2xl shadow-black/20 border border-white/50 relative z-20 transition-transform duration-300 hover:shadow-demandoo-500/10">
                   <form onSubmit={handleSearchSubmit} className="flex flex-col gap-3">
                     
@@ -218,10 +212,10 @@ export const HomePage = () => {
 
                   </form>
                 </div>
-              </FadeInSection>
+              </Reveal>
 
               {/* CTA SECONDAIRE */}
-              <FadeInSection delay={500} className="w-full">
+              <Reveal delay={500} className="w-full">
                 <div className="flex flex-col sm:flex-row items-center lg:justify-start justify-center gap-4 mt-2">
                   <Link 
                     to="/publier" 
@@ -237,7 +231,7 @@ export const HomePage = () => {
                     Comment ça marche ?
                   </a>
                 </div>
-              </FadeInSection>
+              </Reveal>
               
               <datalist id="cities-list">
                 {INITIAL_CITIES.map(c => <option key={c} value={c} />)}
@@ -247,7 +241,7 @@ export const HomePage = () => {
             
             {/* COLONNE DROITE (GRANDE IMAGE DEMANDOO) */}
             <div className="relative flex items-center justify-center order-1 lg:order-2 w-full mt-4 lg:mt-0">
-              <FadeInSection delay={400} className="w-full">
+              <Reveal delay={400} className="w-full">
                 <div className="relative w-full flex justify-center lg:justify-end items-center animate-fade-in" style={{ animationDuration: '1s' }}>
                   
                   {/* Lumière radiale turquoise subtile */}
@@ -270,7 +264,7 @@ export const HomePage = () => {
                   {/* Ombre au sol (ellipse) */}
                   <div className="absolute bottom-[5%] left-1/2 -translate-x-1/2 w-[60%] h-6 bg-black/30 blur-[12px] rounded-[100%] pointer-events-none"></div>
                 </div>
-              </FadeInSection>
+              </Reveal>
             </div>
 
           </div>
@@ -308,14 +302,14 @@ export const HomePage = () => {
       {/* 3. TRAJETS DISPONIBLES */}
       <section className="py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-10">
-          <FadeInSection>
+          <Reveal>
             <h2 className="text-3xl font-black text-slate-900">Trajets disponibles</h2>
-          </FadeInSection>
-          <FadeInSection delay={150}>
-            <Link to="/trajets" className="px-5 py-2.5 rounded-xl bg-demandoo-50 text-demandoo-700 font-bold hover:bg-demandoo-100 transition-colors flex items-center gap-2">
-              Voir tout <ArrowRight className="w-4 h-4" />
+          </Reveal>
+          <Reveal delay={150}>
+            <Link to="/trajets" className="group px-5 py-2.5 rounded-xl bg-demandoo-50 text-demandoo-700 font-bold hover:bg-demandoo-100 transition-colors flex items-center gap-2">
+              Voir tout <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
             </Link>
-          </FadeInSection>
+          </Reveal>
         </div>
 
         {availableTrips.length === 0 ? (
@@ -325,46 +319,9 @@ export const HomePage = () => {
             <Link to="/publier" className="inline-block px-6 py-3 rounded-xl bg-demandoo-600 text-white font-bold">Proposer un trajet</Link>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {availableTrips.map((trip, idx) => (
-              <FadeInSection key={trip.id} delay={idx * 100}>
-                <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm hover:shadow-md transition-all flex flex-col justify-between space-y-4">
-                <div className="flex justify-between items-start">
-                  <div className="flex items-center gap-3">
-                    <img src={trip.driver?.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150'} alt={trip.driver?.full_name} className="w-12 h-12 rounded-full object-cover border-2 border-demandoo-50 shadow-sm" />
-                    <div>
-                      <h4 className="font-black text-slate-900 text-sm flex items-center gap-1">
-                        {trip.driver?.full_name}
-                        {trip.driver?.driver_status === 'VERIFIED' && <ShieldCheck className="w-3.5 h-3.5 text-demandoo-500" title="Profil vérifié" />}
-                      </h4>
-                      <p className="text-xs text-slate-500 font-medium">{new Date(trip.departure_datetime).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })}</p>
-                    </div>
-                  </div>
-                  <div className="bg-slate-50 px-3 py-1 rounded-full text-slate-600 font-bold text-xs border border-slate-100">
-                    {trip.seats_available} places
-                  </div>
-                </div>
-
-                <div className="relative pl-6 space-y-4 my-2 border-l-2 border-slate-100">
-                  <div className="relative">
-                    <div className="absolute -left-[29px] top-1 w-4 h-4 rounded-full bg-demandoo-500 border-4 border-white shadow-sm" />
-                    <p className="font-black text-slate-900">{trip.departure_city}</p>
-                    <p className="text-xs text-slate-500 font-medium">{new Date(trip.departure_datetime).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</p>
-                  </div>
-                  <div className="relative">
-                    <div className="absolute -left-[29px] top-1 w-4 h-4 rounded-full bg-slate-800 border-4 border-white shadow-sm" />
-                    <p className="font-black text-slate-900">{trip.arrival_city}</p>
-                  </div>
-                </div>
-
-                <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
-                  <p className="text-xl font-black text-demandoo-600">{trip.price_per_seat.toLocaleString('fr-FR')} FCFA</p>
-                  <Link to={`/trajet/${trip.id}`} className="px-5 py-2.5 rounded-xl bg-slate-900 text-white text-xs font-black hover:bg-slate-800 transition-colors">
-                    Voir le trajet
-                  </Link>
-                </div>
-              </div>
-              </FadeInSection>
+              <TripCard key={trip.id} trip={trip} index={idx} />
             ))}
           </div>
         )}
@@ -373,15 +330,15 @@ export const HomePage = () => {
       {/* 4. COMMENT ÇA MARCHE */}
       <section id="comment-ca-marche" className="py-16 bg-white border-y border-slate-100">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-12">
-          <FadeInSection>
+          <Reveal>
             <div className="space-y-4 max-w-2xl mx-auto">
               <h2 className="text-3xl font-black text-slate-900">Comment ça marche ?</h2>
               <p className="text-slate-600 font-medium">Demandoo facilite la mise en relation. L’accord et le paiement se font directement entre le passager et le chauffeur.</p>
             </div>
-          </FadeInSection>
+          </Reveal>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <FadeInSection delay={100}>
+            <Reveal delay={100}>
               <div className="space-y-4">
               <div className="w-16 h-16 mx-auto rounded-2xl bg-demandoo-50 text-demandoo-600 flex items-center justify-center">
                 <Search className="w-8 h-8" />
@@ -389,8 +346,8 @@ export const HomePage = () => {
               <h3 className="text-xl font-black text-slate-900">1. Cherchez votre trajet</h3>
               <p className="text-slate-500 text-sm font-medium">Choisissez votre destination et votre date parmi les trajets publiés.</p>
             </div>
-            </FadeInSection>
-            <FadeInSection delay={200}>
+            </Reveal>
+            <Reveal delay={200}>
             <div className="space-y-4">
               <div className="w-16 h-16 mx-auto rounded-2xl bg-demandoo-50 text-demandoo-600 flex items-center justify-center">
                 <MessageCircle className="w-8 h-8" />
@@ -398,8 +355,8 @@ export const HomePage = () => {
               <h3 className="text-xl font-black text-slate-900">2. Contactez le chauffeur</h3>
               <p className="text-slate-500 text-sm font-medium">Échangez directement avec le chauffeur par téléphone ou WhatsApp.</p>
             </div>
-            </FadeInSection>
-            <FadeInSection delay={300}>
+            </Reveal>
+            <Reveal delay={300}>
             <div className="space-y-4">
               <div className="w-16 h-16 mx-auto rounded-2xl bg-demandoo-50 text-demandoo-600 flex items-center justify-center">
                 <ShieldCheck className="w-8 h-8" />
@@ -407,7 +364,7 @@ export const HomePage = () => {
               <h3 className="text-xl font-black text-slate-900">3. Convenez du voyage</h3>
               <p className="text-slate-500 text-sm font-medium">Confirmez ensemble la disponibilité, le lieu de rendez-vous et le prix (en espèces).</p>
             </div>
-            </FadeInSection>
+            </Reveal>
           </div>
         </div>
       </section>
@@ -428,9 +385,9 @@ export const HomePage = () => {
 
       {/* 7. TÉMOIGNAGES */}
       <section className="py-16 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        <FadeInSection>
+        <Reveal>
           <h2 className="text-3xl font-black text-slate-900 text-center mb-10">Ce qu'en disent nos utilisateurs</h2>
-        </FadeInSection>
+        </Reveal>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {[
             { name: "Fatou D.", role: "Passagère", img: "https://images.unsplash.com/photo-1531123897727-8f129e1bf38c?auto=format&fit=crop&q=80&w=150", text: "J'ai trouvé un trajet pour Dakar très rapidement. Le chauffeur était ponctuel et sympathique. C'est vraiment simple de s'arranger directement !" },
@@ -440,7 +397,7 @@ export const HomePage = () => {
             { name: "Ousmane F.", role: "Chauffeur", img: "https://images.unsplash.com/photo-1531384441138-2736e62e0919?auto=format&fit=crop&q=80&w=150", text: "Je publie mes trajets Touba - Dakar chaque semaine. Ça me rembourse le carburant et les passagers sont toujours ponctuels." },
             { name: "Mariama B.", role: "Passagère", img: "https://images.unsplash.com/photo-1489424731084-a5d8b219a5bb?auto=format&fit=crop&q=80&w=150", text: "Fini les longues attentes à la gare routière ! Je trouve mon trajet à l'avance, on s'arrange sur le point de rendez-vous et on y va." }
           ].map((testimonial, i) => (
-            <FadeInSection key={i} delay={i * 100}>
+            <Reveal key={i} delay={i * 100}>
               <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between h-full hover:-translate-y-1 transition-transform">
                 <div className="space-y-4 mb-6">
                   <div className="flex gap-1">
@@ -456,16 +413,16 @@ export const HomePage = () => {
                   </div>
                 </div>
               </div>
-            </FadeInSection>
+            </Reveal>
           ))}
         </div>
       </section>
 
       {/* 8. FAQ COURTE */}
       <section className="py-16 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <FadeInSection>
+        <Reveal>
           <h2 className="text-3xl font-black text-slate-900 text-center mb-10">Foire aux questions</h2>
-        </FadeInSection>
+        </Reveal>
         <div className="space-y-4">
           {[
             { q: "Faut-il un compte pour chercher un trajet ?", a: "Non, les passagers peuvent chercher des trajets et contacter les chauffeurs sans avoir de compte." },
@@ -474,19 +431,19 @@ export const HomePage = () => {
             { q: "Comment se passe le paiement ?", a: "Il n'y a aucun paiement en ligne sur Demandoo. Vous réglez le prix du voyage directement en espèces avec le chauffeur, selon l'accord convenu avec lui." },
             { q: "Comment proposer un trajet ?", a: "Vous devez créer un compte en cliquant sur 'Devenir chauffeur', vérifier votre profil, puis publier votre trajet." }
           ].map((faq, i) => (
-            <FadeInSection key={i} delay={i * 100}>
+            <Reveal key={i} delay={i * 100}>
               <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm hover:border-demandoo-200 transition-colors">
                 <h3 className="font-black text-slate-900 flex items-center gap-2 mb-2"><HelpCircle className="w-4 h-4 text-demandoo-500 shrink-0" /> {faq.q}</h3>
                 <p className="text-slate-600 text-sm font-medium leading-relaxed pl-6">{faq.a}</p>
               </div>
-            </FadeInSection>
+            </Reveal>
           ))}
         </div>
       </section>
       {/* 9. TÉLÉCHARGER L'APPLICATION */}
       <section className="py-16 bg-demandoo-50/50 border-y border-slate-100">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-8">
-          <FadeInSection>
+          <Reveal>
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-demandoo-100 text-demandoo-600 mb-2">
               <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><path d="M12 18h.01"/></svg>
             </div>
@@ -494,9 +451,9 @@ export const HomePage = () => {
             <p className="text-slate-600 font-medium text-lg max-w-2xl mx-auto">
               L'application Demandoo est disponible gratuitement. Téléchargez-la dès maintenant sur votre smartphone pour trouver vos trajets encore plus rapidement.
             </p>
-          </FadeInSection>
+          </Reveal>
 
-          <FadeInSection delay={150}>
+          <Reveal delay={150}>
             <div className="flex flex-col sm:flex-row justify-center items-center gap-4 pt-4">
               {/* Bouton App Store */}
               <a href="#" onClick={(e) => e.preventDefault()} className="flex items-center gap-3 bg-slate-900 text-white px-6 py-3 rounded-xl hover:bg-slate-800 transition-colors shadow-lg hover:shadow-xl hover:-translate-y-1 transform w-full sm:w-auto justify-center">
@@ -520,7 +477,7 @@ export const HomePage = () => {
                 </div>
               </a>
             </div>
-          </FadeInSection>
+          </Reveal>
         </div>
       </section>
 

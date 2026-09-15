@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { useTrips } from '../context/TripContext';
 import { useAuth } from '../context/AuthContext';
-import { INITIAL_CITIES } from '../lib/mockData';
+import { INITIAL_CITIES, INITIAL_TRIPS } from '../lib/mockData';
 import { VerifiedDriverBadge } from '../components/common/Badge';
+import { TripCard } from '../components/common/TripCard';
+import { TripCardSkeleton } from '../components/common/TripCardSkeleton';
 import {
   Search, MapPin, Calendar, Users, Filter, ShieldCheck, Car,
   Star, Bell, Check, X, SlidersHorizontal, ChevronDown,
@@ -26,6 +28,16 @@ export const SearchPage = () => {
   const [showAlertModal, setShowAlertModal] = useState(false);
   const [alertSuccess, setAlertSuccess] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
+  const [isSearching, setIsSearching] = useState(true);
+
+  // Simulation de chargement asynchrone pour afficher le Skeleton
+  useEffect(() => {
+    setIsSearching(true);
+    const timer = setTimeout(() => {
+      setIsSearching(false);
+    }, 600);
+    return () => clearTimeout(timer);
+  }, [departure, destination, date, passengers, verifiedOnly, maxPrice, sortBy]);
 
   useEffect(() => {
     setDeparture(searchParams.get('departure') || '');
@@ -276,7 +288,11 @@ export const SearchPage = () => {
             )}
 
             {/* Résultats */}
-            {filteredTrips.length === 0 ? (
+            {isSearching ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {[1, 2, 3, 4, 5, 6].map(i => <TripCardSkeleton key={i} />)}
+              </div>
+            ) : filteredTrips.length === 0 ? (
               <div className="bg-white rounded-3xl p-12 text-center border border-slate-200/80 shadow-sm space-y-5">
                 <div className="w-20 h-20 rounded-full bg-emerald-50 flex items-center justify-center mx-auto border border-emerald-100">
                   <Search className="w-9 h-9 text-emerald-400" />
@@ -297,112 +313,11 @@ export const SearchPage = () => {
                 </div>
               </div>
             ) : (
-              filteredTrips.map(trip => (
-                <div
-                  key={trip.id}
-                  className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200/80 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 group"
-                >
-                  <div className="flex flex-col md:flex-row md:items-center gap-5">
-
-                    {/* Conducteur */}
-                    <div className="flex items-center gap-4 md:w-64 shrink-0">
-                      <div className="relative shrink-0">
-                        <img
-                          src={trip.driver?.avatar_url || `https://ui-avatars.com/api/?name=${trip.driver?.full_name}&background=10b981&color=fff`}
-                          alt={trip.driver?.full_name}
-                          className="w-14 h-14 rounded-2xl object-cover shadow-sm border-2 border-emerald-100"
-                        />
-                        {trip.driver?.driver_status === 'VERIFIED' && (
-                          <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-emerald-500 border-2 border-white flex items-center justify-center">
-                            <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />
-                          </div>
-                        )}
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-1.5">
-                          <span className="font-extrabold text-slate-900 text-sm">{trip.driver?.full_name}</span>
-                        </div>
-                        {(trip.driver?.rating != null || trip.driver?.total_trips != null) && (
-                          <div className="flex items-center gap-1.5 text-xs mt-0.5">
-                            {trip.driver?.rating != null && (
-                              <>
-                                <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-                                <span className="font-bold text-slate-700">{trip.driver.rating}</span>
-                              </>
-                            )}
-                            {trip.driver?.rating != null && trip.driver?.total_trips != null && (
-                              <span className="text-slate-400">•</span>
-                            )}
-                            {trip.driver?.total_trips != null && (
-                              <span className="text-slate-500 font-medium">{trip.driver.total_trips} trajets</span>
-                            )}
-                          </div>
-                        )}
-                        <p className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
-                          <Car className="w-3 h-3 text-emerald-500" />
-                          {trip.driver?.vehicle?.make} {trip.driver?.vehicle?.model}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Itinéraire */}
-                    <div className="flex-1 bg-slate-50 rounded-2xl p-4 border border-slate-100">
-                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                        <div className="flex items-center gap-3 flex-1 min-w-0">
-                          <div className="flex flex-col items-center gap-1 shrink-0">
-                            <div className="w-3 h-3 rounded-full bg-emerald-500 border-2 border-white shadow-sm" />
-                            <div className="w-0.5 h-8 bg-slate-200" />
-                            <div className="w-3 h-3 rounded-full bg-rose-500 border-2 border-white shadow-sm" />
-                          </div>
-                          <div className="flex-1 min-w-0 flex flex-col justify-between gap-3">
-                            <div>
-                              <span className="font-black text-slate-900 text-sm block truncate">{trip.departure_city}</span>
-                              <span className="text-xs text-slate-400 block font-medium truncate">{trip.departure_address}</span>
-                            </div>
-                            <div>
-                              <span className="font-black text-slate-900 text-sm block truncate">{trip.arrival_city}</span>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="text-left sm:text-right shrink-0 space-y-1 w-full sm:w-auto pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-200/60 flex sm:flex-col items-center sm:items-end justify-between">
-                          <div className="text-xs font-bold text-slate-500 flex items-center gap-1">
-                            <Clock className="w-3 h-3" />
-                            {trip.estimated_duration}
-                          </div>
-                          <div className="text-xs font-black text-slate-700">
-                            {new Date(trip.departure_datetime).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })}
-                          </div>
-                          <div className="text-xs font-extrabold text-emerald-700">
-                            {new Date(trip.departure_datetime).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Prix & CTA */}
-                    <div className="flex flex-col sm:flex-row md:flex-col items-stretch sm:items-center md:items-end justify-between md:w-40 shrink-0 pt-3 md:pt-0 border-t md:border-t-0 border-slate-100 gap-3">
-                      <div className="text-left sm:text-right">
-                        <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-100 text-[10px] font-extrabold text-emerald-700 mb-1">
-                          <Zap className="w-2.5 h-2.5" />
-                          {trip.seats_available} place{trip.seats_available > 1 ? 's' : ''} libre{trip.seats_available > 1 ? 's' : ''}
-                        </div>
-                        <p className="text-2xl font-black text-slate-900 leading-none">
-                          {trip.price_per_seat.toLocaleString('fr-FR')}
-                        </p>
-                        <span className="text-[11px] text-slate-500 font-semibold">FCFA / siège</span>
-                      </div>
-                      <Link
-                        to={`/trajet/${trip.id}`}
-                        className="w-full sm:w-auto min-h-[46px] flex items-center justify-center gap-1.5 px-5 py-3 rounded-2xl text-xs font-black text-white bg-gradient-to-r from-emerald-600 to-teal-600 shadow-lg shadow-emerald-600/20 hover:from-emerald-500 hover:to-teal-500 active:scale-[0.97] transition-all"
-                      >
-                        Voir le trajet
-                        <ArrowRight className="w-3.5 h-3.5" />
-                      </Link>
-                    </div>
-                  </div>
-                </div>
-              ))
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredTrips.map((trip, idx) => (
+                  <TripCard key={trip.id} trip={trip} index={idx} />
+                ))}
+              </div>
             )}
           </div>
         </div>
