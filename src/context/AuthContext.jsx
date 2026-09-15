@@ -559,6 +559,25 @@ export const AuthProvider = ({ children }) => {
         // avant d'essayer de récupérer le profil, bien que ce soit généralement instantané.
         await new Promise(resolve => setTimeout(resolve, 500));
 
+        // Enregistrer le véhicule en DB si fourni lors de l'inscription chauffeur
+        if (safeRole === 'driver' && userData.vehicle && (userData.vehicle.brand || userData.vehicle.model)) {
+          try {
+            await supabase.from('vehicles').insert([{
+              driver_id: data.user.id,
+              brand: userData.vehicle.brand || 'Standard',
+              model: userData.vehicle.model || 'Standard',
+              year: parseInt(userData.vehicle.year, 10) || new Date().getFullYear(),
+              color: userData.vehicle.color || 'Gris',
+              license_plate: userData.vehicle.license_plate || userData.vehicle.plate_number || 'DK-0000-AA',
+              seats: parseInt(userData.vehicle.seats_count || userData.vehicle.seats, 10) || 4,
+              vehicle_type: userData.vehicle.vehicle_type || 'Berline',
+              status: 'pending'
+            }]);
+          } catch (vehError) {
+            console.warn("Échec insertion véhicule (non-bloquant):", vehError);
+          }
+        }
+
         await fetchUserProfile(data.user, safeRole);
       }
 

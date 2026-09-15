@@ -51,5 +51,5 @@ export function translateAuthError(error) {
     return "Les inscriptions sont temporairement désactivées. Réessayez plus tard.";
   }
 
-  return "Impossible de traiter votre demande. Veuillez réessayer.";
+  return `Impossible de traiter votre demande (${error?.message || 'Erreur inconnue'}). Veuillez réessayer.`;
 }

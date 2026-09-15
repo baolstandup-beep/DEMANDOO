@@ -1,16 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { 
   Users, 
   Search, 
-  Filter,
-  MoreVertical,
-  CheckCircle2,
-  XCircle,
-  Clock,
-  AlertTriangle,
-  Eye,
-  ShieldCheck
+  Filter, 
+  CheckCircle2, 
+  XCircle, 
+  Clock, 
+  AlertTriangle, 
+  Eye, 
+  ShieldCheck,
+  RefreshCw
 } from 'lucide-react';
 
 const MOCK_DRIVERS = [
@@ -58,11 +59,74 @@ const MOCK_DRIVERS = [
 
 export const AdminDriversPage = () => {
   const [filter, setFilter] = useState('ALL');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [drivers, setDrivers] = useState(MOCK_DRIVERS);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    loadDrivers();
+  }, []);
+
+  const loadDrivers = async () => {
+    if (!isSupabaseConfigured) {
+      setDrivers(MOCK_DRIVERS);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select(`
+          id,
+          full_name,
+          phone,
+          email,
+          driver_status,
+          kyc_status,
+          is_driver_active,
+          created_at,
+          vehicles (brand, model, year, license_plate)
+        `)
+        .eq('role', 'driver')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        const formatted = data.map(d => {
+          const veh = d.vehicles && d.vehicles.length > 0 ? d.vehicles[0] : null;
+          const vehicleText = veh ? `${veh.brand} ${veh.model} (${veh.year})` : '-';
+          const progress = d.driver_status === 'VERIFIED' ? '100%' : d.driver_status === 'PENDING' ? '70%' : '40%';
+          const submittedAt = d.created_at ? new Date(d.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }) : '-';
+          return {
+            id: d.id,
+            name: d.full_name || d.email?.split('@')[0] || 'Chauffeur',
+            phone: d.phone || 'Non renseigné',
+            vehicle: vehicleText,
+            progress: progress,
+            status: d.driver_status || 'INCOMPLETE',
+            submittedAt: submittedAt,
+            date: submittedAt
+          };
+        });
+        setDrivers(formatted);
+      } else {
+        setDrivers(MOCK_DRIVERS);
+      }
+    } catch (err) {
+      console.warn("Could not load drivers from Supabase, using mock:", err);
+      setDrivers(MOCK_DRIVERS);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const getStatusBadge = (status) => {
     switch(status) {
       case 'VERIFIED': return <span className="px-3 py-1 bg-emerald-100 text-emerald-800 rounded-full text-[10px] font-black tracking-wider flex items-center gap-1 w-fit"><ShieldCheck className="w-3 h-3" /> VÉRIFIÉ (CONFIANCE)</span>;
       case 'ACTIVE': return <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-[10px] font-black tracking-wider flex items-center gap-1 w-fit"><CheckCircle2 className="w-3 h-3" /> ACTIF (AUTO)</span>;
+      case 'PENDING':
       case 'UNDER_REVIEW': return <span className="px-3 py-1 bg-amber-100 text-amber-800 rounded-full text-[10px] font-black tracking-wider flex items-center gap-1 w-fit"><Clock className="w-3 h-3" /> EN VÉRIFICATION</span>;
       case 'REJECTED': return <span className="px-3 py-1 bg-rose-100 text-rose-800 rounded-full text-[10px] font-black tracking-wider flex items-center gap-1 w-fit"><XCircle className="w-3 h-3" /> REFUSÉ</span>;
       case 'INCOMPLETE': return <span className="px-3 py-1 bg-slate-100 text-slate-600 rounded-full text-[10px] font-black tracking-wider flex items-center gap-1 w-fit"><AlertTriangle className="w-3 h-3" /> INCOMPLET</span>;
@@ -70,7 +134,15 @@ export const AdminDriversPage = () => {
     }
   };
 
-  const filteredDrivers = filter === 'ALL' ? MOCK_DRIVERS : MOCK_DRIVERS.filter(d => d.status === filter);
+  const filteredDrivers = drivers.filter(d => {
+    const matchesFilter = filter === 'ALL' || d.status === filter;
+    const query = searchQuery.trim().toLowerCase();
+    const matchesSearch = !query || 
+      d.name.toLowerCase().includes(query) || 
+      d.phone.toLowerCase().includes(query) || 
+      d.vehicle.toLowerCase().includes(query);
+    return matchesFilter && matchesSearch;
+  });
 
   return (
     <div className="min-h-screen bg-slate-50/50 py-8 px-4 sm:px-6">
@@ -112,13 +184,19 @@ export const AdminDriversPage = () => {
             <Search className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
             <input 
               type="text" 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Rechercher un chauffeur, téléphone..."
               className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm font-medium focus:ring-2 focus:ring-demandoo-500/20 outline-none"
             />
           </div>
-          <button className="px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 flex items-center gap-2 hover:bg-slate-50">
-            <Filter className="w-4 h-4" />
-            Filtres avancés
+          <button 
+            onClick={loadDrivers}
+            disabled={loading}
+            className="px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 flex items-center gap-2 hover:bg-slate-50 transition-colors disabled:opacity-50"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-demandoo-600' : ''}`} />
+            Actualiser
           </button>
         </div>
 

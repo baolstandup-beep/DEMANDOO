@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { 
   ArrowLeft,
   ShieldCheck, 
@@ -47,6 +48,45 @@ export const AdminDriverReviewPage = () => {
   const [activeDoc, setActiveDoc] = useState(driver.documents[0]);
   const [rejectReason, setRejectReason] = useState('');
   const [showRejectModal, setShowRejectModal] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    loadDriverDetails();
+  }, [id]);
+
+  const loadDriverDetails = async () => {
+    if (!isSupabaseConfigured || !id || !id.includes('-') || id.startsWith('drv-')) return;
+    
+    try {
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select(`*, vehicles(*)`)
+        .eq('id', id)
+        .single();
+
+      if (error) throw error;
+      if (profile) {
+        const veh = profile.vehicles && profile.vehicles.length > 0 ? profile.vehicles[0] : null;
+        setDriver(prev => ({
+          ...prev,
+          id: profile.id,
+          name: profile.full_name || profile.email?.split('@')[0] || 'Chauffeur',
+          phone: profile.phone || prev.phone,
+          email: profile.email || prev.email,
+          status: profile.driver_status || 'UNDER_REVIEW',
+          vehicle: veh ? {
+            make: veh.brand,
+            model: veh.model,
+            year: veh.year,
+            color: veh.color || 'Standard',
+            plate: veh.license_plate || veh.plate_number || 'En attente'
+          } : prev.vehicle
+        }));
+      }
+    } catch (e) {
+      console.warn("Could not load driver from Supabase:", e);
+    }
+  };
 
   const handleApproveDoc = () => {
     const updatedDocs = driver.documents.map(d => 
@@ -69,16 +109,42 @@ export const AdminDriverReviewPage = () => {
     setRejectReason('');
   };
 
-  const handleGlobalDecision = (decision) => {
+  const handleGlobalDecision = async (decision) => {
+    let reason = '';
     if (decision === 'REJECTED') {
-      const reason = prompt("Motif de refus du dossier complet :");
+      reason = prompt("Motif de refus du dossier complet :");
       if (!reason) return;
-      alert(`Dossier refusé : ${reason}`);
-    } else {
-      alert("Dossier approuvé avec succès ! Le chauffeur est maintenant VÉRIFIÉ.");
     }
-    setDriver({ ...driver, status: decision });
-    navigate('/admin/drivers');
+
+    setLoading(true);
+    try {
+      if (isSupabaseConfigured && id && !id.startsWith('drv-')) {
+        const newStatus = decision === 'APPROVED' ? 'VERIFIED' : 'REJECTED';
+        const { error } = await supabase
+          .from('profiles')
+          .update({
+            driver_status: newStatus,
+            kyc_status: decision === 'APPROVED' ? 'verified' : 'rejected',
+            is_driver_active: decision === 'APPROVED'
+          })
+          .eq('id', id);
+
+        if (error) throw error;
+      }
+
+      if (decision === 'REJECTED') {
+        alert(`Dossier refusé : ${reason}`);
+      } else {
+        alert("Dossier approuvé avec succès ! Le chauffeur est maintenant VÉRIFIÉ.");
+      }
+
+      setDriver({ ...driver, status: decision === 'APPROVED' ? 'VERIFIED' : 'REJECTED' });
+      navigate('/admin/drivers');
+    } catch (err) {
+      alert("Erreur lors de la mise à jour : " + err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const getStatusColor = (status) => {

@@ -120,8 +120,9 @@ export const TripProvider = ({ children }) => {
   const getTripById = (id) => trips.find(t => t.id === id) || null;
 
   const publishTrip = async (tripData, driverUser) => {
-    if (driverUser.role !== 'driver' || driverUser.driver_status !== 'VERIFIED' || !driverUser.is_driver_active) {
-      throw new Error("403 FORBIDDEN: Seuls les chauffeurs vérifiés peuvent publier un trajet.");
+    const isAllowed = driverUser?.role === 'admin' || (driverUser?.driver_status === 'VERIFIED' && driverUser?.is_driver_active);
+    if (!isAllowed) {
+      throw new Error("403 FORBIDDEN: Seuls les chauffeurs vérifiés et actifs peuvent publier un trajet.");
     }
     
     // Le contrôle du quota est théoriquement fait par RLS sur Supabase
