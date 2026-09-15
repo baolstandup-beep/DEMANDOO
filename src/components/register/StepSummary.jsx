@@ -14,20 +14,8 @@ export const StepSummary = ({ data, updateData, onSubmit, isLoading }) => {
           <span className="text-sm font-bold text-slate-500">Informations personnelles</span>
           <CheckCircle2 className="w-5 h-5 text-emerald-500" />
         </div>
-        <div className="flex items-center justify-between border-b border-slate-200 pb-3">
-          <span className="text-sm font-bold text-slate-500">Photo chauffeur</span>
-          <CheckCircle2 className="w-5 h-5 text-emerald-500" />
-        </div>
-        <div className="flex items-center justify-between border-b border-slate-200 pb-3">
-          <span className="text-sm font-bold text-slate-500">Assurance & Permis</span>
-          <CheckCircle2 className="w-5 h-5 text-emerald-500" />
-        </div>
-        <div className="flex items-center justify-between border-b border-slate-200 pb-3">
-          <span className="text-sm font-bold text-slate-500">Informations véhicule</span>
-          <CheckCircle2 className="w-5 h-5 text-emerald-500" />
-        </div>
         <div className="flex items-center justify-between">
-          <span className="text-sm font-bold text-slate-500">Photos véhicule ({(Array.isArray(data.vehiclePhotos) ? data.vehiclePhotos : []).length})</span>
+          <span className="text-sm font-bold text-slate-500">Photo de profil</span>
           <CheckCircle2 className="w-5 h-5 text-emerald-500" />
         </div>
       </div>

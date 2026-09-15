@@ -107,7 +107,7 @@ export const RegisterPage = () => {
     }
 
     window.scrollTo(0, 0);
-    setCurrentStep((prev) => Math.min(prev + 1, 5));
+    setCurrentStep((prev) => Math.min(prev + 1, 3));
   };
 
   const prevStep = () => {
@@ -126,24 +126,21 @@ export const RegisterPage = () => {
         phone: formData.phone,
         password: formData.password,
         role: 'driver',
-        // Dans une vraie app, les Base64 seraient uploadés sur Supabase Storage
-        // Ici on les passe pour enrichir le profil / véhicule simulé si besoin
         avatar_url: formData.avatarBase64,
         vehicle: {
-          brand: formData.brand,
-          model: formData.model,
-          year: formData.year,
-          color: formData.color,
-          seats_count: parseInt(formData.seatsCount),
-          vehicle_type: formData.vehicleType,
-          license_plate: formData.licensePlate,
-          photos: formData.vehiclePhotos
+          brand: formData.brand || 'Standard',
+          model: formData.model || 'Véhicule',
+          year: formData.year || '2022',
+          color: formData.color || 'Gris',
+          seats_count: 4,
+          vehicle_type: 'Berline',
+          license_plate: formData.licensePlate || 'DK-0000-XX'
         }
       });
 
       if (result.success) {
         localStorage.removeItem(STORAGE_KEY);
-        navigate('/admin'); // Ou Dashboard chauffeur
+        navigate('/abonnement');
       } else {
         alert(result.error || "Une erreur est survenue.");
       }
@@ -169,9 +166,9 @@ export const RegisterPage = () => {
           </Link>
         </div>
 
-        <StepIndicator currentStep={currentStep} totalSteps={5} onBack={prevStep} />
+        <StepIndicator currentStep={currentStep} totalSteps={3} onBack={prevStep} />
 
-        <div className="min-h-[400px]">
+        <div className="min-h-[360px]">
           {currentStep === 1 && (
             <StepIdentity 
               data={formData} 
@@ -190,14 +187,6 @@ export const RegisterPage = () => {
           )}
 
           {currentStep === 3 && (
-            <StepVehicleInfo data={formData} updateData={updateData} onNext={nextStep} />
-          )}
-
-          {currentStep === 4 && (
-            <StepVehiclePhotos data={formData} updateData={updateData} onNext={nextStep} />
-          )}
-
-          {currentStep === 5 && (
             <StepSummary data={formData} updateData={updateData} onSubmit={handleSubmit} isLoading={isLoading} />
           )}
         </div>
