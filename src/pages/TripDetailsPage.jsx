@@ -17,8 +17,10 @@ import {
   CheckCircle, 
   AlertCircle,
   Users,
-  ShieldAlert
+  ShieldAlert,
+  Navigation
 } from 'lucide-react';
+import { MapView } from '../components/common/MapView';
 
 export const TripDetailsPage = () => {
   const { id } = useParams();
@@ -217,6 +219,25 @@ export const TripDetailsPage = () => {
             </div>
 
           </div>
+
+          {/* SUIVI GPS EN DIRECT */}
+          {trip.driver?.is_driver_active && trip.driver?.latitude && trip.driver?.longitude && (
+            <div className="glass-card rounded-2xl sm:rounded-3xl p-4 sm:p-6 border border-slate-200/80 shadow-md space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+                <h3 className="text-base font-black text-demandoo-dark flex items-center gap-2">
+                  <Navigation className="w-5 h-5 text-emerald-600" />
+                  Position du chauffeur
+                </h3>
+                <span className="inline-block px-3 py-1 bg-emerald-50 text-emerald-600 text-[10px] font-black uppercase tracking-widest rounded-full animate-pulse border border-emerald-100">
+                  En Direct
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 font-medium">
+                Le chauffeur est actuellement en ligne. Sa position GPS se met à jour toutes les 15 secondes.
+              </p>
+              <MapView latitude={trip.driver.latitude} longitude={trip.driver.longitude} label={trip.driver.full_name} height="250px" />
+            </div>
+          )}
 
           {/* TRIP AMENITIES & RULES */}
           <div className="glass-card rounded-2xl sm:rounded-3xl p-4 sm:p-6 border border-slate-200/80 shadow-md space-y-4">
