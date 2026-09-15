@@ -231,3 +231,27 @@ FOR EACH ROW EXECUTE FUNCTION update_trip_seats();
 -- CREATE POLICY "Drivers can upload own docs" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'driver-documents' AND (storage.foldername(name))[1] = auth.uid()::text);
 -- CREATE POLICY "Drivers can view own docs" ON storage.objects FOR SELECT USING (bucket_id = 'driver-documents' AND (storage.foldername(name))[1] = auth.uid()::text);
 -- CREATE POLICY "Admins can view all docs" ON storage.objects FOR SELECT USING (bucket_id = 'driver-documents' AND EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin'));
+
+-- ===================================================
+-- 10. AUTH TRIGGER FOR PROFILE CREATION
+-- ===================================================
+CREATE OR REPLACE FUNCTION public.handle_new_user() 
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO public.profiles (id, email, full_name, role, driver_status)
+  VALUES (
+    NEW.id,
+    NEW.email,
+    COALESCE(NEW.raw_user_meta_data->>'full_name', NEW.raw_user_meta_data->>'firstName' || ' ' || NEW.raw_user_meta_data->>'lastName', 'Utilisateur sans nom'),
+    COALESCE(NEW.raw_user_meta_data->>'role', 'passenger'),
+    CASE WHEN NEW.raw_user_meta_data->>'role' = 'driver' THEN 'INCOMPLETE' ELSE 'INCOMPLETE' END
+  );
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Trigger to automatically create a profile for each new user
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();

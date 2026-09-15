@@ -102,7 +102,6 @@ export const AuthProvider = ({ children }) => {
           driver_status: roleToAssign === 'driver' ? 'PENDING' : 'INCOMPLETE',
           is_phone_verified: false,
           is_identity_verified: false,
-          is_driver_active: false,
           phone: authUser.user_metadata?.phone || null,
         };
 
@@ -554,29 +553,11 @@ export const AuthProvider = ({ children }) => {
       }
 
 
-      // Si le trigger Supabase n'a pas encore créé le profil, on le crée manuellement
+      // Le profil est désormais créé automatiquement par le trigger Supabase (on_auth_user_created).
       if (data.session) {
-        // Utilisateur immédiatement connecté (email confirm désactivé)
-        const { data: existingProfile } = await supabase
-          .from('profiles')
-          .select('id')
-          .eq('id', data.user.id)
-          .single();
-
-        if (!existingProfile) {
-          await supabase.from('profiles').insert([{
-            id: data.user.id,
-            email: generatedEmail,
-            full_name: `${userData.firstName || ''} ${userData.lastName || ''}`.trim() || userData.name || '',
-            phone: userData.phone || null,
-            role: safeRole,
-            driver_status: safeRole === 'driver' ? 'PENDING' : 'INCOMPLETE',
-            avatar_url: '',
-            is_phone_verified: false,
-            is_identity_verified: false,
-            is_driver_active: false,
-          }]);
-        }
+        // Optionnel : on peut attendre un court instant pour s'assurer que le trigger a terminé son exécution
+        // avant d'essayer de récupérer le profil, bien que ce soit généralement instantané.
+        await new Promise(resolve => setTimeout(resolve, 500));
 
         await fetchUserProfile(data.user, safeRole);
       }
