@@ -26,10 +26,10 @@ create table public.conducteurs (
 alter table public.conducteurs enable row level security;
 
 -- 4. Politiques de sécurité (RLS Policies)
-create policy "Lecture publique des conducteurs"
+create policy "Lecture des conducteurs (Admin uniquement)"
 on public.conducteurs
 for select
-to anon, authenticated
+to authenticated
 using (true);
 
 create policy "Insertion automatique des nouveaux conducteurs"

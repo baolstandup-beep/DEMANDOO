@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Demandoo — Administration</title>
+  <link rel="stylesheet" href="styles.css">
+  <!-- Supabase CDN Client -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <div class="logo">
+        <div class="logo-badge">🛡️</div>
+        <div>
+          <h1>Administration Demandoo</h1>
+          <p class="subtitle">Gestion et Validation des Conducteurs</p>
+        </div>
+      </div>
+      <button id="logout-btn" class="btn" style="width: auto; background: var(--danger); display: none;">Déconnexion</button>
+    </header>
+
+    <div id="alert-container"></div>
+
+    <!-- ÉCRAN DE CONNEXION -->
+    <div id="login-screen" class="card" style="max-width: 400px; margin: 40px auto;">
+      <h2 class="card-title">Connexion Administrateur</h2>
+      <form id="login-form">
+        <div class="form-group">
+          <label for="admin-email">Email</label>
+          <input type="email" id="admin-email" required>
+        </div>
+        <div class="form-group">
+          <label for="admin-password">Mot de passe</label>
+          <input type="password" id="admin-password" required>
+        </div>
+        <button type="submit" class="btn">Se connecter</button>
+      </form>
+    </div>
+
+    <!-- TABLEAU DE BORD (Caché par défaut) -->
+    <div id="dashboard-screen" class="card" style="display: none;">
+      <h2 class="card-title">
+        <span>🚚</span> Conducteurs Inscrits
+      </h2>
+      
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th>Conducteur</th>
+              <th>Téléphone</th>
+              <th>Véhicule</th>
+              <th>Ville</th>
+              <th>Permis N°</th>
+              <th>Document</th>
+              <th>Statut</th>
+              <th>Date</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="drivers-list">
+            <!-- Rempli par admin.js -->
+          </tbody>
+        </table>
+
+        <div id="empty-state" class="empty-state" style="display: none;">
+          Aucun conducteur pour le moment.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/supabaseClient.js"></script>
+  <script src="js/admin.js"></script>
+</body>
+</html>
