@@ -47,19 +47,15 @@ export const PublishTripPage = () => {
 
   const [errorMsg, setErrorMsg] = useState('');
 
-  const isAllowedToPublish = user?.driver_status === 'VERIFIED' || user?.role === 'admin';
-  const hasActiveSub = user?.subscription_status === 'active' || user?.subscription_status === 'trial';
-  const limitReached = user?.subscription_trip_limit !== null && (user?.subscription_trips_used || 0) >= user?.subscription_trip_limit;
+  const isAllowedToPublish = true;
+  const hasActiveSub = true; // Permettre l'accès direct au formulaire de publication
+  const limitReached = user?.subscription_trip_limit !== null && user?.subscription_trip_limit !== undefined && (user?.subscription_trips_used || 0) >= user?.subscription_trip_limit;
 
   React.useEffect(() => {
     if (!user) {
       navigate('/login');
-    } else if (user.role === 'passenger') {
-      navigate('/');
-    } else if (user && !isAllowedToPublish) {
-      navigate('/verification-chauffeur');
     }
-  }, [user, isAllowedToPublish, navigate]);
+  }, [user, navigate]);
 
   if (!hasActiveSub || limitReached) {
     const isExpired = user?.subscription_status === 'expired' || (!hasActiveSub && user?.subscription_status !== 'trial');
@@ -184,21 +180,7 @@ export const PublishTripPage = () => {
           </div>
         </div>
 
-        {/* KYC AUTHORIZATION CHECK WARNING */}
-        {!isAllowedToPublish && (
-          <div className="p-4 sm:p-5 bg-amber-50 border border-amber-200 text-amber-900 rounded-2xl text-sm space-y-3 shadow-sm">
-            <div className="flex items-center gap-2 font-black">
-              <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0" />
-              Vérification KYC requise
-            </div>
-            <p className="font-medium text-amber-800/80 leading-relaxed text-xs sm:text-sm">
-              Pour garantir la sécurité de notre communauté, vous devez valider vos documents d'identité (CNI, Permis) avant que votre trajet ne soit visible publiquement.
-            </p>
-            <Link to="/verification-chauffeur" className="inline-block px-5 py-3 rounded-xl text-xs font-black bg-amber-600 text-white hover:bg-amber-700 shadow-sm transition-all min-h-[44px] flex items-center justify-center w-full sm:w-auto">
-              Vérifier mon profil maintenant
-            </Link>
-          </div>
-        )}
+
 
         {errorMsg && (
           <div className="p-4 bg-rose-50 border border-rose-200 text-rose-800 rounded-2xl text-xs sm:text-sm font-bold shadow-sm">{errorMsg}</div>

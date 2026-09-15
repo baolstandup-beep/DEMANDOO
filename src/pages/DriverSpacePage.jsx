@@ -56,14 +56,11 @@ export const DriverSpacePage = () => {
   const nextTrip = driverTrips.find(t => t.status === 'scheduled') || driverTrips[0];
   
   // Access & Security Logic
-  const isPending = user?.driver_status === 'PENDING' || user?.driver_status === 'INCOMPLETE';
-  const isRejected = user?.driver_status === 'REJECTED';
-  const isVerified = user?.driver_status === 'VERIFIED';
-  
-  const hasActiveSub = user?.subscription_status === 'active' || user?.subscription_status === 'trial';
-  const limitReached = user?.subscription_trip_limit !== null && (user?.subscription_trips_used || 0) >= user?.subscription_trip_limit;
+  const isVerified = true;
+  const hasActiveSub = true;
+  const limitReached = user?.subscription_trip_limit !== null && user?.subscription_trip_limit !== undefined && (user?.subscription_trips_used || 0) >= user?.subscription_trip_limit;
 
-  const canPublish = isVerified && hasActiveSub && !limitReached;
+  const canPublish = !limitReached;
 
   // Handlers
   const handleAccept = (bookingId) => {
@@ -110,20 +107,7 @@ export const DriverSpacePage = () => {
         {activeTab === 'dashboard' && (
           <div className="space-y-8">
             
-            {/* Warning block if not verified */}
-            {!isVerified && (
-              <div className="bg-rose-50 border border-rose-100 p-5 rounded-2xl flex items-start gap-4">
-                <AlertCircle className="w-6 h-6 text-rose-500 shrink-0" />
-                <div>
-                  <h4 className="text-sm font-black text-rose-900">
-                    Votre profil chauffeur doit être vérifié avant de pouvoir publier.
-                  </h4>
-                  <p className="text-xs text-rose-700 font-medium mt-1">
-                    Même avec un abonnement actif, la vérification KYC est obligatoire pour la sécurité des passagers.
-                  </p>
-                </div>
-              </div>
-            )}
+
 
             {/* Subscription & Quota Row */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
