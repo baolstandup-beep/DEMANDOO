@@ -120,25 +120,25 @@ export const PaymentModal = ({ isOpen, onClose, plan, onSuccess }) => {
                 <button
                   type="button"
                   onClick={() => setProvider('wave')}
-                  className={`flex flex-col items-center justify-center p-4 rounded-2xl border-2 transition-all ${
+                  className={`flex flex-col items-center justify-center p-3 rounded-2xl border-2 transition-all ${
                     provider === 'wave' 
                       ? 'border-[#1DCBFA] bg-[#1DCBFA]/5 shadow-sm scale-105' 
                       : 'border-slate-200 bg-white hover:border-slate-300'
                   }`}
                 >
-                  <div className="text-lg font-black text-[#1DCBFA] tracking-tighter">wave</div>
+                  <img src="/images/wave-logo.jpg" alt="Wave" className="h-10 object-contain rounded-lg mix-blend-multiply" />
                 </button>
                 
                 <button
                   type="button"
                   onClick={() => setProvider('orange_money')}
-                  className={`flex flex-col items-center justify-center p-4 rounded-2xl border-2 transition-all ${
+                  className={`flex flex-col items-center justify-center p-3 rounded-2xl border-2 transition-all ${
                     provider === 'orange_money' 
                       ? 'border-[#FF7900] bg-[#FF7900]/5 shadow-sm scale-105' 
                       : 'border-slate-200 bg-white hover:border-slate-300'
                   }`}
                 >
-                  <div className="text-lg font-black text-[#FF7900] tracking-tighter">Orange<span className="text-black text-sm block -mt-1">Money</span></div>
+                  <img src="/images/om-logo.png" alt="Orange Money" className="h-10 object-contain mix-blend-multiply" />
                 </button>
               </div>
             </div>
