@@ -95,7 +95,7 @@ export const Header = () => {
         <div className="flex items-center gap-2.5">
 
           {/* CTA: PUBLIER UN TRAJET */}
-          {user && user.role === 'driver' && user.driver_status === 'VERIFIED' && viewMode === 'driver' && (
+          {user && (user.role === 'driver' || user.role === 'admin') && (
             <Link 
               to="/publier"
               className="hidden sm:inline-flex items-center gap-2 px-4 py-2 text-xs btn-premium"
@@ -207,23 +207,46 @@ export const Header = () => {
                     </span>
                   </div>
 
-                  {user.role === 'driver' && user.driver_status === 'VERIFIED' && (
-                    <button
-                      onClick={() => {
-                        toggleViewMode();
-                        setShowUserMenu(false);
-                      }}
-                      className="w-full flex items-center justify-between px-4 py-2.5 text-xs font-bold text-demandoo-700 bg-emerald-50 hover:bg-emerald-100 transition-colors border-b border-slate-100"
-                    >
-                      <span className="flex items-center gap-2.5">
-                        <Sparkles className="w-4 h-4 text-demandoo-600" />
-                        {viewMode === 'passenger' ? 'Passer en Mode Conducteur' : 'Passer en Mode Passager'}
-                      </span>
-                    </button>
-                  )}
+                  {/* DIRECT ACCESSIBLE ITEMS FOR DRIVERS AND USERS */}
+                  {(user.role === 'driver' || user.role === 'admin') ? (
+                    <>
+                      <Link 
+                        to="/espace-chauffeur" 
+                        onClick={() => setShowUserMenu(false)}
+                        className="flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-emerald-50/60 transition-colors"
+                      >
+                        <User className="w-4 h-4 text-demandoo-600" />
+                        Mon Profil Chauffeur
+                      </Link>
 
-                  {/* PASSENGER ITEMS (shown for everyone, or when in passenger mode) */}
-                  {(user.role === 'passenger' || viewMode === 'passenger' || user.role === 'admin') && (
+                      <Link 
+                        to="/publier" 
+                        onClick={() => setShowUserMenu(false)}
+                        className="flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-emerald-50/60 transition-colors"
+                      >
+                        <PlusCircle className="w-4 h-4 text-demandoo-600" />
+                        Publier un voyage
+                      </Link>
+
+                      <Link 
+                        to="/mes-reservations" 
+                        onClick={() => setShowUserMenu(false)}
+                        className="flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-emerald-50/60 transition-colors"
+                      >
+                        <Car className="w-4 h-4 text-demandoo-600" />
+                        Mes Trajets & Réservations
+                      </Link>
+
+                      <Link 
+                        to="/abonnement" 
+                        onClick={() => setShowUserMenu(false)}
+                        className="flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-emerald-50/60 transition-colors"
+                      >
+                        <CreditCard className="w-4 h-4 text-demandoo-600" />
+                        Mon Abonnement
+                      </Link>
+                    </>
+                  ) : (
                     <>
                       <Link 
                         to="/mes-reservations" 
@@ -234,67 +257,20 @@ export const Header = () => {
                         Mes Trajets
                       </Link>
                       
-                      {user.role === 'passenger' && (
-                        <Link 
-                          to="/verification-chauffeur" 
-                          onClick={() => setShowUserMenu(false)}
-                          className="flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-emerald-50/60 transition-colors"
-                        >
-                          <Shield className="w-4 h-4 text-demandoo-600" />
-                          Devenir conducteur
-                        </Link>
-                      )}
-                    </>
-                  )}
-
-                  {/* DRIVER ITEMS (shown only in driver view mode) */}
-                  {user.role === 'driver' && viewMode === 'driver' && (
-                    <>
                       <Link 
-                        to="/espace-chauffeur" 
+                        to="/inscription-chauffeur" 
                         onClick={() => setShowUserMenu(false)}
                         className="flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-emerald-50/60 transition-colors"
                       >
-                        <User className="w-4 h-4 text-demandoo-600" />
-                        Mon Profil
+                        <Shield className="w-4 h-4 text-demandoo-600" />
+                        Devenir conducteur
                       </Link>
-
-                      {user.driver_status === 'VERIFIED' && (
-                        <Link 
-                          to="/publier" 
-                          onClick={() => setShowUserMenu(false)}
-                          className="flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-emerald-50/60 transition-colors"
-                        >
-                          <PlusCircle className="w-4 h-4 text-demandoo-600" />
-                          Publier un trajet
-                        </Link>
-                      )}
-
-                      <Link 
-                        to="/abonnement" 
-                        onClick={() => setShowUserMenu(false)}
-                        className="flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-emerald-50/60 transition-colors"
-                      >
-                        <CreditCard className="w-4 h-4 text-demandoo-600" />
-                        Mon Abonnement (SaaS)
-                      </Link>
-                      
-                      {user.driver_status !== 'VERIFIED' && (
-                        <Link 
-                          to="/verification-chauffeur" 
-                          onClick={() => setShowUserMenu(false)}
-                          className="flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-amber-50/60 transition-colors"
-                        >
-                          <Shield className="w-4 h-4 text-amber-500" />
-                          Vérification KYC Chauffeur
-                        </Link>
-                      )}
                     </>
                   )}
 
                   {user.role === 'admin' && (
                     <Link 
-                      to="/admin/paiements" 
+                      to="/admin/drivers" 
                       onClick={() => setShowUserMenu(false)}
                       className="flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-purple-700 hover:bg-purple-50 transition-colors border-t border-slate-100"
                     >
