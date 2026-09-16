@@ -25,7 +25,8 @@ export const LoginPage = () => {
     setIsLoading(false);
 
     if (result && result.user) {
-      if (result.user.role === 'admin') navigate('/admin');
+      const userRole = (result.user?.app_metadata?.role || result.user?.role || '').toLowerCase();
+      if (userRole === 'admin') navigate('/admin');
       else navigate('/espace-chauffeur');
     } else {
       setError(result?.error || "Email ou mot de passe incorrect.");

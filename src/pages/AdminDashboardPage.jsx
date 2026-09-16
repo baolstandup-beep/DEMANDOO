@@ -30,7 +30,8 @@ export const AdminDashboardPage = () => {
   const [rejectionReason, setRejectionReason] = useState('');
 
   // Security check: Only Admin role access!
-  if (user?.role !== 'admin') {
+  const userRole = (user?.app_metadata?.role || user?.role || '').toLowerCase();
+  if (userRole !== 'admin') {
     return (
       <div className="max-w-xl mx-auto py-16 px-4 text-center space-y-4">
         <div className="w-16 h-16 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center mx-auto shadow-inner">
@@ -38,7 +39,7 @@ export const AdminDashboardPage = () => {
         </div>
         <h2 className="text-xl font-black text-slate-900">Accès Restreint</h2>
         <p className="text-xs text-slate-500 font-medium">
-          Cette zone est exclusivement réservée à l'administration de Demandoo. Utilisez le sélecteur de rôle en haut pour passer en mode Administrateur.
+          Cette zone est exclusivement réservée à l'administration de Demandoo.
         </p>
       </div>
     );

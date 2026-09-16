@@ -17,7 +17,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   const emptyState = document.getElementById('empty-state');
   const alertContainer = document.getElementById('alert-container');
 
-  // Gestion des états UI
+  // État local
+  let adminAuthenticated = false;
+  let isAuthenticating = false;
+
+  // Gestion des affichages UI
   function showLoading() {
     if (loadingScreen) loadingScreen.style.display = 'block';
     if (loginScreen) loginScreen.style.display = 'none';
@@ -30,7 +34,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (loginScreen) loginScreen.style.display = 'block';
     if (dashboardScreen) dashboardScreen.style.display = 'none';
     if (logoutBtn) logoutBtn.style.display = 'none';
-    // Purger les remplissages automatiques de numéros de téléphone du navigateur
     if (emailInput && (!emailInput.value.includes('@') || emailInput.value.includes('773033196'))) {
       emailInput.value = '';
     }
@@ -76,6 +79,11 @@ document.addEventListener('DOMContentLoaded', async () => {
       .replace(/'/g, '&#039;');
   }
 
+  function checkAdminRole(user) {
+    const role = user?.app_metadata?.role;
+    return role === 'admin' || role === 'ADMIN' || (typeof role === 'string' && role.toLowerCase() === 'admin');
+  }
+
   // 1. VÉRIFICATION INITIALE DE LA SESSION (Route Admin Protégée)
   async function checkAdminSession() {
     if (!supabase) {
@@ -89,25 +97,20 @@ document.addEventListener('DOMContentLoaded', async () => {
     try {
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
 
-      if (sessionError || !session) {
+      if (sessionError || !session || !session.user) {
         showLogin();
         return;
       }
 
-      // Vérification stricte du rôle via app_metadata
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      console.log("SESSION INITIALE ACTIVE :", session.user.email);
+      console.log("APP METADATA INITIALE :", session.user.app_metadata);
+      console.log("ADMIN ROLE INITIAL :", session.user.app_metadata?.role);
 
-      if (userError || !user) {
-        await supabase.auth.signOut();
-        showLogin();
-        return;
-      }
-
-      if (user?.app_metadata?.role === 'admin') {
+      if (checkAdminRole(session.user)) {
+        adminAuthenticated = true;
         showDashboard();
       } else {
         await supabase.auth.signOut();
-        showAlert("Accès refusé. Ce compte n'est pas administrateur.", "danger");
         showLogin();
       }
     } catch (err) {
@@ -116,20 +119,26 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
-  // Écouter les changements d'état d'authentification Supabase
+  // Écouter les changements d'état d'authentification Supabase sans conflit
   if (supabase) {
     supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log("AUTH STATE CHANGE :", event);
       if (event === 'SIGNED_OUT') {
+        adminAuthenticated = false;
         showLogin();
       } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-        if (!session) {
-          showLogin();
+        if (!session || !session.user) {
+          if (!isAuthenticating) showLogin();
           return;
         }
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user?.app_metadata?.role === 'admin') {
+
+        console.log("AUTH STATE CHANGE USER :", session.user.email);
+        console.log("AUTH STATE CHANGE ROLE :", session.user.app_metadata?.role);
+
+        if (checkAdminRole(session.user)) {
+          adminAuthenticated = true;
           showDashboard();
-        } else {
+        } else if (!isAuthenticating) {
           await supabase.auth.signOut();
           showAlert("Accès refusé. Ce compte n'est pas administrateur.", "danger");
           showLogin();
@@ -138,7 +147,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
-  // Lancer la vérification dès le chargement du DOM
+  // Lancer la vérification initiale
   await checkAdminSession();
 
   // 2. SOUMISSION DU FORMULAIRE DE CONNEXION ADMIN
@@ -160,69 +169,68 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
       }
 
+      isAuthenticating = true;
       setSubmitLoading(true);
 
       try {
-        // Authentification via Supabase Auth uniquement
+        console.log("Tentative de connexion Supabase Auth pour :", email);
+
+        // Authentification directe via Supabase Auth
         const { data, error } = await supabase.auth.signInWithPassword({
           email: email,
           password: password
         });
 
         if (error) {
+          console.error("ERREUR SUPABASE AUTH :", error);
           setSubmitLoading(false);
-          const errCode = error.status || 0;
+          isAuthenticating = false;
           const errMsg = (error.message || '').toLowerCase();
-
-          if (errMsg.includes('invalid login') || errMsg.includes('invalid_grant') || errMsg.includes('credentials') || errCode === 400) {
+          if (errMsg.includes('invalid login') || errMsg.includes('invalid_grant') || errMsg.includes('credentials') || error.status === 400) {
             showAlert("Email ou mot de passe incorrect.", "danger");
-          } else if (errMsg.includes('fetch') || errMsg.includes('network') || errCode >= 500) {
-            showAlert("Impossible de se connecter. Vérifiez votre connexion et réessayez.", "danger");
           } else {
-            showAlert("Email ou mot de passe incorrect.", "danger");
+            showAlert("Impossible de se connecter. Vérifiez votre connexion et réessayez.", "danger");
           }
           return;
         }
 
-        if (!data?.user) {
-          setSubmitLoading(false);
-          showAlert("Email ou mot de passe incorrect.", "danger");
-          return;
-        }
+        // Logs de diagnostic requis
+        console.log("AUTH USER:", data.user);
+        console.log("AUTH SESSION:", data.session);
+        console.log("APP METADATA:", data.user?.app_metadata);
+        console.log("ADMIN ROLE:", data.user?.app_metadata?.role);
 
-        // 3. VÉRIFICATION DU RÔLE ADMIN VIA app_metadata
-        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        const isAdmin = checkAdminRole(data.user);
 
-        if (userError || !user) {
+        if (isAdmin) {
+          adminAuthenticated = true;
           setSubmitLoading(false);
-          await supabase.auth.signOut();
-          showAlert("Impossible de récupérer les informations du compte.", "danger");
-          return;
-        }
-
-        if (user?.app_metadata?.role === 'admin') {
-          setSubmitLoading(false);
+          isAuthenticating = false;
           clearAlert();
+          console.log("Connexion admin validée avec succès. Affichage du Dashboard...");
           showDashboard();
         } else {
-          // Déconnexion immédiate si l'utilisateur n'est pas administrateur
+          console.warn("Utilisateur non admin :", data.user?.app_metadata?.role);
           await supabase.auth.signOut();
           setSubmitLoading(false);
+          isAuthenticating = false;
           showAlert("Accès refusé. Ce compte n'est pas administrateur.", "danger");
           showLogin();
         }
       } catch (err) {
-        console.error("Exception connexion admin :", err);
+        console.error("Exception inattendue lors de la connexion admin :", err);
         setSubmitLoading(false);
+        isAuthenticating = false;
         showAlert("Impossible de se connecter. Vérifiez votre connexion et réessayez.", "danger");
       }
     });
   }
 
-  // 4. DÉCONNEXION ADMIN
+  // 3. DÉCONNEXION ADMIN
   if (logoutBtn) {
     logoutBtn.addEventListener('click', async () => {
       clearAlert();
+      adminAuthenticated = false;
       if (supabase) {
         await supabase.auth.signOut();
       }
@@ -231,7 +239,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
-  // 5. CHARGEMENT DES CONDUCTEURS (Dashboard)
+  // 4. CHARGEMENT DES CONDUCTEURS (Dashboard)
   async function chargerConducteurs() {
     if (!driversList) return;
 
@@ -243,7 +251,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         .order('created_at', { ascending: false });
 
       if (error) {
-        showAlert("Erreur lors de la récupération des conducteurs.", "danger");
+        console.warn("Erreur chargement liste conducteurs (non-bloquant) :", error);
         return;
       }
 
@@ -283,11 +291,10 @@ document.addEventListener('DOMContentLoaded', async () => {
       });
     } catch (err) {
       console.error("Erreur chargement conducteurs :", err);
-      showAlert("Impossible de charger la liste des conducteurs.", "danger");
     }
   }
 
-  // 6. ACTION VALIDER / SUSPENDRE CONDUCTEUR
+  // 5. ACTION VALIDER / SUSPENDRE CONDUCTEUR
   window.changerStatut = async function(id, nouveauStatut) {
     if (!confirm(`Voulez-vous vraiment changer le statut à : ${nouveauStatut === 'VERIFIED' ? 'Validé' : 'Suspendu'} ?`)) return;
 
