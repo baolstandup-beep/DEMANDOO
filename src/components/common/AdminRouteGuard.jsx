@@ -17,7 +17,8 @@ export const AdminRouteGuard = ({ children }) => {
   }
 
   // Vérification de sécurité stricte
-  if (!user || user.role !== 'admin') {
+  const isAdmin = user?.app_metadata?.role === 'admin' || user?.role === 'admin';
+  if (!user || !isAdmin) {
     return <Navigate to="/login" replace />;
   }
 

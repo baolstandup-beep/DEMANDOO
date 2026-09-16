@@ -136,21 +136,28 @@ export const AuthProvider = ({ children }) => {
         localStorage.removeItem('demandoo_intended_role');
       }
 
-      setUser(profile);
+      const isAdmin = authUser?.app_metadata?.role === 'admin';
+      const completeProfile = {
+        ...profile,
+        app_metadata: authUser?.app_metadata || {},
+        role: isAdmin ? 'admin' : (profile?.role || 'passenger')
+      };
+
+      setUser(completeProfile);
 
       // Définir le viewMode
       const storedViewMode = localStorage.getItem('demandoo_view_mode');
-      if (profile.role === 'driver' && profile.driver_status === 'VERIFIED' &&
+      if (completeProfile.role === 'driver' && completeProfile.driver_status === 'VERIFIED' &&
           (storedViewMode === 'driver' || safeRole === 'driver')) {
         setViewMode('driver');
         localStorage.setItem('demandoo_view_mode', 'driver');
-      } else if (profile.role === 'admin') {
+      } else if (completeProfile.role === 'admin') {
         setViewMode('admin');
       } else {
         setViewMode('passenger');
       }
 
-      return profile;
+      return completeProfile;
     } catch (error) {
       console.error("Error fetching user profile:", error);
       return null;
@@ -549,14 +556,24 @@ export const AuthProvider = ({ children }) => {
         profile = inserted || newProfile;
       }
 
-      setUser(profile);
-      if (profile.role === 'driver' || role === 'driver') {
+      const isAdmin = authData.user?.app_metadata?.role === 'admin';
+      const completeProfile = {
+        ...profile,
+        app_metadata: authData.user?.app_metadata || {},
+        role: isAdmin ? 'admin' : (profile?.role || role || 'passenger')
+      };
+
+      setUser(completeProfile);
+      if (completeProfile.role === 'admin') {
+        setViewMode('admin');
+        localStorage.setItem('demandoo_view_mode', 'admin');
+      } else if (completeProfile.role === 'driver' || role === 'driver') {
         setViewMode('driver');
         localStorage.setItem('demandoo_view_mode', 'driver');
       }
-      localStorage.setItem('demandoo_user_v2', JSON.stringify(profile));
+      localStorage.setItem('demandoo_user_v2', JSON.stringify(completeProfile));
 
-      return { user: profile };
+      return { user: completeProfile };
     } catch (err) {
       console.warn("Supabase auth exception:", err);
       return { error: translateAuthError(err) };

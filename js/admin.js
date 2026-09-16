@@ -1,96 +1,236 @@
+// ==============================================================================
+// Demandoo — Administration
+// Gestion de la connexion et de la validation des conducteurs
+// ==============================================================================
+
 document.addEventListener('DOMContentLoaded', async () => {
+  // Éléments DOM
+  const loadingScreen = document.getElementById('loading-screen');
   const loginScreen = document.getElementById('login-screen');
   const dashboardScreen = document.getElementById('dashboard-screen');
   const loginForm = document.getElementById('login-form');
+  const emailInput = document.getElementById('admin-email');
+  const passwordInput = document.getElementById('admin-password');
+  const submitBtn = document.getElementById('login-submit-btn');
   const logoutBtn = document.getElementById('logout-btn');
   const driversList = document.getElementById('drivers-list');
   const emptyState = document.getElementById('empty-state');
   const alertContainer = document.getElementById('alert-container');
 
-  // Vérifier la session actuelle
-  const { data: { session } } = await supabase.auth.getSession();
-  if (session) {
-    showDashboard();
+  // Gestion des états UI
+  function showLoading() {
+    if (loadingScreen) loadingScreen.style.display = 'block';
+    if (loginScreen) loginScreen.style.display = 'none';
+    if (dashboardScreen) dashboardScreen.style.display = 'none';
+    if (logoutBtn) logoutBtn.style.display = 'none';
   }
 
-  // Gérer la connexion
-  loginForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    clearAlert();
-    const rawInput = (document.getElementById('admin-email').value || '').trim();
-    const password = document.getElementById('admin-password').value;
-
-    let candidateEmails = [];
-
-    if (rawInput.includes('@')) {
-      candidateEmails.push(rawInput);
-    } else {
-      const digits = rawInput.replace(/\D/g, '');
-      const phoneNoCountry = digits.replace(/^221/, '').replace(/^0+/, '');
-
-      try {
-        const { data: matchedProfiles } = await supabase
-          .from('profiles')
-          .select('email, phone')
-          .or(`phone.ilike.%${phoneNoCountry}%,email.ilike.%${phoneNoCountry}%`)
-          .limit(3);
-
-        if (matchedProfiles && matchedProfiles.length > 0) {
-          matchedProfiles.forEach(p => {
-            if (p.email && !candidateEmails.includes(p.email)) {
-              candidateEmails.push(p.email);
-            }
-          });
-        }
-      } catch (err) {
-        console.warn("Profiles lookup failed:", err);
-      }
-
-      if (phoneNoCountry) {
-        candidateEmails.push(`driver.${phoneNoCountry}@demandoo.sn`);
-        candidateEmails.push(`driver.${digits}@demandoo.sn`);
-        candidateEmails.push(`221${phoneNoCountry}@demandoo.com`);
-        candidateEmails.push(`${phoneNoCountry}@demandoo.sn`);
-      }
-    }
-
-    let authSuccess = false;
-    let lastError = null;
-
-    for (const emailToTry of candidateEmails) {
-      const { data, error } = await supabase.auth.signInWithPassword({ email: emailToTry, password });
-      if (!error && data?.user) {
-        authSuccess = true;
-        break;
-      } else {
-        lastError = error;
-      }
-    }
-
-    if (authSuccess) {
-      showDashboard();
-    } else {
-      showAlert(lastError ? lastError.message : "Identifiants incorrects.", 'danger');
-    }
-  });
-
-  // Gérer la déconnexion
-  logoutBtn.addEventListener('click', async () => {
-    await supabase.auth.signOut();
-    loginScreen.style.display = 'block';
-    dashboardScreen.style.display = 'none';
-    logoutBtn.style.display = 'none';
-  });
+  function showLogin() {
+    if (loadingScreen) loadingScreen.style.display = 'none';
+    if (loginScreen) loginScreen.style.display = 'block';
+    if (dashboardScreen) dashboardScreen.style.display = 'none';
+    if (logoutBtn) logoutBtn.style.display = 'none';
+  }
 
   function showDashboard() {
-    loginScreen.style.display = 'none';
-    dashboardScreen.style.display = 'block';
-    logoutBtn.style.display = 'block';
+    if (loadingScreen) loadingScreen.style.display = 'none';
+    if (loginScreen) loginScreen.style.display = 'none';
+    if (dashboardScreen) dashboardScreen.style.display = 'block';
+    if (logoutBtn) logoutBtn.style.display = 'inline-block';
     chargerConducteurs();
   }
 
-  // Charger la liste
+  function setSubmitLoading(isLoading) {
+    if (!submitBtn) return;
+    if (isLoading) {
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Connexion...';
+    } else {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Se connecter';
+    }
+  }
+
+  function showAlert(message, type = 'danger') {
+    if (!alertContainer) return;
+    alertContainer.innerHTML = `<div class="alert alert-${type}">${escapeHtml(message)}</div>`;
+  }
+
+  function clearAlert() {
+    if (alertContainer) {
+      alertContainer.innerHTML = '';
+    }
+  }
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
+  // 1. VÉRIFICATION INITIALE DE LA SESSION (Route Admin Protégée)
+  async function checkAdminSession() {
+    if (!supabase) {
+      showAlert("Configuration Supabase manquante ou indisponible.", "danger");
+      showLogin();
+      return;
+    }
+
+    showLoading();
+
+    try {
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+
+      if (sessionError || !session) {
+        showLogin();
+        return;
+      }
+
+      // Vérification stricte du rôle via app_metadata
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+
+      if (userError || !user) {
+        await supabase.auth.signOut();
+        showLogin();
+        return;
+      }
+
+      if (user?.app_metadata?.role === 'admin') {
+        showDashboard();
+      } else {
+        await supabase.auth.signOut();
+        showAlert("Accès refusé. Ce compte n'est pas administrateur.", "danger");
+        showLogin();
+      }
+    } catch (err) {
+      console.error("Erreur lors de la vérification de session admin :", err);
+      showLogin();
+    }
+  }
+
+  // Écouter les changements d'état d'authentification Supabase
+  if (supabase) {
+    supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_OUT') {
+        showLogin();
+      } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        if (!session) {
+          showLogin();
+          return;
+        }
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user?.app_metadata?.role === 'admin') {
+          showDashboard();
+        } else {
+          await supabase.auth.signOut();
+          showAlert("Accès refusé. Ce compte n'est pas administrateur.", "danger");
+          showLogin();
+        }
+      }
+    });
+  }
+
+  // Lancer la vérification dès le chargement du DOM
+  await checkAdminSession();
+
+  // 2. SOUMISSION DU FORMULAIRE DE CONNEXION ADMIN
+  if (loginForm) {
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      clearAlert();
+
+      const email = (emailInput?.value || '').trim();
+      const password = passwordInput?.value || '';
+
+      if (!email || !password) {
+        showAlert("Veuillez renseigner votre email et mot de passe.", "danger");
+        return;
+      }
+
+      if (!supabase) {
+        showAlert("Service d'authentification non initialisé.", "danger");
+        return;
+      }
+
+      setSubmitLoading(true);
+
+      try {
+        // Authentification via Supabase Auth uniquement
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: email,
+          password: password
+        });
+
+        if (error) {
+          setSubmitLoading(false);
+          const errCode = error.status || 0;
+          const errMsg = (error.message || '').toLowerCase();
+
+          if (errMsg.includes('invalid login') || errMsg.includes('invalid_grant') || errMsg.includes('credentials') || errCode === 400) {
+            showAlert("Email ou mot de passe incorrect.", "danger");
+          } else if (errMsg.includes('fetch') || errMsg.includes('network') || errCode >= 500) {
+            showAlert("Impossible de se connecter. Vérifiez votre connexion et réessayez.", "danger");
+          } else {
+            showAlert("Email ou mot de passe incorrect.", "danger");
+          }
+          return;
+        }
+
+        if (!data?.user) {
+          setSubmitLoading(false);
+          showAlert("Email ou mot de passe incorrect.", "danger");
+          return;
+        }
+
+        // 3. VÉRIFICATION DU RÔLE ADMIN VIA app_metadata
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+
+        if (userError || !user) {
+          setSubmitLoading(false);
+          await supabase.auth.signOut();
+          showAlert("Impossible de récupérer les informations du compte.", "danger");
+          return;
+        }
+
+        if (user?.app_metadata?.role === 'admin') {
+          setSubmitLoading(false);
+          clearAlert();
+          showDashboard();
+        } else {
+          // Déconnexion immédiate si l'utilisateur n'est pas administrateur
+          await supabase.auth.signOut();
+          setSubmitLoading(false);
+          showAlert("Accès refusé. Ce compte n'est pas administrateur.", "danger");
+          showLogin();
+        }
+      } catch (err) {
+        console.error("Exception connexion admin :", err);
+        setSubmitLoading(false);
+        showAlert("Impossible de se connecter. Vérifiez votre connexion et réessayez.", "danger");
+      }
+    });
+  }
+
+  // 4. DÉCONNEXION ADMIN
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', async () => {
+      clearAlert();
+      if (supabase) {
+        await supabase.auth.signOut();
+      }
+      showLogin();
+      if (passwordInput) passwordInput.value = '';
+    });
+  }
+
+  // 5. CHARGEMENT DES CONDUCTEURS (Dashboard)
   async function chargerConducteurs() {
+    if (!driversList) return;
+
     try {
       const { data: conducteurs, error } = await supabase
         .from('profiles')
@@ -98,30 +238,34 @@ document.addEventListener('DOMContentLoaded', async () => {
         .eq('role', 'driver')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        showAlert("Erreur lors de la récupération des conducteurs.", "danger");
+        return;
+      }
 
       driversList.innerHTML = '';
 
       if (!conducteurs || conducteurs.length === 0) {
-        emptyState.style.display = 'block';
+        if (emptyState) emptyState.style.display = 'block';
         return;
       }
-      emptyState.style.display = 'none';
+
+      if (emptyState) emptyState.style.display = 'none';
 
       conducteurs.forEach(c => {
         const tr = document.createElement('tr');
         
-        const dateFormatted = new Date(c.created_at).toLocaleDateString('fr-FR');
+        const dateFormatted = c.created_at ? new Date(c.created_at).toLocaleDateString('fr-FR') : '-';
         const badgeClass = c.driver_status === 'VERIFIED' ? 'badge-success' : 
                            c.driver_status === 'SUSPENDED' ? 'badge-danger' : 'badge-warning';
         const statutLabel = c.driver_status === 'VERIFIED' ? 'Validé' : 
                             c.driver_status === 'SUSPENDED' ? 'Suspendu' : 'En attente';
 
         tr.innerHTML = `
-          <td><strong>${escapeHtml(c.full_name)}</strong></td>
-          <td>${escapeHtml(c.phone)}</td>
+          <td><strong>${escapeHtml(c.full_name || 'Inconnu')}</strong></td>
+          <td>${escapeHtml(c.phone || '-')}</td>
           <td><span class="tag">Chauffeur</span></td>
-          <td>-</td>
+          <td>${escapeHtml(c.city || '-')}</td>
           <td><code>${escapeHtml(c.license_number || '-')}</code></td>
           <td>-</td>
           <td><span class="badge ${badgeClass}" id="badge-${c.id}">${statutLabel}</span></td>
@@ -134,40 +278,31 @@ document.addEventListener('DOMContentLoaded', async () => {
         driversList.appendChild(tr);
       });
     } catch (err) {
-      showAlert(`Erreur chargement : ${err.message}`, 'danger');
+      console.error("Erreur chargement conducteurs :", err);
+      showAlert("Impossible de charger la liste des conducteurs.", "danger");
     }
   }
 
-  // Rendre la fonction changerStatut globale pour le onClick HTML
+  // 6. ACTION VALIDER / SUSPENDRE CONDUCTEUR
   window.changerStatut = async function(id, nouveauStatut) {
-    if (!confirm(`Voulez-vous vraiment changer le statut à : ${nouveauStatut} ?`)) return;
+    if (!confirm(`Voulez-vous vraiment changer le statut à : ${nouveauStatut === 'VERIFIED' ? 'Validé' : 'Suspendu'} ?`)) return;
 
     try {
       const { error } = await supabase
         .from('profiles')
-        .update({ driver_status: nouveauStatut, is_driver_active: nouveauStatut === 'VERIFIED' })
+        .update({ 
+          driver_status: nouveauStatut, 
+          is_driver_active: nouveauStatut === 'VERIFIED' 
+        })
         .eq('id', id);
 
       if (error) throw error;
       
-      showAlert('Statut mis à jour !', 'success');
-      chargerConducteurs(); // Recharger la liste
+      showAlert('Statut mis à jour avec succès.', 'success');
+      chargerConducteurs();
     } catch (err) {
-      showAlert(`Erreur mise à jour : ${err.message}`, 'danger');
+      console.error("Erreur mise à jour statut conducteur :", err);
+      showAlert("Erreur lors de la mise à jour du statut.", "danger");
     }
   };
-
-  function showAlert(message, type) {
-    alertContainer.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
-    setTimeout(() => clearAlert(), 5000);
-  }
-
-  function clearAlert() {
-    alertContainer.innerHTML = '';
-  }
-
-  function escapeHtml(str) {
-    if (!str) return '';
-    return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-  }
 });

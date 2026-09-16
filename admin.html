@@ -19,24 +19,29 @@
           <p class="subtitle">Gestion et Validation des Conducteurs</p>
         </div>
       </div>
-      <button id="logout-btn" class="btn" style="width: auto; background: var(--danger); display: none;">Déconnexion</button>
+      <button id="logout-btn" class="btn" style="width: auto; background: var(--danger); display: none;">Se déconnecter</button>
     </header>
 
     <div id="alert-container"></div>
+
+    <!-- ÉCRAN DE CHARGEMENT INITIAL (Vérification session) -->
+    <div id="loading-screen" class="card" style="max-width: 400px; margin: 40px auto; text-align: center; display: none;">
+      <p style="color: var(--text-muted); font-size: 14px;">Vérification des accès administrateur...</p>
+    </div>
 
     <!-- ÉCRAN DE CONNEXION -->
     <div id="login-screen" class="card" style="max-width: 400px; margin: 40px auto;">
       <h2 class="card-title">Connexion Administrateur</h2>
       <form id="login-form">
         <div class="form-group">
-          <label for="admin-email">Email ou Numéro de téléphone</label>
-          <input type="text" id="admin-email" placeholder="Ex: 77 123 45 67 ou admin@demandoo.sn" required>
+          <label for="admin-email">Email</label>
+          <input type="email" id="admin-email" placeholder="nom@exemple.com" required autocomplete="email">
         </div>
         <div class="form-group">
           <label for="admin-password">Mot de passe</label>
-          <input type="password" id="admin-password" required>
+          <input type="password" id="admin-password" placeholder="••••••••" required autocomplete="current-password">
         </div>
-        <button type="submit" class="btn">Se connecter</button>
+        <button type="submit" id="login-submit-btn" class="btn">Se connecter</button>
       </form>
     </div>
 
