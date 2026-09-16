@@ -75,6 +75,7 @@ export const Footer = () => {
             <ul className="space-y-4 text-sm font-bold">
               <li><Link to="/mes-reservations" className="text-slate-600 hover:text-demandoo-600 hover:translate-x-1 transition-all inline-block">Espace passager</Link></li>
               <li><Link to="/espace-chauffeur" className="text-slate-600 hover:text-demandoo-600 hover:translate-x-1 transition-all inline-block">Espace conducteur</Link></li>
+              <li><Link to="/abonnement" className="text-slate-600 hover:text-demandoo-600 hover:translate-x-1 transition-all inline-block">Formules d'abonnement</Link></li>
               <li><Link to="/trajets" className="text-slate-600 hover:text-demandoo-600 hover:translate-x-1 transition-all inline-block">Mes trajets</Link></li>
               <li><Link to="/mes-reservations" className="text-slate-600 hover:text-demandoo-600 hover:translate-x-1 transition-all inline-block">Historique trajets</Link></li>
             </ul>

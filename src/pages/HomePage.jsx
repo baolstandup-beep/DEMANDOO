@@ -22,7 +22,9 @@ import {
   TrendingUp,
   CreditCard,
   Shield,
-  Smartphone
+  Smartphone,
+  Check,
+  Zap
 } from 'lucide-react';
 
 import { Reveal } from '../components/common/Reveal';
@@ -600,6 +602,270 @@ export const HomePage = () => {
 
           </div>
         </Reveal>
+      </section>
+
+      {/* ========================================================================= */}
+      {/* 5. BIS - FORMULES D'ABONNEMENT CONDUCTEURS (0% Commission) */}
+      {/* ========================================================================= */}
+      <section id="abonnements" className="py-16 lg:py-24 bg-slate-50 border-t border-slate-100 relative">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          
+          {/* Header de section */}
+          <div className="text-center max-w-3xl mx-auto mb-16 space-y-3">
+            <Reveal>
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-demandoo-100 text-demandoo-700 text-xs font-black uppercase tracking-wider mb-2">
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>Formules Chauffeurs Transparentes</span>
+              </div>
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 tracking-tight">
+                Zéro commission sur vos trajets. <br />
+                <span className="text-demandoo-600">Vous gardez 100% de vos gains.</span>
+              </h2>
+              <p className="text-sm sm:text-base text-slate-600 font-medium max-w-2xl mx-auto mt-2">
+                Choisissez le forfait qui s'adapte à votre fréquence de voyage. Aucun frais caché, aucun prélèvement sur vos passagers.
+              </p>
+            </Reveal>
+          </div>
+
+          {/* Grille des 3 Cartes d'Abonnement */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
+            
+            {/* 1. Plan Découverte (0 FCFA) */}
+            <Reveal delay={100}>
+              <div className="bg-white rounded-3xl p-8 border border-slate-200/80 shadow-sm hover:shadow-xl hover:border-slate-300 transition-all duration-300 flex flex-col justify-between h-full relative">
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="px-3 py-1 rounded-full text-xs font-black bg-slate-100 text-slate-700 uppercase tracking-wide">
+                      Essai
+                    </span>
+                    <span className="text-xs font-bold text-slate-400">Sans engagement</span>
+                  </div>
+
+                  <h3 className="text-2xl font-black text-slate-900 mb-2">Découverte</h3>
+                  <p className="text-xs text-slate-500 font-medium mb-6 min-h-[36px]">
+                    Pour tester Demandoo et proposer votre tout premier trajet sans frais.
+                  </p>
+
+                  {/* Prix */}
+                  <div className="flex items-baseline gap-1 mb-6 pb-6 border-b border-slate-100">
+                    <span className="text-4xl sm:text-5xl font-black text-slate-900">0</span>
+                    <span className="text-lg font-bold text-slate-500">FCFA</span>
+                    <span className="text-xs text-slate-400 font-medium ml-1">/ gratuit</span>
+                  </div>
+
+                  {/* Liste des Avantages */}
+                  <div className="space-y-3.5 mb-8">
+                    <div className="flex items-start gap-3">
+                      <div className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0 mt-0.5">
+                        <Check className="w-3 h-3 stroke-[3]" />
+                      </div>
+                      <span className="text-xs sm:text-sm font-bold text-slate-700">1 trajet complet inclus</span>
+                    </div>
+
+                    <div className="flex items-start gap-3">
+                      <div className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0 mt-0.5">
+                        <Check className="w-3 h-3 stroke-[3]" />
+                      </div>
+                      <span className="text-xs sm:text-sm font-bold text-slate-700">0% de commission sur vos gains</span>
+                    </div>
+
+                    <div className="flex items-start gap-3">
+                      <div className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0 mt-0.5">
+                        <Check className="w-3 h-3 stroke-[3]" />
+                      </div>
+                      <span className="text-xs sm:text-sm font-bold text-slate-700">Réservation directe WhatsApp</span>
+                    </div>
+
+                    <div className="flex items-start gap-3">
+                      <div className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0 mt-0.5">
+                        <Check className="w-3 h-3 stroke-[3]" />
+                      </div>
+                      <span className="text-xs sm:text-sm font-medium text-slate-600">Paiements directs avec les passagers</span>
+                    </div>
+                  </div>
+                </div>
+
+                <Link
+                  to="/inscription-chauffeur"
+                  className="w-full py-4 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-900 font-black text-sm text-center transition-all block"
+                >
+                  Commencer Gratuitement
+                </Link>
+              </div>
+            </Reveal>
+
+            {/* 2. Plan Standard (2 400 FCFA / mois) */}
+            <Reveal delay={200}>
+              <div className="bg-white rounded-3xl p-8 border border-slate-200/80 shadow-md hover:shadow-xl hover:border-demandoo-300 transition-all duration-300 flex flex-col justify-between h-full relative">
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="px-3 py-1 rounded-full text-xs font-black bg-demandoo-50 text-demandoo-700 uppercase tracking-wide">
+                      Occasionnel
+                    </span>
+                    <span className="text-xs font-bold text-slate-400">Mensuel</span>
+                  </div>
+
+                  <h3 className="text-2xl font-black text-slate-900 mb-2">Standard</h3>
+                  <p className="text-xs text-slate-500 font-medium mb-6 min-h-[36px]">
+                    Pour proposer quelques trajets par mois et partager ses frais de route.
+                  </p>
+
+                  {/* Prix */}
+                  <div className="flex items-baseline gap-1 mb-6 pb-6 border-b border-slate-100">
+                    <span className="text-4xl sm:text-5xl font-black text-slate-900">2 400</span>
+                    <span className="text-lg font-bold text-slate-500">FCFA</span>
+                    <span className="text-xs text-slate-400 font-medium ml-1">/ mois</span>
+                  </div>
+
+                  {/* Liste des Avantages */}
+                  <div className="space-y-3.5 mb-8">
+                    <div className="flex items-start gap-3">
+                      <div className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0 mt-0.5">
+                        <Check className="w-3 h-3 stroke-[3]" />
+                      </div>
+                      <span className="text-xs sm:text-sm font-bold text-slate-700">Jusqu'à 4 trajets par mois</span>
+                    </div>
+
+                    <div className="flex items-start gap-3">
+                      <div className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0 mt-0.5">
+                        <Check className="w-3 h-3 stroke-[3]" />
+                      </div>
+                      <span className="text-xs sm:text-sm font-bold text-slate-700">0% de commission sur vos gains</span>
+                    </div>
+
+                    <div className="flex items-start gap-3">
+                      <div className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0 mt-0.5">
+                        <Check className="w-3 h-3 stroke-[3]" />
+                      </div>
+                      <span className="text-xs sm:text-sm font-bold text-slate-700">Support client prioritaire</span>
+                    </div>
+
+                    <div className="flex items-start gap-3">
+                      <div className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0 mt-0.5">
+                        <Check className="w-3 h-3 stroke-[3]" />
+                      </div>
+                      <span className="text-xs sm:text-sm font-medium text-slate-600">Paiements Wave & Espèces directs</span>
+                    </div>
+                  </div>
+                </div>
+
+                <Link
+                  to="/abonnement"
+                  className="w-full py-4 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-black text-sm text-center shadow-lg transition-all block"
+                >
+                  Choisir Standard
+                </Link>
+              </div>
+            </Reveal>
+
+            {/* 3. Plan Pro (4 900 FCFA / mois) - Highlighted */}
+            <Reveal delay={300}>
+              <div className="bg-gradient-to-br from-demandoo-700 via-demandoo-600 to-teal-800 text-white rounded-3xl p-8 shadow-2xl shadow-demandoo-600/30 border-2 border-demandoo-400/40 flex flex-col justify-between h-full relative transform lg:-translate-y-2">
+                
+                {/* Badge Flottant "Recommandé" */}
+                <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-amber-400 text-slate-950 px-4 py-1 rounded-full text-[11px] font-black uppercase tracking-wider shadow-lg flex items-center gap-1">
+                  <Star className="w-3 h-3 fill-slate-950" />
+                  <span>Recommandé • Chauffeurs Réguliers</span>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-4 mt-2">
+                    <span className="px-3 py-1 rounded-full text-xs font-black bg-white/20 text-white uppercase tracking-wide backdrop-blur-md">
+                      Illimité
+                    </span>
+                    <span className="text-xs font-bold text-emerald-300">Formule Pro</span>
+                  </div>
+
+                  <h3 className="text-2xl font-black text-white mb-2 flex items-center gap-2">
+                    <span>Pro</span>
+                    <Award className="w-6 h-6 text-amber-400" />
+                  </h3>
+                  <p className="text-xs text-slate-100 font-medium mb-6 min-h-[36px]">
+                    Pour les chauffeurs réguliers qui souhaitent maximiser leurs revenus sans limite.
+                  </p>
+
+                  {/* Prix */}
+                  <div className="flex items-baseline gap-1 mb-6 pb-6 border-b border-white/15">
+                    <span className="text-4xl sm:text-5xl font-black text-white">4 900</span>
+                    <span className="text-lg font-bold text-slate-200">FCFA</span>
+                    <span className="text-xs text-slate-300 font-medium ml-1">/ mois</span>
+                  </div>
+
+                  {/* Liste des Avantages */}
+                  <div className="space-y-3.5 mb-8">
+                    <div className="flex items-start gap-3">
+                      <div className="w-5 h-5 rounded-full bg-white text-demandoo-700 flex items-center justify-center shrink-0 mt-0.5 font-black shadow-sm">
+                        <Check className="w-3 h-3 stroke-[3]" />
+                      </div>
+                      <span className="text-xs sm:text-sm font-black text-white">Trajets illimités chaque mois</span>
+                    </div>
+
+                    <div className="flex items-start gap-3">
+                      <div className="w-5 h-5 rounded-full bg-white text-demandoo-700 flex items-center justify-center shrink-0 mt-0.5 font-black shadow-sm">
+                        <Check className="w-3 h-3 stroke-[3]" />
+                      </div>
+                      <span className="text-xs sm:text-sm font-black text-amber-300">Badge exclusif « Chauffeur Pro »</span>
+                    </div>
+
+                    <div className="flex items-start gap-3">
+                      <div className="w-5 h-5 rounded-full bg-white text-demandoo-700 flex items-center justify-center shrink-0 mt-0.5 font-black shadow-sm">
+                        <Check className="w-3 h-3 stroke-[3]" />
+                      </div>
+                      <span className="text-xs sm:text-sm font-bold text-slate-100">Visibilité prioritaire dans la recherche</span>
+                    </div>
+
+                    <div className="flex items-start gap-3">
+                      <div className="w-5 h-5 rounded-full bg-white text-demandoo-700 flex items-center justify-center shrink-0 mt-0.5 font-black shadow-sm">
+                        <Check className="w-3 h-3 stroke-[3]" />
+                      </div>
+                      <span className="text-xs sm:text-sm font-bold text-slate-100">0% de commission sur vos gains</span>
+                    </div>
+
+                    <div className="flex items-start gap-3">
+                      <div className="w-5 h-5 rounded-full bg-white text-demandoo-700 flex items-center justify-center shrink-0 mt-0.5 font-black shadow-sm">
+                        <Check className="w-3 h-3 stroke-[3]" />
+                      </div>
+                      <span className="text-xs sm:text-sm font-bold text-slate-100">Support VIP dédié 7j/7</span>
+                    </div>
+                  </div>
+                </div>
+
+                <Link
+                  to="/abonnement"
+                  className="w-full py-4 rounded-2xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-sm text-center shadow-xl hover:shadow-2xl transition-all block transform active:scale-95"
+                >
+                  Devenir Chauffeur Pro
+                </Link>
+              </div>
+            </Reveal>
+
+          </div>
+
+          {/* Bandeau Moyen de paiement Wave & Orange Money */}
+          <Reveal delay={400} className="mt-12">
+            <div className="bg-white rounded-2xl p-4 sm:p-6 border border-slate-200/80 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-demandoo-50 flex items-center justify-center text-demandoo-600 shrink-0">
+                  <ShieldCheck className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="text-xs sm:text-sm font-black text-slate-900">Paiement 100% sécurisé au Sénégal</p>
+                  <p className="text-[11px] sm:text-xs font-medium text-slate-500">Activez votre abonnement en 30 secondes via Wave ou Orange Money.</p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <span className="px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 font-black text-xs border border-blue-100">
+                  🌊 Wave Sénégal
+                </span>
+                <span className="px-3 py-1.5 rounded-lg bg-orange-50 text-orange-700 font-black text-xs border border-orange-100">
+                  🍊 Orange Money
+                </span>
+              </div>
+            </div>
+          </Reveal>
+
+        </div>
       </section>
 
       {/* ========================================================================= */}
