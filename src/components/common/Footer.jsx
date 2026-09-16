@@ -55,11 +55,11 @@ export const Footer = () => {
                 <strong className="text-white">Annexe :</strong> Touba, à côté de la grande Mosquée
               </p>
               <a href="mailto:info@demandoo.sn" className="flex items-center gap-3 hover:text-white transition-colors">
-                <Mail className="w-5 h-5 text-[#8b5cf6]" />
+                <Mail className="w-5 h-5 text-demandoo-500" />
                 info@demandoo.sn
               </a>
               <a href="tel:+221770000000" className="flex items-center gap-3 hover:text-white transition-colors">
-                <Phone className="w-5 h-5 text-[#8b5cf6]" />
+                <Phone className="w-5 h-5 text-demandoo-500" />
                 +221 77 000 00 00
               </a>
             </div>
@@ -69,19 +69,19 @@ export const Footer = () => {
       </div>
 
       {/* BOTTOM FOOTER */}
-      <div className="bg-[#6f569b]">
+      <div className="bg-demandoo-600">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-xs sm:text-sm font-medium text-white/90 text-center md:text-left">
             Copyright © {currentYear}. Tous droits réservés - DEMANDOO | Conception pour la mobilité
           </p>
           <div className="flex items-center gap-3">
-            <a href="#" className="w-8 h-8 rounded-full bg-white text-[#6f569b] flex items-center justify-center hover:scale-110 transition-transform">
+            <a href="#" className="w-8 h-8 rounded-full bg-white text-demandoo-600 flex items-center justify-center hover:scale-110 transition-transform">
               <Facebook className="w-4 h-4 fill-current" />
             </a>
-            <a href="#" className="w-8 h-8 rounded-full bg-white text-[#6f569b] flex items-center justify-center hover:scale-110 transition-transform">
+            <a href="#" className="w-8 h-8 rounded-full bg-white text-demandoo-600 flex items-center justify-center hover:scale-110 transition-transform">
               <Twitter className="w-4 h-4 fill-current" />
             </a>
-            <a href="#" className="w-8 h-8 rounded-full bg-white text-[#6f569b] flex items-center justify-center hover:scale-110 transition-transform">
+            <a href="#" className="w-8 h-8 rounded-full bg-white text-demandoo-600 flex items-center justify-center hover:scale-110 transition-transform">
               <Instagram className="w-4 h-4" />
             </a>
           </div>
