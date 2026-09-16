@@ -1,10 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { 
-  Car, 
-  ShieldCheck, 
-  CreditCard, 
-  MessageCircle,
   Phone,
   Mail,
   Facebook,
@@ -16,116 +12,78 @@ export const Footer = () => {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="bg-white text-slate-600 font-sans border-t border-slate-200">
+    <footer className="bg-[#1A1A1A] text-white font-sans">
       
-      {/* PRE-FOOTER: TRUST & SECURITY */}
-      <div className="bg-slate-50 border-b border-slate-200 py-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-            <div className="text-center md:text-left space-y-1">
-              <h3 className="text-slate-900 font-black text-lg">Voyagez avec plus de confiance</h3>
-              <p className="text-xs text-slate-500 font-medium">L'exigence de la sécurité à chaque étape.</p>
-            </div>
-            
-            <div className="flex flex-wrap items-center justify-center gap-6 text-sm font-bold text-slate-700">
-              <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-xl shadow-sm border border-slate-100">
-                <ShieldCheck className="w-5 h-5 text-demandoo-500" />
-                <span>Profils vérifiés</span>
-              </div>
-              <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-xl shadow-sm border border-slate-100">
-                <MessageCircle className="w-5 h-5 text-demandoo-500" />
-                <span>Avis de la communauté</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* MAIN FOOTER */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 lg:gap-8">
           
-          {/* COLONNE 1 — DEMANDOO */}
-          <div className="space-y-6">
+          {/* COLONNE 1 — LOGO */}
+          <div className="flex items-center justify-center lg:justify-start lg:items-start">
             <Link to="/" className="inline-block hover:scale-[1.02] transition-transform">
-              <img src="/logo.png" alt="Demandoo — Covoiturage Sénégal" className="h-8 w-auto object-contain" />
+              {/* Le filtre invert rend le logo blanc pour qu'il soit visible sur fond sombre */}
+              <img src="/logo.png" alt="Demandoo" className="h-20 w-auto object-contain brightness-0 invert" />
             </Link>
-            <p className="text-sm text-slate-500 font-medium leading-relaxed">
-              Le covoiturage de confiance entre Touba et tout le Sénégal. Demandoo facilite la mise en relation entre conducteurs et passagers pour voyager simplement, partager les frais et se déplacer en toute sécurité.
+          </div>
+
+          {/* COLONNE 2 — A PROPOS */}
+          <div className="space-y-4">
+            <h4 className="font-black text-lg text-white">À propos</h4>
+            <p className="text-sm text-slate-300 font-medium leading-relaxed">
+              Chez Demandoo, notre mission est claire et ambitieuse : <strong className="text-white">offrir un covoiturage de qualité</strong> qui forme des voyageurs non seulement satisfaits sur le plan économique, mais aussi dotés d'une perspective humaine et solidaire.
             </p>
-
           </div>
 
-          {/* COLONNE 2 — DEMANDOO (Liens rapides) */}
-          <div className="space-y-6 lg:ml-8">
-            <h4 className="text-slate-900 font-black text-base uppercase tracking-widest">Demandoo</h4>
-            <ul className="space-y-4 text-sm font-bold">
-              <li><Link to="/" className="text-slate-600 hover:text-demandoo-600 hover:translate-x-1 transition-all inline-block">Accueil</Link></li>
-              <li><Link to="/trajets" className="text-slate-600 hover:text-demandoo-600 hover:translate-x-1 transition-all inline-block">Rechercher un trajet</Link></li>
-              <li><Link to="/publier" className="text-slate-600 hover:text-demandoo-600 hover:translate-x-1 transition-all inline-block">Publier un trajet</Link></li>
-              <li><Link to="/comment-ca-marche" className="text-slate-600 hover:text-demandoo-600 hover:translate-x-1 transition-all inline-block">Comment ça marche ?</Link></li>
-              <li><Link to="/securite" className="text-slate-600 hover:text-demandoo-600 hover:translate-x-1 transition-all inline-block">Sécurité</Link></li>
-              <li><Link to="/a-propos" className="text-slate-600 hover:text-demandoo-600 hover:translate-x-1 transition-all inline-block">À propos</Link></li>
+          {/* COLONNE 3 — LIENS RAPIDES */}
+          <div className="space-y-4">
+            <h4 className="font-black text-lg text-white">Liens Rapides</h4>
+            <ul className="space-y-3 text-sm font-medium text-slate-300">
+              <li><Link to="/" className="hover:text-white transition-colors inline-block">Accueil</Link></li>
+              <li><Link to="/trajets" className="hover:text-white transition-colors inline-block">Rechercher un trajet</Link></li>
+              <li><Link to="/publier" className="hover:text-white transition-colors inline-block">Publier un trajet</Link></li>
+              <li><Link to="/comment-ca-marche" className="hover:text-white transition-colors inline-block">Comment ça marche</Link></li>
+              <li><Link to="/faq" className="hover:text-white transition-colors inline-block">Nos contacts</Link></li>
             </ul>
           </div>
 
-          {/* COLONNE 3 — CONDUCTEURS & PASSAGERS */}
-          <div className="space-y-6">
-            <h4 className="text-slate-900 font-black text-base uppercase tracking-widest">Espaces</h4>
-            <ul className="space-y-4 text-sm font-bold">
-              <li><Link to="/mes-reservations" className="text-slate-600 hover:text-demandoo-600 hover:translate-x-1 transition-all inline-block">Espace passager</Link></li>
-              <li><Link to="/espace-chauffeur" className="text-slate-600 hover:text-demandoo-600 hover:translate-x-1 transition-all inline-block">Espace conducteur</Link></li>
-              <li><Link to="/abonnement" className="text-slate-600 hover:text-demandoo-600 hover:translate-x-1 transition-all inline-block">Formules d'abonnement</Link></li>
-              <li><Link to="/trajets" className="text-slate-600 hover:text-demandoo-600 hover:translate-x-1 transition-all inline-block">Mes trajets</Link></li>
-              <li><Link to="/mes-reservations" className="text-slate-600 hover:text-demandoo-600 hover:translate-x-1 transition-all inline-block">Historique trajets</Link></li>
-            </ul>
-          </div>
-
-          {/* COLONNE 4 — AIDE & CONTACT */}
-          <div className="space-y-6">
-            <h4 className="text-slate-900 font-black text-base uppercase tracking-widest">Aide & Légal</h4>
-            
-            {/* Contact Compact */}
-            <div className="bg-slate-50 rounded-2xl p-5 space-y-4 border border-slate-200">
-              <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Besoin d'aide ?</p>
-              <div className="space-y-3">
-
-                <a href="mailto:support@demandoo.sn" className="flex items-center gap-3 text-sm font-bold text-slate-700 hover:text-demandoo-600 transition-colors">
-                  <div className="w-8 h-8 rounded-full bg-white border border-slate-200 flex items-center justify-center">
-                    <Mail className="w-4 h-4 text-slate-400" />
-                  </div>
-                  support@demandoo.sn
-                </a>
-              </div>
-              <a 
-                href="mailto:support@demandoo.sn" 
-                className="block w-full py-3 rounded-xl text-center text-xs font-black text-white bg-demandoo-600 hover:bg-demandoo-700 shadow-md shadow-demandoo-500/20 transition-all mt-2"
-              >
-                Contacter le support
+          {/* COLONNE 4 — INFOS DE CONTACTS */}
+          <div className="space-y-4">
+            <h4 className="font-black text-lg text-white">Infos de contacts</h4>
+            <div className="space-y-4 text-sm font-medium text-slate-300">
+              <p className="leading-relaxed">
+                <strong className="text-white">Siège social :</strong> Dakar, Sénégal face à l'aéroport<br/>
+                <strong className="text-white">Annexe :</strong> Touba, à côté de la grande Mosquée
+              </p>
+              <a href="mailto:info@demandoo.sn" className="flex items-center gap-3 hover:text-white transition-colors">
+                <Mail className="w-5 h-5 text-[#8b5cf6]" />
+                info@demandoo.sn
+              </a>
+              <a href="tel:+221770000000" className="flex items-center gap-3 hover:text-white transition-colors">
+                <Phone className="w-5 h-5 text-[#8b5cf6]" />
+                +221 77 000 00 00
               </a>
             </div>
-
-            <ul className="space-y-3 text-xs font-bold pt-2">
-              <li><Link to="/faq" className="text-slate-500 hover:text-demandoo-600 transition-colors">FAQ</Link></li>
-              <li><Link to="/cgu" className="text-slate-500 hover:text-demandoo-600 transition-colors">Conditions générales d'utilisation</Link></li>
-              <li><Link to="/confidentialite" className="text-slate-500 hover:text-demandoo-600 transition-colors">Politique de confidentialité</Link></li>
-              <li><Link to="/mentions-legales" className="text-slate-500 hover:text-demandoo-600 transition-colors">Mentions légales</Link></li>
-            </ul>
           </div>
 
         </div>
       </div>
 
       {/* BOTTOM FOOTER */}
-      <div className="border-t border-slate-200 bg-slate-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-24 md:pb-6 flex flex-col md:flex-row items-center justify-between gap-4">
-          <p className="text-xs font-bold text-slate-500 text-center md:text-left">
-            © {currentYear} Demandoo. Tous droits réservés.
+      <div className="bg-[#6f569b]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex flex-col md:flex-row items-center justify-between gap-4">
+          <p className="text-xs sm:text-sm font-medium text-white/90 text-center md:text-left">
+            Copyright © {currentYear}. Tous droits réservés - DEMANDOO | Conception pour la mobilité
           </p>
-          <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-xs font-bold text-slate-500">
-            <Link to="/cgu" className="hover:text-demandoo-600 transition-colors py-1">Conditions</Link>
-            <Link to="/confidentialite" className="hover:text-demandoo-600 transition-colors py-1">Confidentialité</Link>
-            <Link to="/cookies" className="hover:text-demandoo-600 transition-colors py-1">Cookies</Link>
+          <div className="flex items-center gap-3">
+            <a href="#" className="w-8 h-8 rounded-full bg-white text-[#6f569b] flex items-center justify-center hover:scale-110 transition-transform">
+              <Facebook className="w-4 h-4 fill-current" />
+            </a>
+            <a href="#" className="w-8 h-8 rounded-full bg-white text-[#6f569b] flex items-center justify-center hover:scale-110 transition-transform">
+              <Twitter className="w-4 h-4 fill-current" />
+            </a>
+            <a href="#" className="w-8 h-8 rounded-full bg-white text-[#6f569b] flex items-center justify-center hover:scale-110 transition-transform">
+              <Instagram className="w-4 h-4" />
+            </a>
           </div>
         </div>
       </div>
