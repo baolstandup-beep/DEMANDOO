@@ -165,14 +165,15 @@ export const PublishTripPage = () => {
       incrementTripsUsed();
       navigate(`/trajet/${newTrip.id}`);
     } catch (err) {
-      if (err.message.includes("429")) {
+      console.error("Erreur lors de la publication du trajet :", err);
+      if (err.message && err.message.includes("429")) {
         setErrorMsg("Quota atteint : Vous avez utilisé tous vos trajets. Passez à l'abonnement Pro pour publier en illimité.");
         window.scrollTo({ top: 0, behavior: 'smooth' });
-      } else if (err.message.includes("402") || err.message.includes("FORBIDDEN")) {
-        alert("⚠️ Action non autorisée.\n\nVous allez être redirigé vers la page des abonnements ou de vérification.");
-        navigate('/abonnement');
+      } else if (err.message && err.message.includes("401")) {
+        alert("Veuillez vous connecter pour publier un trajet.");
+        navigate('/login');
       } else {
-        setErrorMsg("Erreur lors de la publication du trajet.");
+        setErrorMsg(err.message || "Erreur lors de la publication du trajet.");
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }
     }

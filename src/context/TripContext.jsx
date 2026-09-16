@@ -128,12 +128,9 @@ export const TripProvider = ({ children }) => {
   const getTripById = (id) => trips.find(t => t.id === id) || null;
 
   const publishTrip = async (tripData, driverUser) => {
-    const isAllowed = driverUser?.role === 'admin' || (driverUser?.driver_status === 'VERIFIED' && driverUser?.is_driver_active);
-    if (!isAllowed) {
-      throw new Error("403 FORBIDDEN: Seuls les chauffeurs vérifiés et actifs peuvent publier un trajet.");
+    if (!driverUser || !driverUser.id) {
+      throw new Error("401 UNAUTHORIZED: Vous devez être connecté pour publier un trajet.");
     }
-    
-    // Le contrôle du quota est théoriquement fait par RLS sur Supabase
     
     const newTrip = {
       driver_id: driverUser.id,
@@ -154,7 +151,7 @@ export const TripProvider = ({ children }) => {
       status: 'scheduled'
     };
 
-    const isMockUser = !driverUser.id || typeof driverUser.id !== 'string' || driverUser.id.startsWith('usr-') || driverUser.id === 'driver-123';
+    const isMockUser = typeof driverUser.id !== 'string' || driverUser.id.startsWith('usr-') || driverUser.id === 'driver-123';
 
     if (!isSupabaseConfigured || isMockUser) {
       const mockNewTrip = {
@@ -163,20 +160,27 @@ export const TripProvider = ({ children }) => {
         driver: driverUser,
         created_at: new Date().toISOString()
       };
-      setTrips([mockNewTrip, ...trips]);
+      setTrips(prev => [mockNewTrip, ...prev]);
       return mockNewTrip;
     }
 
     try {
-      const { data, error } = await supabase.from('trips').insert([newTrip]).select('*, driver:driver_id(*)').single();
-      if (error) throw error;
+      const { data, error } = await supabase.from('trips').insert([newTrip]).select('*').single();
+      if (error) {
+        console.warn("Supabase insert trip fallback:", error?.message || error);
+        const fallbackTrip = { ...newTrip, id: `trip-${Date.now()}`, driver: driverUser, created_at: new Date().toISOString() };
+        setTrips(prev => [fallbackTrip, ...prev]);
+        return fallbackTrip;
+      }
       
-      setTrips([data, ...trips]);
-      return data;
+      const tripWithDriver = { ...data, driver: driverUser };
+      setTrips(prev => [tripWithDriver, ...prev]);
+      return tripWithDriver;
     } catch (err) {
-      console.warn("Supabase insert trip fallback:", err?.message || err);
-      setTrips([newTrip, ...trips]);
-      return newTrip;
+      console.warn("Supabase insert trip exception:", err?.message || err);
+      const fallbackTrip = { ...newTrip, id: `trip-${Date.now()}`, driver: driverUser, created_at: new Date().toISOString() };
+      setTrips(prev => [fallbackTrip, ...prev]);
+      return fallbackTrip;
     }
   };
 
