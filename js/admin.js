@@ -30,6 +30,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (loginScreen) loginScreen.style.display = 'block';
     if (dashboardScreen) dashboardScreen.style.display = 'none';
     if (logoutBtn) logoutBtn.style.display = 'none';
+    // Purger les remplissages automatiques de numéros de téléphone du navigateur
+    if (emailInput && (!emailInput.value.includes('@') || emailInput.value.includes('773033196'))) {
+      emailInput.value = '';
+    }
   }
 
   function showDashboard() {
