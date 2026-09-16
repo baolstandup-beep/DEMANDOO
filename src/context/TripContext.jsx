@@ -50,7 +50,7 @@ export const TripProvider = ({ children }) => {
     try {
       const { data: tripsData, error: tripsError } = await supabase
         .from('trips')
-        .select(`*, driver:driver_id(*)`)
+        .select(`*, driver:profiles(*)`)
         .order('created_at', { ascending: false });
 
       if (tripsError) throw tripsError;
@@ -155,13 +155,22 @@ export const TripProvider = ({ children }) => {
     }
 
     try {
-      const { data, error } = await supabase.from('trips').insert([newTrip]).select('*, driver:driver_id(*)').single();
-      if (error) {
-        throw new Error(error.message);
+      // D'abord on insère le trajet (sans jointure risquée)
+      const { data: insertData, error: insertError } = await supabase.from('trips').insert([newTrip]).select().single();
+      if (insertError) {
+        throw new Error(insertError.message);
       }
       
-      setTrips(prev => [data, ...prev]);
-      return data;
+      let finalTrip = insertData;
+      try {
+        const { data: joinedTrip } = await supabase.from('trips').select('*, driver:profiles(*)').eq('id', insertData.id).single();
+        if (joinedTrip) finalTrip = joinedTrip;
+      } catch (joinErr) {
+        console.warn("Impossible de joindre le profil chauffeur (non-bloquant):", joinErr);
+      }
+      
+      setTrips(prev => [finalTrip, ...prev]);
+      return finalTrip;
     } catch (err) {
       console.error("Erreur lors de la publication :", err?.message || err);
       throw err;
@@ -170,10 +179,19 @@ export const TripProvider = ({ children }) => {
 
   const updateTrip = async (tripId, tripData, user) => {
     try {
-      const { data, error } = await supabase.from('trips').update(tripData).eq('id', tripId).eq('driver_id', user.id).select('*, driver:driver_id(*)').single();
+      const { data: updateData, error } = await supabase.from('trips').update(tripData).eq('id', tripId).eq('driver_id', user.id).select().single();
       if (error) throw error;
-      setTrips(trips.map(t => t.id === tripId ? data : t));
-      return data;
+
+      let finalTrip = updateData;
+      try {
+        const { data: joinedTrip } = await supabase.from('trips').select('*, driver:profiles(*)').eq('id', tripId).single();
+        if (joinedTrip) finalTrip = joinedTrip;
+      } catch (joinErr) {
+        console.warn("Impossible de joindre le profil chauffeur (non-bloquant):", joinErr);
+      }
+
+      setTrips(trips.map(t => t.id === tripId ? finalTrip : t));
+      return finalTrip;
     } catch (err) {
       console.error("Erreur lors de la mise à jour :", err?.message || err);
       throw err;
@@ -194,14 +212,22 @@ export const TripProvider = ({ children }) => {
 
   const cancelTrip = async (tripId, user) => {
     try {
-      const { data, error } = await supabase.from('trips').update({ status: 'cancelled' }).eq('id', tripId).eq('driver_id', user.id).select('*, driver:driver_id(*)').single();
+      const { data: updateData, error } = await supabase.from('trips').update({ status: 'cancelled' }).eq('id', tripId).eq('driver_id', user.id).select().single();
       if (error) throw error;
+      
+      let finalTrip = updateData;
+      try {
+        const { data: joinedTrip } = await supabase.from('trips').select('*, driver:profiles(*)').eq('id', tripId).single();
+        if (joinedTrip) finalTrip = joinedTrip;
+      } catch (joinErr) {
+        console.warn("Impossible de joindre le profil chauffeur (non-bloquant):", joinErr);
+      }
       
       // Annulation des réservations en cascade (idéalement via trigger DB)
       await supabase.from('bookings').update({ status: 'rejected', rejection_reason: 'trip_cancelled' }).eq('trip_id', tripId).in('status', ['pending', 'accepted']);
       
       loadAllData(); // Refresh everything
-      return data;
+      return finalTrip;
     } catch (err) {
       console.error("Erreur lors de l'annulation :", err?.message || err);
       throw err;
