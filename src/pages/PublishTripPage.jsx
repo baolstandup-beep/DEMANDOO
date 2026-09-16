@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTrips } from '../context/TripContext';
+import { supabase } from '../lib/supabase';
 import { INITIAL_CITIES } from '../lib/mockData';
 import { 
   MapPin, 
@@ -21,35 +22,106 @@ import {
   Trash2
 } from 'lucide-react';
 
+const DRAFT_STORAGE_KEY = 'demandoo_publish_trip_draft';
+
+// Extraction et assainissement robuste du nom de ville (évite 'ere' ou coupures)
+export const extractCityName = (val) => {
+  if (!val) return '';
+  if (typeof val === 'string') return val.trim();
+  if (typeof val === 'object') return (val.label || val.value || val.name || val.city || '').trim();
+  return String(val).trim();
+};
+
 export const PublishTripPage = () => {
-  const { user, incrementTripsUsed } = useAuth();
+  const { user, loading: authLoading, incrementTripsUsed } = useAuth();
   const { publishTrip } = useTrips();
   const navigate = useNavigate();
 
   const [step, setStep] = useState(1);
   const totalSteps = 8;
 
-  // Form State across 8 Steps
-  const [departureCity, setDepartureCity] = useState('');
-  const [arrivalCity, setArrivalCity] = useState('');
-  const [waypoints, setWaypoints] = useState([]);
-  const [date, setDate] = useState('');
-  const [time, setTime] = useState('08:00');
-  const [departureAddress, setDepartureAddress] = useState('');
-  const [arrivalAddress, setArrivalAddress] = useState('');
-  const [vehicleMake, setVehicleMake] = useState('Peugeot');
-  const [vehicleModel, setVehicleModel] = useState('508');
-  const [vehicleColor, setVehicleColor] = useState('Gris');
-  const [vehiclePlate, setVehiclePlate] = useState('DK-8492-BC');
-  const [seatsTotal, setSeatsTotal] = useState(4);
-  const [pricePerSeat, setPricePerSeat] = useState(3500);
-  const [rulesLuggage, setRulesLuggage] = useState('Sacs de taille moyenne autorisés');
-  const [rulesPets, setRulesPets] = useState(false);
-  const [rulesSmoking, setRulesSmoking] = useState(false);
-  const [cancellationPolicy, setCancellationPolicy] = useState('Annulation gratuite jusqu\'à 12h avant le départ');
+  // Form State centralisé persistant à travers les 8 étapes
+  const [tripForm, setTripForm] = useState(() => {
+    try {
+      const saved = sessionStorage.getItem(DRAFT_STORAGE_KEY);
+      if (saved) return JSON.parse(saved);
+    } catch (e) {
+      console.warn("Erreur lecture brouillon:", e);
+    }
+    return {
+      departureCity: '',
+      arrivalCity: '',
+      waypoints: [],
+      date: '',
+      time: '08:00',
+      departureAddress: '',
+      arrivalAddress: '',
+      vehicleMake: 'Peugeot',
+      vehicleModel: '508',
+      vehicleColor: 'Gris',
+      vehiclePlate: 'DK-8492-BC',
+      seatsTotal: 4,
+      pricePerSeat: 3500,
+      rulesLuggage: 'Sacs de taille moyenne autorisés',
+      rulesPets: false,
+      rulesSmoking: false,
+      cancellationPolicy: 'Annulation gratuite jusqu\'à 12h avant le départ'
+    };
+  });
+
+  // Sauvegarder dans sessionStorage à chaque mise à jour du formulaire
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(tripForm));
+    } catch (e) {
+      // Ignore quota storage issues
+    }
+  }, [tripForm]);
+
+  const updateFormField = (field, value) => {
+    setTripForm(prev => ({ ...prev, [field]: value }));
+  };
+
+  const {
+    departureCity,
+    arrivalCity,
+    waypoints = [],
+    date,
+    time,
+    departureAddress,
+    arrivalAddress,
+    vehicleMake,
+    vehicleModel,
+    vehicleColor,
+    vehiclePlate,
+    seatsTotal,
+    pricePerSeat,
+    rulesLuggage,
+    rulesPets,
+    rulesSmoking,
+    cancellationPolicy
+  } = tripForm;
+
+  const setDepartureCity = (val) => updateFormField('departureCity', extractCityName(val));
+  const setArrivalCity = (val) => updateFormField('arrivalCity', extractCityName(val));
+  const setDate = (val) => updateFormField('date', val);
+  const setTime = (val) => updateFormField('time', val);
+  const setDepartureAddress = (val) => updateFormField('departureAddress', val);
+  const setArrivalAddress = (val) => updateFormField('arrivalAddress', val);
+  const setVehicleMake = (val) => updateFormField('vehicleMake', val);
+  const setVehicleModel = (val) => updateFormField('vehicleModel', val);
+  const setVehicleColor = (val) => updateFormField('vehicleColor', val);
+  const setVehiclePlate = (val) => updateFormField('vehiclePlate', val);
+  const setSeatsTotal = (val) => updateFormField('seatsTotal', typeof val === 'function' ? val(tripForm.seatsTotal) : val);
+  const setPricePerSeat = (val) => updateFormField('pricePerSeat', typeof val === 'function' ? val(tripForm.pricePerSeat) : val);
+  const setRulesLuggage = (val) => updateFormField('rulesLuggage', val);
+  const setRulesPets = (val) => updateFormField('rulesPets', typeof val === 'function' ? val(tripForm.rulesPets) : val);
+  const setRulesSmoking = (val) => updateFormField('rulesSmoking', typeof val === 'function' ? val(tripForm.rulesSmoking) : val);
+  const setCancellationPolicy = (val) => updateFormField('cancellationPolicy', val);
 
   const [errorMsg, setErrorMsg] = useState('');
   const [isPublishing, setIsPublishing] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
 
   const getSuggestedPrice = (dep, arr) => {
     const d = (dep || '').toLowerCase();
@@ -64,30 +136,30 @@ export const PublishTripPage = () => {
   };
 
   const addWaypoint = () => {
-    if (waypoints.length < 3) {
-      setWaypoints([...waypoints, '']);
+    if ((tripForm.waypoints || []).length < 3) {
+      updateFormField('waypoints', [...(tripForm.waypoints || []), '']);
     }
   };
 
   const updateWaypoint = (index, value) => {
-    const updated = [...waypoints];
-    updated[index] = value;
-    setWaypoints(updated);
+    const updated = [...(tripForm.waypoints || [])];
+    updated[index] = extractCityName(value);
+    updateFormField('waypoints', updated);
   };
 
   const removeWaypoint = (index) => {
-    setWaypoints(waypoints.filter((_, i) => i !== index));
+    updateFormField('waypoints', (tripForm.waypoints || []).filter((_, i) => i !== index));
   };
 
-  const isAllowedToPublish = true;
-  const hasActiveSub = true; // Permettre l'accès direct au formulaire de publication
+  const hasActiveSub = true;
   const limitReached = user?.subscription_trip_limit !== null && user?.subscription_trip_limit !== undefined && (user?.subscription_trips_used || 0) >= user?.subscription_trip_limit;
 
-  React.useEffect(() => {
-    if (!user) {
+  // Redirection uniquement si le chargement auth est complètement terminé et aucun user
+  useEffect(() => {
+    if (!authLoading && !user) {
       navigate('/login');
     }
-  }, [user, navigate]);
+  }, [user, authLoading, navigate]);
 
   if (!hasActiveSub || limitReached) {
     const isExpired = user?.subscription_status === 'expired' || (!hasActiveSub && user?.subscription_status !== 'trial');
@@ -131,56 +203,119 @@ export const PublishTripPage = () => {
     );
   }
 
+  // Soumission finale avec vérification et validation complète
   const handleFinalSubmit = async (e) => {
     e.preventDefault();
-    if (!date) {
+    if (isPublishing || isSuccess) return;
+    setErrorMsg('');
+
+    // 1. VALIDATION STRICTE DE TOUS LES CHAMPS OBLIGATOIRES
+    const depCity = extractCityName(tripForm.departureCity);
+    const arrCity = extractCityName(tripForm.arrivalCity);
+    const depAddr = (tripForm.departureAddress || '').trim();
+
+    if (!depCity) {
+      setErrorMsg("La ville de départ est obligatoire.");
+      setStep(1);
+      return;
+    }
+    if (!arrCity) {
+      setErrorMsg("La ville d'arrivée est obligatoire.");
+      setStep(1);
+      return;
+    }
+    if (!tripForm.date) {
       setErrorMsg("Veuillez sélectionner une date de départ.");
       setStep(2);
       return;
     }
-    
-    if (isPublishing) return;
+    if (!tripForm.time) {
+      setErrorMsg("Veuillez sélectionner une heure de départ.");
+      setStep(2);
+      return;
+    }
+    if (!depAddr) {
+      setErrorMsg("Le point de départ est obligatoire (ex: Gare Routière de " + depCity + ").");
+      setStep(3);
+      return;
+    }
+    if (!tripForm.seatsTotal || tripForm.seatsTotal < 1) {
+      setErrorMsg("Le nombre de places doit être supérieur à 0.");
+      setStep(5);
+      return;
+    }
+    if (!tripForm.pricePerSeat || tripForm.pricePerSeat < 500) {
+      setErrorMsg("Le prix par place doit être d'au moins 500 FCFA.");
+      setStep(6);
+      return;
+    }
+
+    // 2. VÉRIFICATION STRICTE DE LA SESSION AVANT DE DÉCLENCHER LA PUBLICATION
+    let activeUser = null;
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      activeUser = sessionData?.session?.user;
+      if (!activeUser) {
+        const { data: userData } = await supabase.auth.getUser();
+        activeUser = userData?.user;
+      }
+    } catch (checkErr) {
+      console.warn("Vérification session:", checkErr);
+    }
+
+    // Si ni Supabase Auth ni user contextuel n'existent : AUTH_USER_MISSING
+    if (!activeUser && !user) {
+      setErrorMsg("Utilisateur non connecté. Veuillez vous connecter pour publier.");
+      return;
+    }
+
     setIsPublishing(true);
 
     try {
-      const departureDatetime = new Date(`${date}T${time}`).toISOString();
-      const newTrip = await publishTrip({
-        departure_city: departureCity || 'Touba',
-        departure_address: departureAddress || 'Gare Routière',
-        arrival_city: arrivalCity || 'Dakar',
-        arrival_address: arrivalAddress || 'Gare',
-        waypoints: waypoints.filter(Boolean),
-        departure_datetime: departureDatetime,
-        seats_total: seatsTotal,
-        price_per_seat: pricePerSeat,
-        rules_luggage: rulesLuggage,
-        rules_pets: rulesPets,
-        rules_smoking: rulesSmoking,
-        cancellation_policy: cancellationPolicy,
-        vehicle: {
-          make: vehicleMake,
-          model: vehicleModel,
-          color: vehicleColor,
-          plate_number: vehiclePlate,
-          seats_count: seatsTotal
-        }
-      }, user);
+      const payloadToSend = {
+        departureCity: depCity,
+        arrivalCity: arrCity,
+        departureAddress: depAddr,
+        arrivalAddress: (tripForm.arrivalAddress || arrCity || 'Centre-ville').trim(),
+        waypoints: (tripForm.waypoints || []).filter(Boolean),
+        date: tripForm.date,
+        time: tripForm.time,
+        seatsTotal: tripForm.seatsTotal,
+        pricePerSeat: tripForm.pricePerSeat,
+        rulesLuggage: tripForm.rulesLuggage,
+        rulesPets: tripForm.rulesPets,
+        rulesSmoking: tripForm.rulesSmoking,
+        cancellationPolicy: tripForm.cancellationPolicy,
+        vehicleMake: tripForm.vehicleMake,
+        vehicleModel: tripForm.vehicleModel,
+        vehicleColor: tripForm.vehicleColor,
+        vehiclePlate: tripForm.vehiclePlate
+      };
 
+      await publishTrip(payloadToSend, user);
+
+      // Succès ! Nettoyer le brouillon et rediriger
+      sessionStorage.removeItem(DRAFT_STORAGE_KEY);
       incrementTripsUsed();
-      navigate(`/espace-chauffeur`);
+      setIsSuccess(true);
+
+      setTimeout(() => {
+        navigate('/espace-chauffeur');
+      }, 1200);
+
     } catch (err) {
-      console.error("Erreur lors de la publication du trajet :", err);
-      // RESTER À L'ÉTAPE 8 - NE PAS RESET
-      if (err.message && err.message.includes("429")) {
+      console.error("[DEMANDOO] Erreur lors de la publication :", err);
+      const message = err.message || JSON.stringify(err) || "Erreur lors de la publication du trajet.";
+      
+      if (message.includes("429")) {
         setErrorMsg("Quota atteint : Vous avez utilisé tous vos trajets. Passez à l'abonnement Pro pour publier en illimité.");
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      } else if (err.message && err.message.includes("401")) {
-        alert("Veuillez vous connecter pour publier un trajet.");
-        navigate('/login');
+      } else if (message.includes("401") || message.includes("non connecté")) {
+        setErrorMsg("Session expirée. Veuillez vous reconnecter.");
+        setTimeout(() => navigate('/login'), 1500);
       } else {
-        setErrorMsg(err.message || "Erreur lors de la publication du trajet.");
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        setErrorMsg(message);
       }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     } finally {
       setIsPublishing(false);
     }
@@ -260,13 +395,33 @@ export const PublishTripPage = () => {
                       list="cities-list-pub"
                       value={departureCity}
                       onChange={(e) => {
-                        setDepartureCity(e.target.value);
-                        const sug = getSuggestedPrice(e.target.value, arrivalCity);
+                        const clean = extractCityName(e.target.value);
+                        setDepartureCity(clean);
+                        const sug = getSuggestedPrice(clean, arrivalCity);
                         setPricePerSeat(sug.default);
+                        if (errorMsg) setErrorMsg('');
                       }}
                       placeholder="Ex: Touba"
                       className="w-full pl-12 pr-4 py-4 rounded-2xl bg-slate-50 border border-slate-200 text-base font-bold text-slate-900 focus:bg-white focus:ring-4 focus:ring-demandoo-500/10 focus:border-demandoo-500 transition-all outline-none"
                     />
+                  </div>
+                  {/* Suggestions rapides départ */}
+                  <div className="flex flex-wrap gap-1.5 mt-2">
+                    {["Touba", "Dakar", "Thiès", "Saint-Louis", "Mbour", "Kaolack"].map(c => (
+                      <button
+                        key={c}
+                        type="button"
+                        onClick={() => {
+                          setDepartureCity(c);
+                          const sug = getSuggestedPrice(c, arrivalCity);
+                          setPricePerSeat(sug.default);
+                          if (errorMsg) setErrorMsg('');
+                        }}
+                        className={`px-3 py-1 rounded-xl text-xs font-bold transition-all ${departureCity === c ? 'bg-demandoo-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-demandoo-50 hover:text-demandoo-700'}`}
+                      >
+                        {c}
+                      </button>
+                    ))}
                   </div>
                 </div>
 
@@ -321,13 +476,33 @@ export const PublishTripPage = () => {
                       list="cities-list-pub"
                       value={arrivalCity}
                       onChange={(e) => {
-                        setArrivalCity(e.target.value);
-                        const sug = getSuggestedPrice(departureCity, e.target.value);
+                        const clean = extractCityName(e.target.value);
+                        setArrivalCity(clean);
+                        const sug = getSuggestedPrice(departureCity, clean);
                         setPricePerSeat(sug.default);
+                        if (errorMsg) setErrorMsg('');
                       }}
                       placeholder="Ex: Dakar"
                       className="w-full pl-12 pr-4 py-4 rounded-2xl bg-slate-50 border border-slate-200 text-base font-bold text-slate-900 focus:bg-white focus:ring-4 focus:ring-demandoo-500/10 focus:border-demandoo-500 transition-all outline-none"
                     />
+                  </div>
+                  {/* Suggestions rapides arrivée */}
+                  <div className="flex flex-wrap gap-1.5 mt-2">
+                    {["Dakar", "Touba", "Thiès", "Saint-Louis", "Mbour", "Kaolack"].map(c => (
+                      <button
+                        key={c}
+                        type="button"
+                        onClick={() => {
+                          setArrivalCity(c);
+                          const sug = getSuggestedPrice(departureCity, c);
+                          setPricePerSeat(sug.default);
+                          if (errorMsg) setErrorMsg('');
+                        }}
+                        className={`px-3 py-1 rounded-xl text-xs font-bold transition-all ${arrivalCity === c ? 'bg-demandoo-600 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-demandoo-50 hover:text-demandoo-700'}`}
+                      >
+                        {c}
+                      </button>
+                    ))}
                   </div>
                 </div>
 
@@ -338,7 +513,18 @@ export const PublishTripPage = () => {
 
               <button
                 type="button"
-                onClick={() => setStep(2)}
+                onClick={() => {
+                  if (!departureCity.trim()) {
+                    setErrorMsg("Veuillez renseigner votre ville de départ.");
+                    return;
+                  }
+                  if (!arrivalCity.trim()) {
+                    setErrorMsg("Veuillez renseigner votre ville d'arrivée.");
+                    return;
+                  }
+                  setErrorMsg('');
+                  setStep(2);
+                }}
                 disabled={!departureCity || !arrivalCity}
                 className="w-full mt-8 py-4 rounded-2xl text-sm font-black text-white bg-demandoo-600 hover:bg-demandoo-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-demandoo-600/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
               >
@@ -368,7 +554,7 @@ export const PublishTripPage = () => {
                   <input
                     type="date"
                     value={date}
-                    onChange={(e) => setDate(e.target.value)}
+                    onChange={(e) => { setDate(e.target.value); if (errorMsg) setErrorMsg(''); }}
                     className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-200 text-base font-bold text-slate-900 focus:bg-white focus:ring-4 focus:ring-demandoo-500/10 focus:border-demandoo-500 transition-all outline-none"
                     required
                   />
@@ -379,7 +565,7 @@ export const PublishTripPage = () => {
                   <input
                     type="time"
                     value={time}
-                    onChange={(e) => setTime(e.target.value)}
+                    onChange={(e) => { setTime(e.target.value); if (errorMsg) setErrorMsg(''); }}
                     className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-200 text-base font-bold text-slate-900 focus:bg-white focus:ring-4 focus:ring-demandoo-500/10 focus:border-demandoo-500 transition-all outline-none"
                     required
                   />
@@ -388,7 +574,18 @@ export const PublishTripPage = () => {
 
               <button
                 type="button"
-                onClick={() => setStep(3)}
+                onClick={() => {
+                  if (!date) {
+                    setErrorMsg("Veuillez sélectionner la date du trajet.");
+                    return;
+                  }
+                  if (!time) {
+                    setErrorMsg("Veuillez sélectionner l'heure du trajet.");
+                    return;
+                  }
+                  setErrorMsg('');
+                  setStep(3);
+                }}
                 disabled={!date || !time}
                 className="w-full mt-8 py-4 rounded-2xl text-sm font-black text-white bg-demandoo-600 hover:bg-demandoo-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-demandoo-600/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
               >
@@ -414,35 +611,76 @@ export const PublishTripPage = () => {
 
               <div className="space-y-5">
                 <div>
-                  <label className="text-xs font-black text-slate-700 block mb-2 uppercase tracking-wider ml-1">
-                    Lieu exact à <span className="text-demandoo-600">{departureCity}</span>
-                  </label>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="text-xs font-black text-slate-700 uppercase tracking-wider ml-1">
+                      Point de départ exact à <span className="text-demandoo-600">{departureCity || 'départ'}</span> <span className="text-rose-500">*</span>
+                    </label>
+                  </div>
                   <input
                     type="text"
                     value={departureAddress}
-                    onChange={(e) => setDepartureAddress(e.target.value)}
-                    placeholder="Ex: Gare Routière, croisement X..."
+                    onChange={(e) => { setDepartureAddress(e.target.value); if (errorMsg) setErrorMsg(''); }}
+                    placeholder="Ex: Gare Routière de Touba, Station Total..."
                     className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-200 text-base font-bold text-slate-900 focus:bg-white focus:ring-4 focus:ring-demandoo-500/10 focus:border-demandoo-500 transition-all outline-none"
+                    required
                   />
+                  {/* Lieux rapides suggérés */}
+                  <div className="flex flex-wrap gap-1.5 mt-2">
+                    <span className="text-[11px] font-bold text-slate-400 self-center">Suggestions :</span>
+                    {["Gare Routière", "Centre-ville", "Station Total", "Grande Mosquée", "Station Shell"].map(loc => (
+                      <button
+                        key={loc}
+                        type="button"
+                        onClick={() => {
+                          const val = `${loc}${departureCity ? ' de ' + departureCity : ''}`;
+                          setDepartureAddress(val);
+                          if (errorMsg) setErrorMsg('');
+                        }}
+                        className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-demandoo-50 hover:text-demandoo-700 text-slate-600 text-xs font-bold transition-colors"
+                      >
+                        {loc}
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
                 <div>
                   <label className="text-xs font-black text-slate-700 block mb-2 uppercase tracking-wider ml-1">
-                    Lieu exact à <span className="text-demandoo-600">{arrivalCity}</span>
+                    Lieu d'arrivée à <span className="text-demandoo-600">{arrivalCity || 'arrivée'}</span>
                   </label>
                   <input
                     type="text"
                     value={arrivalAddress}
                     onChange={(e) => setArrivalAddress(e.target.value)}
-                    placeholder="Ex: Arrêt Bus Y, Centre-ville..."
+                    placeholder="Ex: Gare des Baux Maraîchers, Arrêt Bus..."
                     className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-200 text-base font-bold text-slate-900 focus:bg-white focus:ring-4 focus:ring-demandoo-500/10 focus:border-demandoo-500 transition-all outline-none"
                   />
+                  <div className="flex flex-wrap gap-1.5 mt-2">
+                    <span className="text-[11px] font-bold text-slate-400 self-center">Suggestions :</span>
+                    {["Gare des Baux Maraîchers", "Rond-point Liberté 6", "Centre-ville", "Gare Routière"].map(loc => (
+                      <button
+                        key={loc}
+                        type="button"
+                        onClick={() => setArrivalAddress(loc)}
+                        className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-demandoo-50 hover:text-demandoo-700 text-slate-600 text-xs font-bold transition-colors"
+                      >
+                        {loc}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
 
               <button
                 type="button"
-                onClick={() => setStep(4)}
+                onClick={() => {
+                  if (!departureAddress || !departureAddress.trim()) {
+                    setErrorMsg(`Le point de départ à ${departureCity || 'votre ville'} est obligatoire.`);
+                    return;
+                  }
+                  setErrorMsg('');
+                  setStep(4);
+                }}
                 className="w-full mt-8 py-4 rounded-2xl text-sm font-black text-white bg-demandoo-600 hover:bg-demandoo-700 shadow-lg shadow-demandoo-600/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
               >
                 Continuer <ArrowRight className="w-5 h-5" />
@@ -709,12 +947,30 @@ export const PublishTripPage = () => {
                 </div>
               </div>
 
+              {errorMsg && (
+                <div className="p-4 bg-rose-50 border border-rose-200 text-rose-800 rounded-2xl text-xs sm:text-sm font-bold shadow-sm">
+                  {errorMsg}
+                </div>
+              )}
+
               <button
                 type="submit"
-                disabled={isPublishing}
-                className="w-full min-h-[48px] mt-6 sm:mt-8 py-4 rounded-2xl text-sm font-black text-white bg-demandoo-600 hover:bg-demandoo-700 shadow-lg shadow-demandoo-600/25 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                disabled={isPublishing || isSuccess}
+                className="w-full min-h-[48px] mt-6 sm:mt-8 py-4 rounded-2xl text-sm font-black text-white bg-demandoo-600 hover:bg-demandoo-700 disabled:opacity-75 disabled:cursor-not-allowed shadow-lg shadow-demandoo-600/25 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
               >
-                {isPublishing ? 'Publication...' : 'Publier le trajet maintenant'}
+                {isSuccess ? (
+                  <>
+                    <CheckCircle className="w-5 h-5 text-emerald-300 animate-bounce" />
+                    <span>Trajet publié avec succès ! Redirection...</span>
+                  </>
+                ) : isPublishing ? (
+                  <>
+                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    <span>Publication en cours...</span>
+                  </>
+                ) : (
+                  <span>Publier le trajet maintenant</span>
+                )}
               </button>
             </form>
           )}
