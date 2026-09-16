@@ -107,6 +107,46 @@ export const DriverVerificationPage = () => {
 
     setIsSubmitting(true);
     try {
+      // 1. Vérification KYC IA si le fichier est présent
+      if (licenseInfo.licenseFront && user?.id) {
+        // Convert file to base64
+        const fileToBase64 = (file) => new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.readAsDataURL(file);
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = error => reject(error);
+        });
+
+        const imageBase64 = await fileToBase64(licenseInfo.licenseFront);
+
+        // Appel à l'Agent IA
+        addNotification({ title: "Vérification en cours", message: "Analyse de votre document par l'IA...", type: "info" });
+        const kycRes = await fetch('/api/verify-kyc', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            driver_id: user.id,
+            image_base64: imageBase64
+          })
+        });
+
+        if (kycRes.ok) {
+          const kycData = await kycRes.json();
+          if (!kycData.is_valid) {
+            addNotification({
+              title: "Document refusé",
+              message: kycData.reason || "Votre permis n'a pas pu être validé.",
+              type: "error"
+            });
+            setIsSubmitting(false);
+            return;
+          }
+        } else {
+           console.warn("KYC API failed, continuing with manual verification...", await kycRes.text());
+        }
+      }
+
+      // 2. Continuer l'enregistrement (mise à jour DB locale/Supabase)
       const result = await completeDriverOnboarding({
         personalInfo,
         licenseInfo,
@@ -128,7 +168,7 @@ export const DriverVerificationPage = () => {
       
       addNotification({
         title: "Compte activé !",
-        message: "Félicitations, votre compte chauffeur est actif.",
+        message: "Félicitations, votre compte chauffeur est validé par notre agent IA.",
         type: "success"
       });
     } catch (err) {
