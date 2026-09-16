@@ -1024,14 +1024,14 @@ export const HomePage = () => {
             {[...PARTNERS_LIST, ...PARTNERS_LIST].map((partner, idx) => (
               <div 
                 key={`${partner.id}-${idx}`}
-                className="w-36 h-36 sm:w-44 sm:h-44 aspect-square bg-slate-50 hover:bg-white rounded-3xl border border-slate-200/80 shadow-sm hover:shadow-xl hover:border-demandoo-300 p-3.5 sm:p-4 flex flex-col items-center justify-between text-center transition-all duration-300 transform group hover:-translate-y-1.5 shrink-0 select-none"
+                className="w-36 h-36 sm:w-44 sm:h-44 aspect-square bg-white rounded-3xl border border-slate-200/90 shadow-sm hover:shadow-xl hover:border-demandoo-400 p-3 sm:p-3.5 flex flex-col items-center justify-between text-center transition-all duration-300 transform group hover:-translate-y-1.5 shrink-0 select-none"
               >
-                {/* Emplacement Logo Carré (avec gestion de fallback d'image) */}
-                <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-white border border-slate-200/70 group-hover:border-demandoo-200 flex items-center justify-center p-2.5 transition-all shadow-sm">
+                {/* Emplacement Logo Grand Format occupant tout l'espace supérieur du carré */}
+                <div className="w-full flex-1 rounded-2xl bg-slate-50/80 border border-slate-100 group-hover:border-demandoo-200 group-hover:bg-white flex items-center justify-center p-3 transition-all overflow-hidden relative">
                   <img 
                     src={partner.logo} 
                     alt={partner.name} 
-                    className="max-h-full max-w-full object-contain filter group-hover:scale-105 transition-transform"
+                    className="w-full h-full object-contain filter group-hover:scale-110 transition-transform duration-300"
                     onError={(e) => {
                       e.target.style.display = 'none';
                       if (e.target.nextSibling) {
@@ -1039,17 +1039,17 @@ export const HomePage = () => {
                       }
                     }}
                   />
-                  <div className={`hidden w-full h-full rounded-xl items-center justify-center text-xl sm:text-2xl font-black ${partner.bgBadge}`}>
+                  <div className={`hidden w-full h-full rounded-xl items-center justify-center text-3xl sm:text-4xl font-black ${partner.bgBadge}`}>
                     {partner.initials}
                   </div>
                 </div>
 
-                {/* Nom du Partenaire & Catégorie */}
-                <div className="w-full px-1">
+                {/* Nom du Partenaire & Catégorie en bas */}
+                <div className="w-full pt-1.5 px-0.5">
                   <p className="font-black text-xs sm:text-sm text-slate-900 group-hover:text-demandoo-600 truncate transition-colors">
                     {partner.name}
                   </p>
-                  <span className="inline-block text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-0.5 truncate max-w-full">
+                  <span className="inline-block text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-wider truncate max-w-full">
                     {partner.category}
                   </span>
                 </div>
