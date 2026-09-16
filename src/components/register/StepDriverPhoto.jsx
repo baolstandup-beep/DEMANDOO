@@ -1,17 +1,28 @@
-import React, { useRef } from 'react';
-import { Camera, Image as ImageIcon, X } from 'lucide-react';
+import React, { useRef, useState } from 'react';
+import { Camera, Image as ImageIcon, X, Loader2 } from 'lucide-react';
+import { compressImage } from '../../lib/imageCompressor';
 
 export const StepDriverPhoto = ({ data, updateData, onNext }) => {
   const fileInputRef = useRef(null);
+  const [isProcessing, setIsProcessing] = useState(false);
   
-  const handleFileChange = (e) => {
+  const handleFileChange = async (e) => {
     const file = e.target.files[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        updateData({ avatarBase64: reader.result });
-      };
-      reader.readAsDataURL(file);
+      try {
+        setIsProcessing(true);
+        const compressedBase64 = await compressImage(file, 500, 500, 0.75);
+        updateData({ avatarBase64: compressedBase64 });
+      } catch (err) {
+        console.warn("Erreur compression image, fallback reader:", err);
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          updateData({ avatarBase64: reader.result });
+        };
+        reader.readAsDataURL(file);
+      } finally {
+        setIsProcessing(false);
+      }
     }
   };
 

@@ -611,7 +611,8 @@ export const AuthProvider = ({ children }) => {
       ? userData.email.trim()
       : `driver.${phoneDigits || Date.now()}@demandoo.sn`;
 
-    const userAvatar = userData.avatar_url || userData.avatarBase64 || '';
+    // Ne JAMAIS envoyer de base64 lourd dans user_metadata Supabase Auth (limite stricte de 1MB par GoTrue)
+    const lightweightAvatarUrl = (userAvatar && userAvatar.startsWith('http')) ? userAvatar : '';
 
     try {
       // Bloquer onAuthStateChange pendant l'inscription pour éviter une navigation prématurée
@@ -627,7 +628,7 @@ export const AuthProvider = ({ children }) => {
             role: safeRole,
             firstName: userData.firstName || '',
             lastName: userData.lastName || '',
-            avatar_url: userAvatar,
+            avatar_url: lightweightAvatarUrl,
           }
         }
       });
