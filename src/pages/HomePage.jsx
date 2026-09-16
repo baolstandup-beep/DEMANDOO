@@ -24,12 +24,98 @@ import {
   Shield,
   Smartphone,
   Check,
-  Zap
+  Zap,
+  Handshake,
+  Building2
 } from 'lucide-react';
 
 import { Reveal } from '../components/common/Reveal';
 import { useIntersectionObserver } from '../hooks/useIntersectionObserver';
 import { TripCard } from '../components/common/TripCard';
+
+// Liste des Partenaires de Confiance (Format Carré avec Défilement)
+const PARTNERS_LIST = [
+  {
+    id: 'wave',
+    name: 'Wave Sénégal',
+    category: 'Paiement Mobile',
+    logo: '/images/partners/wave.png',
+    initials: '🌊',
+    bgBadge: 'bg-sky-50 text-sky-600 border border-sky-100',
+  },
+  {
+    id: 'orange-money',
+    name: 'Orange Money',
+    category: 'Mobile Money',
+    logo: '/images/partners/orange.png',
+    initials: '🍊',
+    bgBadge: 'bg-orange-50 text-orange-600 border border-orange-100',
+  },
+  {
+    id: 'free-money',
+    name: 'Free Money',
+    category: 'Paiement Télécom',
+    logo: '/images/partners/freemoney.png',
+    initials: '🔴',
+    bgBadge: 'bg-red-50 text-red-600 border border-red-100',
+  },
+  {
+    id: 'totalenergies',
+    name: 'TotalEnergies',
+    category: 'Énergie & Stations',
+    logo: '/images/partners/total.png',
+    initials: '⛽',
+    bgBadge: 'bg-emerald-50 text-emerald-600 border border-emerald-100',
+  },
+  {
+    id: 'ola-energy',
+    name: 'Ola Energy',
+    category: 'Stations & Carburant',
+    logo: '/images/partners/ola.png',
+    initials: '⚡',
+    bgBadge: 'bg-blue-50 text-blue-600 border border-blue-100',
+  },
+  {
+    id: 'axa',
+    name: 'AXA Assurances',
+    category: 'Protection Trajet',
+    logo: '/images/partners/axa.png',
+    initials: '🛡️',
+    bgBadge: 'bg-indigo-50 text-indigo-600 border border-indigo-100',
+  },
+  {
+    id: 'sunu',
+    name: 'Sunu Assurances',
+    category: 'Sécurité Voyage',
+    logo: '/images/partners/sunu.png',
+    initials: '☀️',
+    bgBadge: 'bg-amber-50 text-amber-600 border border-amber-100',
+  },
+  {
+    id: 'baux-maraichers',
+    name: 'Baux Maraîchers',
+    category: 'Gare Routière Dakar',
+    logo: '/images/partners/baux.png',
+    initials: '🚌',
+    bgBadge: 'bg-teal-50 text-teal-700 border border-teal-100',
+  },
+  {
+    id: 'aibd',
+    name: 'AIBD Express',
+    category: 'Liaisons Aéroport',
+    logo: '/images/partners/aibd.png',
+    initials: '✈️',
+    bgBadge: 'bg-cyan-50 text-cyan-700 border border-cyan-100',
+  },
+  {
+    id: 'touba-gare',
+    name: 'Gare de Touba',
+    category: 'Pôle Régional',
+    logo: '/images/partners/touba.png',
+    initials: '🕌',
+    bgBadge: 'bg-demandoo-50 text-demandoo-700 border border-demandoo-100',
+  }
+];
 
 const AnimatedBackground = () => {
   const [ref, isVisible] = useIntersectionObserver({ threshold: 0, triggerOnce: false });
@@ -905,6 +991,74 @@ export const HomePage = () => {
 
           </div>
         </div>
+      </section>
+
+      {/* ========================================================================= */}
+      {/* 6. BIS - NOS PARTENAIRES DE CONFIANCE (Format Carré avec Défilement vers la Gauche) */}
+      {/* ========================================================================= */}
+      <section id="partenaires" className="py-16 bg-white border-b border-slate-100 overflow-hidden relative">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-10 text-center">
+          <Reveal>
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-demandoo-100 text-demandoo-700 text-xs font-black uppercase tracking-wider mb-2">
+              <Handshake className="w-3.5 h-3.5" />
+              <span>Écosystème & Réseau Partenaire</span>
+            </div>
+            <h2 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
+              Nos Partenaires de Confiance
+            </h2>
+            <p className="text-sm sm:text-base text-slate-500 font-medium max-w-2xl mx-auto mt-1">
+              Des acteurs majeurs du paiement, des transports et de la sécurité qui accompagnent vos voyages partout au Sénégal.
+            </p>
+          </Reveal>
+        </div>
+
+        {/* Carousel Marquee Infini (Défilement continu vers la gauche) */}
+        <div className="relative w-full overflow-hidden py-4">
+          
+          {/* Gradient Fades sur les extrémités gauche & droite */}
+          <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-16 sm:w-36 bg-gradient-to-r from-white via-white/80 to-transparent z-10" />
+          <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-16 sm:w-36 bg-gradient-to-l from-white via-white/80 to-transparent z-10" />
+
+          {/* Track Défilant avec Cartes Carrées */}
+          <div className="flex gap-4 sm:gap-6 animate-marquee w-max hover:[animation-play-state:paused] cursor-pointer pl-4">
+            {[...PARTNERS_LIST, ...PARTNERS_LIST].map((partner, idx) => (
+              <div 
+                key={`${partner.id}-${idx}`}
+                className="w-36 h-36 sm:w-44 sm:h-44 aspect-square bg-slate-50 hover:bg-white rounded-3xl border border-slate-200/80 shadow-sm hover:shadow-xl hover:border-demandoo-300 p-3.5 sm:p-4 flex flex-col items-center justify-between text-center transition-all duration-300 transform group hover:-translate-y-1.5 shrink-0 select-none"
+              >
+                {/* Emplacement Logo Carré (avec gestion de fallback d'image) */}
+                <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-white border border-slate-200/70 group-hover:border-demandoo-200 flex items-center justify-center p-2.5 transition-all shadow-sm">
+                  <img 
+                    src={partner.logo} 
+                    alt={partner.name} 
+                    className="max-h-full max-w-full object-contain filter group-hover:scale-105 transition-transform"
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                      if (e.target.nextSibling) {
+                        e.target.nextSibling.style.display = 'flex';
+                      }
+                    }}
+                  />
+                  <div className={`hidden w-full h-full rounded-xl items-center justify-center text-xl sm:text-2xl font-black ${partner.bgBadge}`}>
+                    {partner.initials}
+                  </div>
+                </div>
+
+                {/* Nom du Partenaire & Catégorie */}
+                <div className="w-full px-1">
+                  <p className="font-black text-xs sm:text-sm text-slate-900 group-hover:text-demandoo-600 truncate transition-colors">
+                    {partner.name}
+                  </p>
+                  <span className="inline-block text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-0.5 truncate max-w-full">
+                    {partner.category}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+
+        </div>
+
       </section>
 
       {/* ========================================================================= */}
