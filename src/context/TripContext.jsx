@@ -50,7 +50,7 @@ export const TripProvider = ({ children }) => {
     try {
       const { data: tripsData, error: tripsError } = await supabase
         .from('trips')
-        .select(`*, driver:profiles(*)`)
+        .select('*')
         .order('created_at', { ascending: false });
 
       if (tripsError) throw tripsError;
@@ -60,7 +60,7 @@ export const TripProvider = ({ children }) => {
       if (user) {
         const { data: bookingsData } = await supabase
           .from('bookings')
-          .select(`*, trip:trip_id(*)`)
+          .select('*')
           .eq('passenger_id', user.id)
           .order('created_at', { ascending: false });
         
@@ -128,53 +128,71 @@ export const TripProvider = ({ children }) => {
   const getTripById = (id) => trips.find(t => t.id === id) || null;
 
   const publishTrip = async (tripData, driverUser) => {
-    if (!driverUser || !driverUser.id) {
-      throw new Error("401 UNAUTHORIZED: Vous devez être connecté pour publier un trajet.");
-    }
+    // 2. TROUVER LE PROFILE.ID
+    const { data: userData, error: userError } = await supabase.auth.getUser();
+    const user = userData?.user;
     
-    const newTrip = {
-      driver_id: driverUser.id,
-      departure_city: tripData.departure_city,
-      departure_address: tripData.departure_address,
-      arrival_city: tripData.arrival_city,
-      arrival_address: tripData.arrival_address,
+    console.log('[PUBLISH] auth user:', user?.id);
+
+    if (!user) {
+      throw new Error("Utilisateur non connecté");
+    }
+
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', user.id)
+      .single();
+      
+    console.log('[PUBLISH] profile:', profile);
+    console.log('[PUBLISH] profile.id:', profile?.id);
+
+    if (!profile) {
+      console.error('[PUBLISH FAILED] Profil introuvable.', profileError);
+      throw new Error("Profil chauffeur introuvable.");
+    }
+
+    // 3. LOGUER LE PAYLOAD et 4. INSERT MINIMAL SANS JOINTURE
+    const payload = {
+      driver_id: profile.id,
+      departure_city: tripData.departure_city || 'Touba',
+      departure_address: tripData.departure_address || null,
+      arrival_city: tripData.arrival_city || 'Dakar',
+      arrival_address: tripData.arrival_address || null,
       departure_datetime: tripData.departure_datetime,
-      estimated_duration: tripData.estimated_duration || '2h 30m',
+      estimated_duration: tripData.estimated_duration || null,
       seats_total: parseInt(tripData.seats_total, 10),
       seats_available: parseInt(tripData.seats_total, 10),
       price_per_seat: parseInt(tripData.price_per_seat, 10),
-      rules_luggage: tripData.rules_luggage || 'Sacs ordinaires',
+      rules_luggage: tripData.rules_luggage || null,
       rules_pets: !!tripData.rules_pets,
       rules_smoking: !!tripData.rules_smoking,
-      waypoints: Array.isArray(tripData.waypoints) ? tripData.waypoints : [],
-      status: 'scheduled'
+      status: 'active'
     };
+
+    console.log('[PUBLISH] INSERT payload:', payload);
 
     if (!isSupabaseConfigured) {
       throw new Error("Erreur de configuration Supabase.");
     }
 
-    try {
-      // D'abord on insère le trajet (sans jointure risquée)
-      const { data: insertData, error: insertError } = await supabase.from('trips').insert([newTrip]).select().single();
-      if (insertError) {
-        throw new Error(insertError.message);
-      }
+    const { data, error } = await supabase
+      .from('trips')
+      .insert(payload)
+      .select('*')
+      .single();
       
-      let finalTrip = insertData;
-      try {
-        const { data: joinedTrip } = await supabase.from('trips').select('*, driver:profiles(*)').eq('id', insertData.id).single();
-        if (joinedTrip) finalTrip = joinedTrip;
-      } catch (joinErr) {
-        console.warn("Impossible de joindre le profil chauffeur (non-bloquant):", joinErr);
-      }
-      
-      setTrips(prev => [finalTrip, ...prev]);
-      return finalTrip;
-    } catch (err) {
-      console.error("Erreur lors de la publication :", err?.message || err);
-      throw err;
+    console.log('[PUBLISH] INSERT data:', data);
+    console.log('[PUBLISH] INSERT error:', error);
+
+    if (error) {
+      console.error('[PUBLISH FAILED]', error);
+      throw error;
     }
+
+    console.log('[PUBLISH SUCCESS]', data);
+    setTrips(prev => [data, ...prev]);
+    return data;
   };
 
   const updateTrip = async (tripId, tripData, user) => {

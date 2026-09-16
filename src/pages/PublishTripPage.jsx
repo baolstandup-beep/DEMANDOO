@@ -49,6 +49,7 @@ export const PublishTripPage = () => {
   const [cancellationPolicy, setCancellationPolicy] = useState('Annulation gratuite jusqu\'à 12h avant le départ');
 
   const [errorMsg, setErrorMsg] = useState('');
+  const [isPublishing, setIsPublishing] = useState(false);
 
   const getSuggestedPrice = (dep, arr) => {
     const d = (dep || '').toLowerCase();
@@ -137,6 +138,9 @@ export const PublishTripPage = () => {
       setStep(2);
       return;
     }
+    
+    if (isPublishing) return;
+    setIsPublishing(true);
 
     try {
       const departureDatetime = new Date(`${date}T${time}`).toISOString();
@@ -163,9 +167,10 @@ export const PublishTripPage = () => {
       }, user);
 
       incrementTripsUsed();
-      navigate(`/trajet/${newTrip.id}`);
+      navigate(`/espace-chauffeur`);
     } catch (err) {
       console.error("Erreur lors de la publication du trajet :", err);
+      // RESTER À L'ÉTAPE 8 - NE PAS RESET
       if (err.message && err.message.includes("429")) {
         setErrorMsg("Quota atteint : Vous avez utilisé tous vos trajets. Passez à l'abonnement Pro pour publier en illimité.");
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -176,6 +181,8 @@ export const PublishTripPage = () => {
         setErrorMsg(err.message || "Erreur lors de la publication du trajet.");
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }
+    } finally {
+      setIsPublishing(false);
     }
   };
 
@@ -704,9 +711,10 @@ export const PublishTripPage = () => {
 
               <button
                 type="submit"
+                disabled={isPublishing}
                 className="w-full min-h-[48px] mt-6 sm:mt-8 py-4 rounded-2xl text-sm font-black text-white bg-demandoo-600 hover:bg-demandoo-700 shadow-lg shadow-demandoo-600/25 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
               >
-                Publier le trajet maintenant
+                {isPublishing ? 'Publication...' : 'Publier le trajet maintenant'}
               </button>
             </form>
           )}
