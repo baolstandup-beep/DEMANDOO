@@ -147,7 +147,8 @@ export const RegisterPage = () => {
         alert(result.error || "Une erreur est survenue.");
       }
     } catch (e) {
-      alert("Une erreur inattendue est survenue.");
+      console.error("Register submit error:", e);
+      alert(e?.message || "Une erreur inattendue est survenue.");
     } finally {
       setIsLoading(false);
     }
