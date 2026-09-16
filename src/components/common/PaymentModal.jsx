@@ -6,7 +6,7 @@ import { useAuth } from '../../context/AuthContext';
 export const PaymentModal = ({ isOpen, onClose, plan, onSuccess }) => {
   const { user } = useAuth();
   const [provider, setProvider] = useState('wave');
-  const [phoneNumber, setPhoneNumber] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState(user?.phone ? user.phone.replace(/\D/g, '').replace(/^221/, '') : '');
   const [status, setStatus] = useState('idle'); // idle, processing, success, error
   const [errorMsg, setErrorMsg] = useState('');
 

@@ -93,10 +93,17 @@ CREATE TABLE IF NOT EXISTS public.trips (
     rules_luggage TEXT DEFAULT 'Bagages standards acceptés',
     rules_pets BOOLEAN DEFAULT false,
     rules_smoking BOOLEAN DEFAULT false,
+    waypoints JSONB DEFAULT '[]'::jsonb,
     status TEXT DEFAULT 'scheduled' CHECK (status IN ('scheduled', 'ongoing', 'completed', 'cancelled')),
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Index de performance pour les recherches de trajets
+CREATE INDEX IF NOT EXISTS idx_trips_departure_city ON public.trips(departure_city);
+CREATE INDEX IF NOT EXISTS idx_trips_arrival_city ON public.trips(arrival_city);
+CREATE INDEX IF NOT EXISTS idx_trips_departure_datetime ON public.trips(departure_datetime);
+CREATE INDEX IF NOT EXISTS idx_trips_status ON public.trips(status);
 
 -- D. Bookings (Réservations passagers)
 CREATE TABLE IF NOT EXISTS public.bookings (

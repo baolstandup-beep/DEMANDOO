@@ -21,15 +21,7 @@ export const LoginPage = () => {
     setError('');
     setIsLoading(true);
 
-    // Convertir le numéro de téléphone en l'email caché si l'utilisateur a tapé son numéro
-    let loginIdentifier = email.trim();
-    if (!loginIdentifier.includes('@') && /^\d+$/.test(loginIdentifier.replace(/[\s\-\(\)]/g, ''))) {
-      const phoneClean = loginIdentifier.replace(/[\s\-\(\)]/g, '');
-      const fullPhone = phoneClean.length === 9 ? `221${phoneClean}` : phoneClean;
-      loginIdentifier = `${fullPhone}@demandoo.com`;
-    }
-
-    const result = await login(loginIdentifier, password, 'driver');
+    const result = await login(email.trim(), password, 'driver');
     setIsLoading(false);
 
     if (result && result.user) {

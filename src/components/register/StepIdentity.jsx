@@ -1,5 +1,5 @@
 import React from 'react';
-import { User, Eye, EyeOff, Lock } from 'lucide-react';
+import { User, Eye, EyeOff, Lock, Mail } from 'lucide-react';
 
 export const StepIdentity = ({ data, updateData, onNext, showPassword, setShowPassword, showConfirmPassword, setShowConfirmPassword, error }) => {
   const handleSubmit = (e) => {
@@ -67,7 +67,24 @@ export const StepIdentity = ({ data, updateData, onNext, showPassword, setShowPa
             required
           />
         </div>
-        <p className="text-xs text-slate-400 ml-1">Ce numéro servira à vous contacter et pourra être modifié plus tard.</p>
+        <p className="text-xs text-slate-400 ml-1">Ce numéro servira à vous contacter et pour vous connecter.</p>
+      </div>
+
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest block ml-1">Adresse Email</label>
+          <span className="text-[10px] font-bold text-slate-400">Optionnel</span>
+        </div>
+        <div className="relative">
+          <Mail className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
+          <input
+            type="email"
+            value={data.email || ''}
+            onChange={(e) => updateData({ email: e.target.value })}
+            placeholder="Ex: chauffeur@gmail.com"
+            className="w-full pl-11 pr-4 py-3.5 rounded-2xl bg-white border border-slate-200 text-sm font-bold text-slate-900 placeholder:text-slate-400 focus:border-demandoo-500 focus:ring-2 focus:ring-demandoo-500/20 transition-all outline-none"
+          />
+        </div>
       </div>
 
       <div className="space-y-2">

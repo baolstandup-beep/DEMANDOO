@@ -1,20 +1,67 @@
-import React from 'react';
+import React, { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { PlusCircle, Lock } from 'lucide-react';
+import { PlusCircle, Lock, Camera, Loader2 } from 'lucide-react';
 import { VerifiedDriverBadge, PendingVerificationBadge, IncompleteVerificationBadge } from '../common/Badge';
+import { useAuth } from '../../context/AuthContext';
 
 export const DriverHeader = ({ user, isVerified, canPublish }) => {
+  const { updateProfile } = useAuth();
+  const fileInputRef = useRef(null);
+  const [isUploading, setIsUploading] = useState(false);
+
+  const handlePhotoChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert("La photo ne doit pas dépasser 5 Mo.");
+      return;
+    }
+
+    setIsUploading(true);
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      try {
+        await updateProfile({ avatar_url: reader.result });
+      } catch (err) {
+        console.error("Échec upload photo:", err);
+      } finally {
+        setIsUploading(false);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const avatarSrc = user?.avatar_url || (user?.full_name ? `https://ui-avatars.com/api/?name=${encodeURIComponent(user.full_name)}&background=14B8A6&color=fff` : "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=250");
+
   return (
     <div className="bg-slate-900 text-white pb-6">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-5">
-            <img 
-              src={user?.avatar_url || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=250"} 
-              alt={user?.full_name} 
-              className="w-14 h-14 sm:w-16 sm:h-16 rounded-full object-cover border-[3px] border-slate-900 shadow-md shrink-0"
-            />
+            <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
+              <img 
+                src={avatarSrc} 
+                alt={user?.full_name} 
+                className="w-14 h-14 sm:w-16 sm:h-16 rounded-full object-cover border-[3px] border-slate-900 shadow-md shrink-0 transition-transform group-hover:scale-105"
+              />
+              <button 
+                type="button"
+                className="absolute -bottom-1 -right-1 p-1.5 rounded-full bg-demandoo-500 text-white shadow-md hover:bg-demandoo-600 transition-all active:scale-95"
+                title="Changer ma photo de profil"
+                disabled={isUploading}
+              >
+                {isUploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Camera className="w-3.5 h-3.5" />}
+              </button>
+              <input 
+                ref={fileInputRef} 
+                type="file" 
+                accept="image/*" 
+                className="hidden" 
+                onChange={handlePhotoChange} 
+              />
+            </div>
             <div className="space-y-1">
               <span className="text-[10px] font-black text-demandoo-400 uppercase tracking-widest block">
                 Espace Chauffeur

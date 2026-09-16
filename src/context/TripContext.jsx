@@ -106,10 +106,18 @@ export const TripProvider = ({ children }) => {
     return trips.filter(t => {
       if (t.status !== 'scheduled') return false;
       if (t.seats_available < passengers) return false;
-      if (departure && !t.departure_city.toLowerCase().includes(departure.toLowerCase())) return false;
-      if (destination && !t.arrival_city.toLowerCase().includes(destination.toLowerCase())) return false;
+      
+      const depMatch = !departure || (t.departure_city || '').toLowerCase().includes(departure.toLowerCase());
+      if (!depMatch) return false;
+
+      // Correspondance arrivée OU étape intermédiaire
+      const arrMatch = !destination || 
+        (t.arrival_city || '').toLowerCase().includes(destination.toLowerCase()) ||
+        (Array.isArray(t.waypoints) && t.waypoints.some(wp => wp.toLowerCase().includes(destination.toLowerCase())));
+      if (!arrMatch) return false;
+
       if (date) {
-        const tripDate = t.departure_datetime.split('T')[0];
+        const tripDate = (t.departure_datetime || '').split('T')[0];
         if (tripDate !== date) return false;
       }
       if (maxPrice && t.price_per_seat > maxPrice) return false;
@@ -141,6 +149,7 @@ export const TripProvider = ({ children }) => {
       rules_luggage: tripData.rules_luggage || 'Sacs ordinaires',
       rules_pets: !!tripData.rules_pets,
       rules_smoking: !!tripData.rules_smoking,
+      waypoints: Array.isArray(tripData.waypoints) ? tripData.waypoints : [],
       cancellation_policy: tripData.cancellation_policy || 'Annulation gratuite jusqu\'à 24h avant le départ',
       status: 'scheduled'
     };

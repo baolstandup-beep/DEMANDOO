@@ -16,7 +16,9 @@ import {
   ShieldCheck, 
   ArrowRight,
   ArrowLeft,
-  Navigation
+  Navigation,
+  Plus,
+  Trash2
 } from 'lucide-react';
 
 export const PublishTripPage = () => {
@@ -30,6 +32,7 @@ export const PublishTripPage = () => {
   // Form State across 8 Steps
   const [departureCity, setDepartureCity] = useState('');
   const [arrivalCity, setArrivalCity] = useState('');
+  const [waypoints, setWaypoints] = useState([]);
   const [date, setDate] = useState('');
   const [time, setTime] = useState('08:00');
   const [departureAddress, setDepartureAddress] = useState('');
@@ -46,6 +49,34 @@ export const PublishTripPage = () => {
   const [cancellationPolicy, setCancellationPolicy] = useState('Annulation gratuite jusqu\'à 12h avant le départ');
 
   const [errorMsg, setErrorMsg] = useState('');
+
+  const getSuggestedPrice = (dep, arr) => {
+    const d = (dep || '').toLowerCase();
+    const a = (arr || '').toLowerCase();
+    if ((d.includes('dakar') && a.includes('touba')) || (d.includes('touba') && a.includes('dakar'))) return { min: 3500, max: 4500, default: 4000 };
+    if ((d.includes('dakar') && a.includes('saint-louis')) || (d.includes('saint-louis') && a.includes('dakar'))) return { min: 5000, max: 6500, default: 5500 };
+    if ((d.includes('dakar') && a.includes('thi')) || (d.includes('thi') && a.includes('dakar'))) return { min: 1500, max: 2500, default: 2000 };
+    if ((d.includes('dakar') && a.includes('mbour')) || (d.includes('mbour') && a.includes('dakar'))) return { min: 2000, max: 3000, default: 2500 };
+    if ((d.includes('dakar') && a.includes('ziguinchor')) || (d.includes('ziguinchor') && a.includes('dakar'))) return { min: 9000, max: 13000, default: 10000 };
+    if ((d.includes('dakar') && a.includes('kaolack')) || (d.includes('kaolack') && a.includes('dakar'))) return { min: 3000, max: 4500, default: 3500 };
+    return { min: 2500, max: 5000, default: 3500 };
+  };
+
+  const addWaypoint = () => {
+    if (waypoints.length < 3) {
+      setWaypoints([...waypoints, '']);
+    }
+  };
+
+  const updateWaypoint = (index, value) => {
+    const updated = [...waypoints];
+    updated[index] = value;
+    setWaypoints(updated);
+  };
+
+  const removeWaypoint = (index) => {
+    setWaypoints(waypoints.filter((_, i) => i !== index));
+  };
 
   const isAllowedToPublish = true;
   const hasActiveSub = true; // Permettre l'accès direct au formulaire de publication
@@ -114,6 +145,7 @@ export const PublishTripPage = () => {
         departure_address: departureAddress || 'Gare Routière',
         arrival_city: arrivalCity || 'Dakar',
         arrival_address: arrivalAddress || 'Gare',
+        waypoints: waypoints.filter(Boolean),
         departure_datetime: departureDatetime,
         seats_total: seatsTotal,
         price_per_seat: pricePerSeat,
@@ -219,12 +251,58 @@ export const PublishTripPage = () => {
                       type="text"
                       list="cities-list-pub"
                       value={departureCity}
-                      onChange={(e) => setDepartureCity(e.target.value)}
+                      onChange={(e) => {
+                        setDepartureCity(e.target.value);
+                        const sug = getSuggestedPrice(e.target.value, arrivalCity);
+                        setPricePerSeat(sug.default);
+                      }}
                       placeholder="Ex: Touba"
                       className="w-full pl-12 pr-4 py-4 rounded-2xl bg-slate-50 border border-slate-200 text-base font-bold text-slate-900 focus:bg-white focus:ring-4 focus:ring-demandoo-500/10 focus:border-demandoo-500 transition-all outline-none"
                     />
                   </div>
                 </div>
+
+                {/* ÉTAPES INTERMÉDIAIRES */}
+                {waypoints.map((wp, idx) => (
+                  <div key={idx} className="relative z-10 pl-6 border-l-2 border-dashed border-demandoo-400">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="text-xs font-bold text-demandoo-700 uppercase tracking-wider">
+                        Étape {idx + 1} (Arrêt en route)
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => removeWaypoint(idx)}
+                        className="text-xs font-bold text-red-500 hover:text-red-700 flex items-center gap-1"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" /> Supprimer
+                      </button>
+                    </div>
+                    <div className="relative">
+                      <div className="absolute left-4 top-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-demandoo-500 z-10" />
+                      <input
+                        type="text"
+                        list="cities-list-pub"
+                        value={wp}
+                        onChange={(e) => updateWaypoint(idx, e.target.value)}
+                        placeholder="Ex: Thiès"
+                        className="w-full pl-10 pr-4 py-3 rounded-xl bg-slate-50 border border-slate-200 text-sm font-bold text-slate-900 focus:bg-white focus:border-demandoo-500 outline-none"
+                      />
+                    </div>
+                  </div>
+                ))}
+
+                {waypoints.length < 3 && (
+                  <div className="relative z-10">
+                    <button
+                      type="button"
+                      onClick={addWaypoint}
+                      className="inline-flex items-center gap-2 text-xs font-black text-demandoo-600 hover:text-demandoo-700 bg-demandoo-50 px-4 py-2.5 rounded-xl border border-demandoo-100 hover:bg-demandoo-100/60 transition-all"
+                    >
+                      <Plus className="w-4 h-4" />
+                      + Ajouter un arrêt / ville intermédiaire (ex: Thiès, Mbour)
+                    </button>
+                  </div>
+                )}
 
                 <div className="relative z-10">
                   <label className="text-xs font-black text-slate-700 block mb-2 uppercase tracking-wider ml-1">Ville d'arrivée</label>
@@ -234,7 +312,11 @@ export const PublishTripPage = () => {
                       type="text"
                       list="cities-list-pub"
                       value={arrivalCity}
-                      onChange={(e) => setArrivalCity(e.target.value)}
+                      onChange={(e) => {
+                        setArrivalCity(e.target.value);
+                        const sug = getSuggestedPrice(departureCity, e.target.value);
+                        setPricePerSeat(sug.default);
+                      }}
                       placeholder="Ex: Dakar"
                       className="w-full pl-12 pr-4 py-4 rounded-2xl bg-slate-50 border border-slate-200 text-base font-bold text-slate-900 focus:bg-white focus:ring-4 focus:ring-demandoo-500/10 focus:border-demandoo-500 transition-all outline-none"
                     />
@@ -506,7 +588,7 @@ export const PublishTripPage = () => {
                 <div className="p-4 bg-demandoo-50/50 rounded-2xl border border-demandoo-100 flex items-center gap-3">
                   <div className="w-8 h-8 rounded-full bg-demandoo-100 flex items-center justify-center text-demandoo-600 shrink-0">💡</div>
                   <p className="text-xs text-demandoo-800 font-medium leading-relaxed">
-                    Prix conseillé pour ce trajet : <strong className="font-black text-demandoo-600">3 500 - 5 000 FCFA</strong>. Cela vous aide à remplir votre voiture plus rapidement.
+                    Prix conseillé pour le trajet <strong>{departureCity || 'Départ'} ➔ {arrivalCity || 'Arrivée'}</strong> : <strong className="font-black text-demandoo-600">{getSuggestedPrice(departureCity, arrivalCity).min.toLocaleString('fr-FR')} - {getSuggestedPrice(departureCity, arrivalCity).max.toLocaleString('fr-FR')} FCFA</strong>. Cela garantit un remplissage rapide de votre véhicule.
                   </p>
                 </div>
               </div>

@@ -17,14 +17,60 @@ document.addEventListener('DOMContentLoaded', async () => {
   loginForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     clearAlert();
-    const email = document.getElementById('admin-email').value;
+    const rawInput = (document.getElementById('admin-email').value || '').trim();
     const password = document.getElementById('admin-password').value;
 
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) {
-      showAlert(error.message, 'danger');
+    let candidateEmails = [];
+
+    if (rawInput.includes('@')) {
+      candidateEmails.push(rawInput);
     } else {
+      const digits = rawInput.replace(/\D/g, '');
+      const phoneNoCountry = digits.replace(/^221/, '').replace(/^0+/, '');
+
+      try {
+        const { data: matchedProfiles } = await supabase
+          .from('profiles')
+          .select('email, phone')
+          .or(`phone.ilike.%${phoneNoCountry}%,email.ilike.%${phoneNoCountry}%`)
+          .limit(3);
+
+        if (matchedProfiles && matchedProfiles.length > 0) {
+          matchedProfiles.forEach(p => {
+            if (p.email && !candidateEmails.includes(p.email)) {
+              candidateEmails.push(p.email);
+            }
+          });
+        }
+      } catch (err) {
+        console.warn("Profiles lookup failed:", err);
+      }
+
+      if (phoneNoCountry) {
+        candidateEmails.push(`driver.${phoneNoCountry}@demandoo.sn`);
+        candidateEmails.push(`driver.${digits}@demandoo.sn`);
+        candidateEmails.push(`221${phoneNoCountry}@demandoo.com`);
+        candidateEmails.push(`${phoneNoCountry}@demandoo.sn`);
+      }
+    }
+
+    let authSuccess = false;
+    let lastError = null;
+
+    for (const emailToTry of candidateEmails) {
+      const { data, error } = await supabase.auth.signInWithPassword({ email: emailToTry, password });
+      if (!error && data?.user) {
+        authSuccess = true;
+        break;
+      } else {
+        lastError = error;
+      }
+    }
+
+    if (authSuccess) {
       showDashboard();
+    } else {
+      showAlert(lastError ? lastError.message : "Identifiants incorrects.", 'danger');
     }
   });
 

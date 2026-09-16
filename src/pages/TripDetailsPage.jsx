@@ -82,13 +82,19 @@ export const TripDetailsPage = () => {
   };
 
   const generateWhatsAppLink = () => {
-    const phone = trip.driver?.phone || '+221770000000'; // Default if missing
-    // Format the phone number (remove spaces, ensure country code)
+    const phone = trip.driver?.phone || '+221770000000';
     let formattedPhone = phone.replace(/[^0-9+]/g, '');
     if (formattedPhone.startsWith('00')) formattedPhone = '+' + formattedPhone.substring(2);
-    if (!formattedPhone.startsWith('+')) formattedPhone = '+221' + formattedPhone;
+    if (!formattedPhone.startsWith('+')) {
+      if (formattedPhone.startsWith('221')) formattedPhone = '+' + formattedPhone;
+      else formattedPhone = '+221' + formattedPhone;
+    }
     
-    const message = `Bonjour, je suis intéressé par votre trajet ${trip.departure_city} - ${trip.arrival_city} prévu le ${new Date(trip.departure_datetime).toLocaleDateString('fr-FR')}. Reste-t-il de la place ?`;
+    const formattedDate = new Date(trip.departure_datetime).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' });
+    const formattedTime = new Date(trip.departure_datetime).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+    const driverName = trip.driver?.full_name ? ` ${trip.driver.full_name}` : '';
+    
+    const message = `Bonjour${driverName},\n\nJe vous contacte depuis Demandoo pour réserver une place sur votre trajet :\n📍 ${trip.departure_city} → ${trip.arrival_city}\n📅 Le ${formattedDate} à ${formattedTime}\n💰 Tarif : ${trip.price_per_seat.toLocaleString('fr-FR')} FCFA\n\nReste-t-il de la place disponible ? Merci !`;
     return `https://wa.me/${formattedPhone.replace('+', '')}?text=${encodeURIComponent(message)}`;
   };
 
@@ -278,7 +284,7 @@ export const TripDetailsPage = () => {
               </li>
               <li className="flex items-center gap-2 p-3 rounded-xl bg-slate-50 border border-slate-100">
                 <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
-                Paiement en ligne sécurisé (Wave / OM)
+                Paiement direct avec le chauffeur (Espèces / Wave)
               </li>
             </ul>
           </div>
@@ -302,38 +308,33 @@ export const TripDetailsPage = () => {
             </div>
 
             <div className="flex flex-col gap-3">
-              <button
-                onClick={() => {
-                  if (!user) {
-                    navigate('/login');
-                  } else {
-                    setShowPaymentModal(true);
-                  }
-                }}
-                disabled={trip.seats_available < 1 || isAccepted}
-                className="w-full min-h-[48px] py-3.5 sm:py-4 px-4 rounded-2xl text-sm sm:text-base font-black text-white bg-demandoo-500 hover:bg-demandoo-600 shadow-lg shadow-demandoo-500/30 active:scale-[0.98] transition-all flex items-center justify-center gap-2 text-center disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <CreditCard className="w-5 h-5 shrink-0" />
-                <span>{isAccepted ? 'Déjà réservé' : 'Réserver et Payer'}</span>
-              </button>
-              
               <a
                 href={generateWhatsAppLink()}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full min-h-[48px] py-3.5 sm:py-4 px-4 rounded-2xl text-sm sm:text-base font-black text-slate-700 bg-slate-50 border border-slate-200 hover:bg-slate-100 hover:border-slate-300 active:scale-[0.98] transition-all flex items-center justify-center gap-2 text-center"
+                className="w-full min-h-[48px] py-3.5 sm:py-4 px-4 rounded-2xl text-sm sm:text-base font-black text-white bg-[#25D366] hover:bg-[#20bd5a] shadow-lg shadow-emerald-500/25 active:scale-[0.98] transition-all flex items-center justify-center gap-2 text-center"
               >
                 <MessageCircle className="w-5 h-5 shrink-0" />
-                <span>Contacter le chauffeur</span>
+                <span>Réserver sur WhatsApp</span>
               </a>
+              
+              {trip.driver?.phone && (
+                <a
+                  href={`tel:${trip.driver.phone}`}
+                  className="w-full min-h-[44px] py-3 px-4 rounded-2xl text-sm sm:text-base font-black text-slate-700 bg-slate-50 border border-slate-200 hover:bg-slate-100 hover:border-slate-300 active:scale-[0.98] transition-all flex items-center justify-center gap-2 text-center"
+                >
+                  <Phone className="w-4 h-4 shrink-0 text-slate-600" />
+                  <span>Appeler le chauffeur</span>
+                </a>
+              )}
             </div>
 
-            <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-100 text-[11px] text-slate-500 space-y-1 font-medium">
-              <div className="flex items-center gap-1.5 font-bold text-slate-700">
-                <ShieldCheck className="w-4 h-4 text-demandoo-600 shrink-0" />
-                Paiement 100% sécurisé
+            <div className="p-3.5 bg-emerald-50/70 rounded-xl border border-emerald-100 text-[11px] text-slate-600 space-y-1 font-medium">
+              <div className="flex items-center gap-1.5 font-bold text-emerald-800">
+                <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+                Réservation directe sans commission
               </div>
-              <p>Votre paiement est conservé en toute sécurité jusqu'à la fin du trajet via Wave ou Orange Money.</p>
+              <p>Demandoo vous met en relation directe. Le règlement s'effectue directement avec le chauffeur selon vos convenances (espèces ou Wave).</p>
             </div>
           </div>
         </div>

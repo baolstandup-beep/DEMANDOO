@@ -447,11 +447,14 @@ export const AuthProvider = ({ children }) => {
   };
 
   const login = async (identifier, password, role = 'passenger') => {
+    const rawInput = (identifier || '').trim();
+    if (!rawInput) return { error: "Veuillez renseigner votre email ou numéro de téléphone." };
+
     // Si Supabase n'est pas configuré, mode hors-ligne basique (uniquement pour le développement)
     if (!isSupabaseConfigured) {
       const mockUser = {
         id: 'mock-user-1',
-        email: identifier,
+        email: rawInput,
         full_name: 'Utilisateur Démo',
         role: role,
         driver_status: role === 'driver' ? 'VERIFIED' : null,
@@ -463,23 +466,97 @@ export const AuthProvider = ({ children }) => {
     }
 
     try {
-      // Vrai Supabase
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: identifier,
-        password
-      });
-      if (error) {
-        return { error: translateAuthError(error) };
-      }
-      const { data: profile } = await supabase.from('profiles').select('*').eq('id', data.user.id).single();
-      if (profile) {
-        setUser(profile);
-        if (profile.role === 'driver' && profile.driver_status === 'VERIFIED') {
-          setViewMode('driver');
-          localStorage.setItem('demandoo_view_mode', 'driver');
+      let candidateEmails = [];
+
+      if (rawInput.includes('@')) {
+        candidateEmails.push(rawInput);
+      } else {
+        // C'est un numéro de téléphone
+        const digits = rawInput.replace(/\D/g, '');
+        const phoneNoCountry = digits.replace(/^221/, '').replace(/^0+/, '');
+
+        // 1. Chercher dans la table profiles si un utilisateur correspond à ce numéro
+        try {
+          const { data: matchedProfiles } = await supabase
+            .from('profiles')
+            .select('email, phone')
+            .or(`phone.ilike.%${phoneNoCountry}%,email.ilike.%${phoneNoCountry}%`)
+            .limit(3);
+
+          if (matchedProfiles && matchedProfiles.length > 0) {
+            matchedProfiles.forEach(p => {
+              if (p.email && !candidateEmails.includes(p.email)) {
+                candidateEmails.push(p.email);
+              }
+            });
+          }
+        } catch (queryErr) {
+          console.warn("Phone lookup in profiles table failed:", queryErr);
+        }
+
+        // 2. Ajouter les formats générés standards
+        if (phoneNoCountry) {
+          candidateEmails.push(`driver.${phoneNoCountry}@demandoo.sn`);
+          candidateEmails.push(`driver.${digits}@demandoo.sn`);
+          candidateEmails.push(`221${phoneNoCountry}@demandoo.com`);
+          candidateEmails.push(`${phoneNoCountry}@demandoo.sn`);
         }
       }
-      return { user: profile || { role: 'passenger' } };
+
+      let authData = null;
+      let lastError = null;
+
+      // Tester successivement les emails candidats
+      for (const emailToTry of candidateEmails) {
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: emailToTry,
+          password
+        });
+        if (!error && data?.user) {
+          authData = data;
+          lastError = null;
+          break;
+        } else {
+          lastError = error;
+        }
+      }
+
+      if (!authData || !authData.user) {
+        return { error: translateAuthError(lastError) };
+      }
+
+      // Récupérer le profil complet
+      let profile = null;
+      const { data: userProfile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', authData.user.id)
+        .maybeSingle();
+
+      profile = userProfile;
+
+      if (!profile) {
+        const newProfile = {
+          id: authData.user.id,
+          email: authData.user.email,
+          full_name: authData.user.user_metadata?.full_name || authData.user.email?.split('@')[0] || 'Utilisateur',
+          role: role || 'driver',
+          driver_status: 'VERIFIED',
+          is_driver_active: true,
+          phone: authData.user.user_metadata?.phone || rawInput
+        };
+        const { data: inserted } = await supabase.from('profiles').insert([newProfile]).select().single();
+        profile = inserted || newProfile;
+      }
+
+      setUser(profile);
+      if (profile.role === 'driver' || role === 'driver') {
+        setViewMode('driver');
+        localStorage.setItem('demandoo_view_mode', 'driver');
+      }
+      localStorage.setItem('demandoo_user_v2', JSON.stringify(profile));
+
+      return { user: profile };
     } catch (err) {
       console.warn("Supabase auth exception:", err);
       return { error: translateAuthError(err) };
@@ -489,14 +566,14 @@ export const AuthProvider = ({ children }) => {
   const register = async (userData) => {
     const safeRole = VALID_ROLES.includes(userData.role) ? userData.role : 'passenger';
 
-    // Fonction utilitaire pour créer un utilisateur démo local
+    // Helper pour créer un profil démo si Supabase rate-limite ou est indisponible
     const createDemoUser = () => {
-      const fullName = `${userData.firstName || ''} ${userData.lastName || ''}`.trim() || 'Utilisateur';
       const mockUser = {
-        id: `usr-${Date.now()}`,
-        email: `221${(userData.phone || '').replace(/\s/g, '')}@demandoo-users.sn`,
-        full_name: fullName,
-        phone: userData.phone,
+        id: `driver-${Date.now()}`,
+        email: userData.email || `${(userData.phone || '770000000').replace(/\D/g, '')}@demandoo.sn`,
+        full_name: `${userData.firstName || ''} ${userData.lastName || ''}`.trim() || userData.name || 'Chauffeur Demandoo',
+        phone: userData.phone || '',
+        avatar_url: userData.avatar_url || userData.avatarBase64 || '',
         role: safeRole,
         driver_status: safeRole === 'driver' ? 'PENDING' : 'INCOMPLETE',
         is_driver_verified: false
@@ -510,12 +587,14 @@ export const AuthProvider = ({ children }) => {
       return createDemoUser();
     }
 
-    // Générer un email depuis le numéro de téléphone si non fourni
-    // Ex: 773033196 → 221773033196@demandoo.com
-    const phoneClean = (userData.phone || '').replace(/[\s\-\(\)]/g, '').trim();
-    const generatedEmail = (userData.email && userData.email.includes('@')
-      ? userData.email
-      : `221${phoneClean}@demandoo.com`).trim();
+    // Générer un email propre depuis le numéro de téléphone ou l'email renseigné
+    // Ex: 77 303 31 96 → driver.773033196@demandoo.sn
+    const phoneDigits = (userData.phone || '').replace(/\D/g, '').replace(/^221/, '');
+    const generatedEmail = (userData.email && userData.email.includes('@'))
+      ? userData.email.trim()
+      : `driver.${phoneDigits || Date.now()}@demandoo.sn`;
+
+    const userAvatar = userData.avatar_url || userData.avatarBase64 || '';
 
     try {
       // Bloquer onAuthStateChange pendant l'inscription pour éviter une navigation prématurée
@@ -531,6 +610,7 @@ export const AuthProvider = ({ children }) => {
             role: safeRole,
             firstName: userData.firstName || '',
             lastName: userData.lastName || '',
+            avatar_url: userAvatar,
           }
         }
       });
@@ -538,7 +618,7 @@ export const AuthProvider = ({ children }) => {
       if (error) {
         isRegistering.current = false;
         console.error("Erreur signUp:", error);
-        // Si rate limit Supabase → fallback mode démo pour ne pas bloquer les tests
+        // Si rate limit Supabase ou erreur de validation mail → fallback mode démo
         const errMsg = (error.message || '').toLowerCase();
         if (errMsg.includes('rate limit') || errMsg.includes('over_email_send_rate_limit') || error.status === 429) {
           console.warn('[Auth] Rate limit Supabase — basculement mode démo');
@@ -552,12 +632,17 @@ export const AuthProvider = ({ children }) => {
         return { success: false, error: "Impossible de créer votre compte. Veuillez réessayer." };
       }
 
-
-      // Le profil est désormais créé automatiquement par le trigger Supabase (on_auth_user_created).
+      // Mettre à jour l'avatar et les infos du profil en DB
       if (data.session) {
-        // Optionnel : on peut attendre un court instant pour s'assurer que le trigger a terminé son exécution
-        // avant d'essayer de récupérer le profil, bien que ce soit généralement instantané.
         await new Promise(resolve => setTimeout(resolve, 500));
+
+        if (userAvatar) {
+          try {
+            await supabase.from('profiles').update({ avatar_url: userAvatar }).eq('id', data.user.id);
+          } catch (photoErr) {
+            console.warn("Échec mise à jour avatar_url:", photoErr);
+          }
+        }
 
         // Enregistrer le véhicule en DB si fourni lors de l'inscription chauffeur
         if (safeRole === 'driver' && userData.vehicle && (userData.vehicle.brand || userData.vehicle.model)) {

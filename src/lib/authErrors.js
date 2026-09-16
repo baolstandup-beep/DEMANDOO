@@ -35,8 +35,8 @@ export function translateAuthError(error) {
   if (message.includes('password should be at least')) {
     return "Le mot de passe doit contenir au moins 6 caractères.";
   }
-  if (message.includes('invalid email')) {
-    return "Adresse email invalide.";
+  if (message.includes('invalid email') || message.includes('is invalid')) {
+    return "Adresse email ou numéro de téléphone non valide. Veuillez vérifier.";
   }
   if (message.includes('network') || message.includes('fetch')) {
     return "Problème de connexion internet. Vérifiez votre réseau.";
