@@ -54,7 +54,7 @@ export const TripProvider = ({ children }) => {
         .order('created_at', { ascending: false });
 
       if (tripsError) throw tripsError;
-      setTrips(tripsData && tripsData.length > 0 ? tripsData : INITIAL_TRIPS);
+      setTrips(tripsData || []);
 
       // Si l'utilisateur est connecté, charger ses réservations
       if (user) {
@@ -68,8 +68,8 @@ export const TripProvider = ({ children }) => {
       }
       
     } catch (err) {
-      console.warn('Supabase not available, using fallback data:', err?.message || err);
-      setTrips(INITIAL_TRIPS);
+      console.error('Erreur lors du chargement des données Supabase:', err?.message || err);
+      setTrips([]);
     } finally {
       setLoading(false);
     }
@@ -147,40 +147,24 @@ export const TripProvider = ({ children }) => {
       rules_pets: !!tripData.rules_pets,
       rules_smoking: !!tripData.rules_smoking,
       waypoints: Array.isArray(tripData.waypoints) ? tripData.waypoints : [],
-      cancellation_policy: tripData.cancellation_policy || 'Annulation gratuite jusqu\'à 24h avant le départ',
       status: 'scheduled'
     };
 
-    const isMockUser = typeof driverUser.id !== 'string' || driverUser.id.startsWith('usr-') || driverUser.id === 'driver-123';
-
-    if (!isSupabaseConfigured || isMockUser) {
-      const mockNewTrip = {
-        id: `trip-mock-${Date.now()}`,
-        ...newTrip,
-        driver: driverUser,
-        created_at: new Date().toISOString()
-      };
-      setTrips(prev => [mockNewTrip, ...prev]);
-      return mockNewTrip;
+    if (!isSupabaseConfigured) {
+      throw new Error("Erreur de configuration Supabase.");
     }
 
     try {
-      const { data, error } = await supabase.from('trips').insert([newTrip]).select('*').single();
+      const { data, error } = await supabase.from('trips').insert([newTrip]).select('*, driver:driver_id(*)').single();
       if (error) {
-        console.warn("Supabase insert trip fallback:", error?.message || error);
-        const fallbackTrip = { ...newTrip, id: `trip-${Date.now()}`, driver: driverUser, created_at: new Date().toISOString() };
-        setTrips(prev => [fallbackTrip, ...prev]);
-        return fallbackTrip;
+        throw new Error(error.message);
       }
       
-      const tripWithDriver = { ...data, driver: driverUser };
-      setTrips(prev => [tripWithDriver, ...prev]);
-      return tripWithDriver;
+      setTrips(prev => [data, ...prev]);
+      return data;
     } catch (err) {
-      console.warn("Supabase insert trip exception:", err?.message || err);
-      const fallbackTrip = { ...newTrip, id: `trip-${Date.now()}`, driver: driverUser, created_at: new Date().toISOString() };
-      setTrips(prev => [fallbackTrip, ...prev]);
-      return fallbackTrip;
+      console.error("Erreur lors de la publication :", err?.message || err);
+      throw err;
     }
   };
 
@@ -191,10 +175,8 @@ export const TripProvider = ({ children }) => {
       setTrips(trips.map(t => t.id === tripId ? data : t));
       return data;
     } catch (err) {
-      console.warn("Supabase update trip fallback:", err?.message || err);
-      const updatedTrip = { ...trips.find(t => t.id === tripId), ...tripData };
-      setTrips(trips.map(t => t.id === tripId ? updatedTrip : t));
-      return updatedTrip;
+      console.error("Erreur lors de la mise à jour :", err?.message || err);
+      throw err;
     }
   };
 
@@ -205,9 +187,8 @@ export const TripProvider = ({ children }) => {
       setTrips(trips.filter(t => t.id !== tripId));
       return true;
     } catch (err) {
-      console.warn("Supabase delete trip fallback:", err?.message || err);
-      setTrips(trips.filter(t => t.id !== tripId));
-      return true;
+      console.error("Erreur lors de la suppression :", err?.message || err);
+      throw err;
     }
   };
 
@@ -222,10 +203,8 @@ export const TripProvider = ({ children }) => {
       loadAllData(); // Refresh everything
       return data;
     } catch (err) {
-      console.warn("Supabase cancel trip fallback:", err?.message || err);
-      const updatedTrip = { ...trips.find(t => t.id === tripId), status: 'cancelled' };
-      setTrips(trips.map(t => t.id === tripId ? updatedTrip : t));
-      return updatedTrip;
+      console.error("Erreur lors de l'annulation :", err?.message || err);
+      throw err;
     }
   };
 
@@ -267,13 +246,7 @@ export const TripProvider = ({ children }) => {
     };
 
     if (!isSupabaseConfigured) {
-      setBookings(prev => [newBooking, ...prev]);
-      // Envoi du SMS de confirmation au passager via Afrotools
-      sendSmsNotification({
-        to: passengerPhone,
-        message: `DEMANDOO: Votre demande de réservation pour le trajet ${trip.departure_city} - ${trip.arrival_city} a été reçue.`
-      });
-      return newBooking;
+      throw new Error("Erreur de configuration Supabase.");
     }
 
     try {
@@ -286,28 +259,14 @@ export const TripProvider = ({ children }) => {
       });
       return data;
     } catch (err) {
-      console.warn("Supabase booking insert fallback:", err.message);
-      setBookings(prev => [newBooking, ...prev]);
-      return newBooking;
+      console.error("Erreur lors de la réservation :", err.message);
+      throw err;
     }
   };
 
   const acceptBooking = async (bookingId, driverUser) => {
     if (!isSupabaseConfigured) {
-      setBookings(prev => prev.map(b => {
-        if (b.id === bookingId) {
-          return { ...b, status: 'accepted' };
-        }
-        return b;
-      }));
-      const bk = bookings.find(b => b.id === bookingId);
-      if (bk) {
-        sendSmsNotification({
-          to: bk.passenger_phone,
-          message: `DEMANDOO: Votre réservation pour ${bk.trip?.arrival_city || 'votre trajet'} a été confirmée par le chauffeur !`
-        });
-      }
-      return { id: bookingId, status: 'accepted' };
+      throw new Error("Erreur de configuration Supabase.");
     }
 
     try {
@@ -321,16 +280,14 @@ export const TripProvider = ({ children }) => {
       }
       return booking;
     } catch (err) {
-      console.warn("Supabase accept booking fallback:", err?.message || err);
-      setBookings(prev => prev.map(b => b.id === bookingId ? { ...b, status: 'accepted' } : b));
-      return { id: bookingId, status: 'accepted' };
+      console.error("Erreur lors de l'acceptation :", err?.message || err);
+      throw err;
     }
   };
 
   const rejectBooking = async (bookingId, driverUser) => {
     if (!isSupabaseConfigured) {
-      setBookings(prev => prev.map(b => b.id === bookingId ? { ...b, status: 'rejected' } : b));
-      return { id: bookingId, status: 'rejected' };
+      throw new Error("Erreur de configuration Supabase.");
     }
 
     try {
@@ -339,9 +296,8 @@ export const TripProvider = ({ children }) => {
       loadAllData();
       return booking;
     } catch (err) {
-      console.warn("Supabase reject booking fallback:", err?.message || err);
-      setBookings(prev => prev.map(b => b.id === bookingId ? { ...b, status: 'rejected' } : b));
-      return { id: bookingId, status: 'rejected' };
+      console.error("Erreur lors du refus :", err?.message || err);
+      throw err;
     }
   };
 

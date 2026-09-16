@@ -93,6 +93,7 @@ CREATE TABLE IF NOT EXISTS public.trips (
     rules_luggage TEXT DEFAULT 'Bagages standards acceptés',
     rules_pets BOOLEAN DEFAULT false,
     rules_smoking BOOLEAN DEFAULT false,
+    cancellation_policy TEXT DEFAULT 'Annulation gratuite jusqu''à 24h avant le départ',
     waypoints JSONB DEFAULT '[]'::jsonb,
     status TEXT DEFAULT 'scheduled' CHECK (status IN ('scheduled', 'ongoing', 'completed', 'cancelled')),
     created_at TIMESTAMPTZ DEFAULT NOW(),
