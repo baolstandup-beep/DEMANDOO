@@ -8,6 +8,9 @@ const AuthContext = createContext();
 // Rôles valides — jamais 'admin' depuis le navigateur
 const VALID_ROLES = ['passenger', 'driver'];
 
+// Helper pour sécuriser le code secret de 4 chiffres
+const padSecretCode = (code) => `DMD-Sec-24!${code}`;
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -457,6 +460,11 @@ export const AuthProvider = ({ children }) => {
     const rawInput = (identifier || '').trim();
     if (!rawInput) return { error: "Veuillez renseigner votre email ou numéro de téléphone." };
 
+    // Padding du code secret s'il s'agit d'un code à 4 chiffres
+    const paddedPassword = password?.length === 4 && /^\d+$/.test(password) 
+      ? padSecretCode(password) 
+      : password;
+
     // Si Supabase n'est pas configuré, mode hors-ligne basique (uniquement pour le développement)
     if (!isSupabaseConfigured) {
       const mockUser = {
@@ -513,11 +521,10 @@ export const AuthProvider = ({ children }) => {
       let authData = null;
       let lastError = null;
 
-      // Tester successivement les emails candidats
       for (const emailToTry of candidateEmails) {
         const { data, error } = await supabase.auth.signInWithPassword({
           email: emailToTry,
-          password
+          password: paddedPassword
         });
         if (!error && data?.user) {
           authData = data;
@@ -615,13 +622,18 @@ export const AuthProvider = ({ children }) => {
     // Ne JAMAIS envoyer de base64 lourd dans user_metadata Supabase Auth (limite stricte de 1MB par GoTrue)
     const lightweightAvatarUrl = (userAvatar && userAvatar.startsWith('http')) ? userAvatar : '';
 
+    // Padding du code secret s'il s'agit d'un code à 4 chiffres
+    const paddedPassword = userData.password?.length === 4 && /^\d+$/.test(userData.password) 
+      ? padSecretCode(userData.password) 
+      : userData.password;
+
     try {
       // Bloquer onAuthStateChange pendant l'inscription pour éviter une navigation prématurée
       isRegistering.current = true;
 
       const { data, error } = await supabase.auth.signUp({
         email: generatedEmail,
-        password: userData.password,
+        password: paddedPassword,
         options: {
           data: {
             full_name: `${userData.firstName || ''} ${userData.lastName || ''}`.trim() || userData.name || '',
