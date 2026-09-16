@@ -276,16 +276,28 @@ export const TripProvider = ({ children }) => {
     }
 
     try {
-      const { data, error } = await supabase.from('bookings').insert([supabasePayload]).select('*, trip:trip_id(*)').single();
-      if (error) throw error;
-      setBookings(prev => [data, ...prev]);
+      const { data: insertData, error: insertError } = await supabase.from('bookings').insert([supabasePayload]).select().single();
+      if (insertError) {
+        console.error('[DEMANDOO SUPABASE]', insertError);
+        throw insertError;
+      }
+      
+      let finalBooking = insertData;
+      try {
+        const { data: joinedBooking } = await supabase.from('bookings').select('*, trip:trips(*)').eq('id', insertData.id).single();
+        if (joinedBooking) finalBooking = joinedBooking;
+      } catch (joinErr) {
+        console.warn("Impossible de joindre le trajet (non-bloquant):", joinErr);
+      }
+      
+      setBookings(prev => [finalBooking, ...prev]);
       sendSmsNotification({
         to: passengerPhone,
         message: `DEMANDOO: Votre demande de réservation pour le trajet ${trip.departure_city} - ${trip.arrival_city} a été reçue.`
       });
-      return data;
+      return finalBooking;
     } catch (err) {
-      console.error("Erreur lors de la réservation :", err.message);
+      console.error('[DEMANDOO SUPABASE]', err);
       throw err;
     }
   };
@@ -296,17 +308,28 @@ export const TripProvider = ({ children }) => {
     }
 
     try {
-      const { data: booking, error } = await supabase.from('bookings').update({ status: 'accepted' }).eq('id', bookingId).select('*, trip:trip_id(*)').single();
-      if (error) throw error;
+      const { data: updateData, error } = await supabase.from('bookings').update({ status: 'accepted' }).eq('id', bookingId).select().single();
+      if (error) {
+        console.error('[DEMANDOO SUPABASE]', error);
+        throw error;
+      }
       
-      const trip = booking.trip;
+      let finalBooking = updateData;
+      try {
+        const { data: joinedBooking } = await supabase.from('bookings').select('*, trip:trips(*)').eq('id', bookingId).single();
+        if (joinedBooking) finalBooking = joinedBooking;
+      } catch (joinErr) {
+        console.warn("Impossible de joindre le trajet (non-bloquant):", joinErr);
+      }
+      
+      const trip = finalBooking.trip || trips.find(t => t.id === finalBooking.trip_id);
       if (trip && trip.driver_id === driverUser.id) {
-         await supabase.from('trips').update({ seats_available: Math.max(0, trip.seats_available - booking.seats_booked) }).eq('id', trip.id);
+         await supabase.from('trips').update({ seats_available: Math.max(0, trip.seats_available - finalBooking.seats_booked) }).eq('id', trip.id);
          loadAllData();
       }
-      return booking;
+      return finalBooking;
     } catch (err) {
-      console.error("Erreur lors de l'acceptation :", err?.message || err);
+      console.error('[DEMANDOO SUPABASE]', err);
       throw err;
     }
   };
@@ -317,12 +340,24 @@ export const TripProvider = ({ children }) => {
     }
 
     try {
-      const { data: booking, error } = await supabase.from('bookings').update({ status: 'rejected' }).eq('id', bookingId).select('*, trip:trip_id(*)').single();
-      if (error) throw error;
+      const { data: updateData, error } = await supabase.from('bookings').update({ status: 'rejected' }).eq('id', bookingId).select().single();
+      if (error) {
+        console.error('[DEMANDOO SUPABASE]', error);
+        throw error;
+      }
+      
+      let finalBooking = updateData;
+      try {
+        const { data: joinedBooking } = await supabase.from('bookings').select('*, trip:trips(*)').eq('id', bookingId).single();
+        if (joinedBooking) finalBooking = joinedBooking;
+      } catch (joinErr) {
+        console.warn("Impossible de joindre le trajet (non-bloquant):", joinErr);
+      }
+      
       loadAllData();
-      return booking;
+      return finalBooking;
     } catch (err) {
-      console.error("Erreur lors du refus :", err?.message || err);
+      console.error('[DEMANDOO SUPABASE]', err);
       throw err;
     }
   };
