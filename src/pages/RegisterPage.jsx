@@ -1,12 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { StepIndicator } from '../components/register/StepIndicator';
 import { StepIdentity } from '../components/register/StepIdentity';
-import { StepDriverPhoto } from '../components/register/StepDriverPhoto';
-import { StepVehicleInfo } from '../components/register/StepVehicleInfo';
-import { StepVehiclePhotos } from '../components/register/StepVehiclePhotos';
-import { StepSummary } from '../components/register/StepSummary';
 
 const STORAGE_KEY = 'demandoo_draft_registration';
 
@@ -14,28 +9,14 @@ const INITIAL_DATA = {
   firstName: '',
   lastName: '',
   phone: '',
-  email: '',
   password: '',
   confirmPassword: '',
-  avatarBase64: null,
-  licenseFrontBase64: null,
-  licenseBackBase64: null,
-  brand: '',
-  model: '',
-  year: '',
-  color: '',
-  seatsCount: '',
-  vehicleType: '',
-  licensePlate: '',
-  vehiclePhotos: [],
-  acceptedTerms: false,
 };
 
 export const RegisterPage = () => {
   const navigate = useNavigate();
   const { register } = useAuth();
 
-  const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState(INITIAL_DATA);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -46,7 +27,6 @@ export const RegisterPage = () => {
 
   // Charger le brouillon
   useEffect(() => {
-    // FORCE CLEAR POUR REGLER LE BUG ACTUEL (TEMPORAIRE)
     localStorage.removeItem(STORAGE_KEY);
     
     const draft = localStorage.getItem(STORAGE_KEY);
@@ -56,7 +36,6 @@ export const RegisterPage = () => {
         setFormData((prev) => ({
           ...prev, 
           ...parsed,
-          vehiclePhotos: Array.isArray(parsed.vehiclePhotos) ? parsed.vehiclePhotos : []
         }));
       } catch (e) {
         console.error("Failed to parse draft registration", e);
@@ -66,21 +45,11 @@ export const RegisterPage = () => {
 
   // Sauvegarder le brouillon à chaque modification
   useEffect(() => {
-    // Ne pas sauvegarder le mot de passe (sécurité) ni les images en base64 pour éviter de saturer le localStorage
-    const { 
-      password, 
-      confirmPassword, 
-      avatarBase64, 
-      licenseFrontBase64, 
-      licenseBackBase64, 
-      vehiclePhotos, 
-      ...draftData 
-    } = formData;
-    
+    const { password, confirmPassword, ...draftData } = formData;
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(draftData));
     } catch (error) {
-      console.warn("Impossible de sauvegarder le brouillon: quota dépassé", error);
+      console.warn("Impossible de sauvegarder le brouillon", error);
     }
   }, [formData]);
 
@@ -88,35 +57,23 @@ export const RegisterPage = () => {
     setFormData((prev) => ({ ...prev, ...newData }));
   };
 
-  const nextStep = () => {
+  const handleSubmit = async () => {
     setError('');
     
-    // Validation étape 1
-    if (currentStep === 1) {
-      if (formData.password !== formData.confirmPassword) {
-        setError("Les mots de passe ne correspondent pas.");
-        return;
-      }
-      if (formData.password.length < 6) {
-        setError("Le mot de passe doit contenir au moins 6 caractères.");
-        return;
-      }
-      if (!formData.phone || formData.phone.replace(/\s/g, '').length < 8) {
-        setError("Veuillez saisir un numéro de téléphone valide.");
-        return;
-      }
+    // Validation
+    if (formData.password !== formData.confirmPassword) {
+      setError("Les codes secrets ne correspondent pas.");
+      return;
+    }
+    if (formData.password.length !== 4) {
+      setError("Le code secret doit contenir exactement 4 chiffres.");
+      return;
+    }
+    if (!formData.phone || formData.phone.replace(/\s/g, '').length < 8) {
+      setError("Veuillez saisir un numéro de téléphone valide.");
+      return;
     }
 
-    window.scrollTo(0, 0);
-    setCurrentStep((prev) => Math.min(prev + 1, 3));
-  };
-
-  const prevStep = () => {
-    window.scrollTo(0, 0);
-    setCurrentStep((prev) => Math.max(prev - 1, 1));
-  };
-
-  const handleSubmit = async () => {
     if (isLoading) return;
     setIsLoading(true);
     
@@ -125,30 +82,20 @@ export const RegisterPage = () => {
         firstName: formData.firstName,
         lastName: formData.lastName,
         phone: formData.phone,
-        email: formData.email,
         password: formData.password,
-        role: 'driver',
-        avatar_url: formData.avatarBase64,
-        vehicle: {
-          brand: formData.brand || 'Standard',
-          model: formData.model || 'Véhicule',
-          year: formData.year || '2022',
-          color: formData.color || 'Gris',
-          seats_count: 4,
-          vehicle_type: 'Berline',
-          license_plate: formData.licensePlate || 'DK-0000-XX'
-        }
+        role: 'driver'
       });
 
       if (result.success) {
         localStorage.removeItem(STORAGE_KEY);
-        navigate('/abonnement');
+        // Rediriger vers l'espace chauffeur (ils devront compléter leur profil plus tard)
+        navigate('/espace-chauffeur');
       } else {
-        alert(result.error || "Une erreur est survenue.");
+        setError(result.error || "Une erreur est survenue.");
       }
     } catch (e) {
       console.error("Register submit error:", e);
-      alert(e?.message || "Une erreur inattendue est survenue.");
+      setError(e?.message || "Une erreur inattendue est survenue.");
     } finally {
       setIsLoading(false);
     }
@@ -169,29 +116,17 @@ export const RegisterPage = () => {
           </Link>
         </div>
 
-        <StepIndicator currentStep={currentStep} totalSteps={3} onBack={prevStep} />
-
         <div className="min-h-[360px]">
-          {currentStep === 1 && (
-            <StepIdentity 
-              data={formData} 
-              updateData={updateData} 
-              onNext={nextStep} 
-              showPassword={showPassword}
-              setShowPassword={setShowPassword}
-              showConfirmPassword={showConfirmPassword}
-              setShowConfirmPassword={setShowConfirmPassword}
-              error={error}
-            />
-          )}
-          
-          {currentStep === 2 && (
-            <StepDriverPhoto data={formData} updateData={updateData} onNext={nextStep} />
-          )}
-
-          {currentStep === 3 && (
-            <StepSummary data={formData} updateData={updateData} onSubmit={handleSubmit} isLoading={isLoading} />
-          )}
+          <StepIdentity 
+            data={formData} 
+            updateData={updateData} 
+            onNext={handleSubmit} 
+            showPassword={showPassword}
+            setShowPassword={setShowPassword}
+            showConfirmPassword={showConfirmPassword}
+            setShowConfirmPassword={setShowConfirmPassword}
+            error={error}
+          />
         </div>
 
         <p className="text-sm text-center text-slate-400 font-medium mt-8 border-t border-slate-100 pt-6">

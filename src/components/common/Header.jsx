@@ -81,6 +81,13 @@ export const Header = () => {
           >
             Comment ça marche
           </a>
+          <a 
+            href="/#abonnements" 
+            className="px-4 py-1.5 rounded-xl text-xs font-bold transition-all text-slate-600 hover:text-demandoo-600 hover:bg-white/50 flex items-center gap-1"
+          >
+            <Sparkles className="w-3 h-3 text-amber-500" />
+            Abonnements
+          </a>
           {!user && (
             <Link 
               to="/login" 
@@ -442,6 +449,14 @@ export const Header = () => {
               >
                 <HelpCircle className="w-4 h-4 text-slate-400" />
                 Comment ça marche ?
+              </a>
+
+              <a 
+                href="/#abonnements" 
+                className="flex items-center gap-3 px-3.5 py-3 rounded-xl font-bold text-sm text-slate-700 hover:bg-slate-50 hover:text-demandoo-600 transition-colors"
+              >
+                <Sparkles className="w-4 h-4 text-amber-500" />
+                Abonnements Chauffeur (0% Com)
               </a>
             </nav>
 

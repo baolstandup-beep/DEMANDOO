@@ -1,5 +1,5 @@
 import React from 'react';
-import { User, Eye, EyeOff, Lock, Mail } from 'lucide-react';
+import { User, Eye, EyeOff, Lock } from 'lucide-react';
 
 export const StepIdentity = ({ data, updateData, onNext, showPassword, setShowPassword, showConfirmPassword, setShowConfirmPassword, error }) => {
   const handleSubmit = (e) => {
@@ -71,34 +71,19 @@ export const StepIdentity = ({ data, updateData, onNext, showPassword, setShowPa
       </div>
 
       <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest block ml-1">Adresse Email</label>
-          <span className="text-[10px] font-bold text-slate-400">Optionnel</span>
-        </div>
-        <div className="relative">
-          <Mail className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
-          <input
-            type="email"
-            value={data.email || ''}
-            onChange={(e) => updateData({ email: e.target.value })}
-            placeholder="Ex: chauffeur@gmail.com"
-            className="w-full pl-11 pr-4 py-3.5 rounded-2xl bg-white border border-slate-200 text-sm font-bold text-slate-900 placeholder:text-slate-400 focus:border-demandoo-500 focus:ring-2 focus:ring-demandoo-500/20 transition-all outline-none"
-          />
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest block ml-1">Mot de passe *</label>
+        <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest block ml-1">Code secret (4 chiffres) *</label>
         <div className="relative">
           <Lock className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
           <input
             type={showPassword ? "text" : "password"}
+            inputMode="numeric"
+            maxLength={4}
+            pattern="[0-9]{4}"
             value={data.password}
-            onChange={(e) => updateData({ password: e.target.value })}
-            placeholder="••••••••"
+            onChange={(e) => updateData({ password: e.target.value.replace(/[^0-9]/g, '') })}
+            placeholder="••••"
             className="w-full pl-11 pr-12 py-3.5 rounded-2xl bg-white border border-slate-200 text-sm font-bold text-slate-900 placeholder:text-slate-400 focus:border-demandoo-500 focus:ring-2 focus:ring-demandoo-500/20 transition-all outline-none"
             required
-            minLength={6}
           />
           <button 
             type="button" 
@@ -111,14 +96,17 @@ export const StepIdentity = ({ data, updateData, onNext, showPassword, setShowPa
       </div>
 
       <div className="space-y-2">
-        <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest block ml-1">Confirmation du mot de passe *</label>
+        <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest block ml-1">Confirmation du code secret *</label>
         <div className="relative">
           <Lock className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
           <input
             type={showConfirmPassword ? "text" : "password"}
+            inputMode="numeric"
+            maxLength={4}
+            pattern="[0-9]{4}"
             value={data.confirmPassword}
-            onChange={(e) => updateData({ confirmPassword: e.target.value })}
-            placeholder="••••••••"
+            onChange={(e) => updateData({ confirmPassword: e.target.value.replace(/[^0-9]/g, '') })}
+            placeholder="••••"
             className="w-full pl-11 pr-12 py-3.5 rounded-2xl bg-white border border-slate-200 text-sm font-bold text-slate-900 placeholder:text-slate-400 focus:border-demandoo-500 focus:ring-2 focus:ring-demandoo-500/20 transition-all outline-none"
             required
           />
@@ -136,8 +124,9 @@ export const StepIdentity = ({ data, updateData, onNext, showPassword, setShowPa
         type="submit"
         className="w-full py-4 rounded-2xl font-black text-sm text-white bg-slate-900 hover:bg-slate-800 transition-colors"
       >
-        Étape suivante
+        Créer mon compte
       </button>
     </form>
   );
 };
+

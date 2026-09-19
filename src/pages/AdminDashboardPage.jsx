@@ -2,27 +2,12 @@ import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useTrips } from '../context/TripContext';
 import { useNotifications } from '../context/NotificationContext';
-import { VerifiedDriverBadge } from '../components/common/Badge';
-import { 
-  ShieldAlert, 
-  Users, 
-  Car, 
-  CreditCard, 
-  FileText, 
-  CheckCircle2, 
-  XCircle, 
-  Eye, 
-  Lock, 
-  RefreshCw,
-  Search,
-  Building2,
-  DollarSign
-} from 'lucide-react';
+import { ShieldAlert } from 'lucide-react';
 import { AdminSubscriptionsPage } from './AdminSubscriptionsPage';
 
 export const AdminDashboardPage = () => {
   const { user } = useAuth();
-  const { verifications, reviewDriverVerification, payments, bookings, trips, drivers, partners } = useTrips();
+  const { verifications, reviewDriverVerification, payments, trips, partners } = useTrips();
   const { addNotification } = useNotifications();
 
   const [activeTab, setActiveTab] = useState('verifications'); // 'verifications', 'payments', 'trips', 'partners'
