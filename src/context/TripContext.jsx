@@ -50,21 +50,50 @@ export const TripProvider = ({ children }) => {
     try {
       const { data: tripsData, error: tripsError } = await supabase
         .from('trips')
-        .select(`*, driver:driver_id(*)`)
+        .select('*')
         .order('created_at', { ascending: false });
 
       if (tripsError) throw tripsError;
-      setTrips(tripsData && tripsData.length > 0 ? tripsData : INITIAL_TRIPS);
+      
+      const driverIds = [...new Set((tripsData || []).map(t => t.driver_id).filter(Boolean))];
+      let profilesById = new Map();
+      
+      if (driverIds.length > 0) {
+        const { data: profiles, error: profilesError } = await supabase
+          .from('profiles')
+          .select('id, full_name, email, phone, avatar_url, role, driver_status, is_driver_verified')
+          .in('id', driverIds);
+          
+        if (!profilesError && profiles) {
+          profilesById = new Map(profiles.map(p => [p.id, p]));
+        }
+      }
+      
+      const tripsDataMapped = tripsData ? tripsData.map(t => ({
+        ...t,
+        driver: profilesById.get(t.driver_id) || null,
+        estimated_duration: t.rules?.estimated_duration || '2h 30m',
+        rules_luggage: t.rules?.rules_luggage,
+        rules_pets: t.rules?.rules_pets,
+        rules_smoking: t.rules?.rules_smoking,
+        waypoints: t.rules?.waypoints || [],
+      })) : [];
+      
+      setTrips(tripsDataMapped.length > 0 ? tripsDataMapped : INITIAL_TRIPS);
 
       // Si l'utilisateur est connecté, charger ses réservations
       if (user) {
         const { data: bookingsData } = await supabase
           .from('bookings')
-          .select(`*, trip:trip_id(*)`)
+          .select('*')
           .eq('passenger_id', user.id)
           .order('created_at', { ascending: false });
         
-        setBookings(bookingsData || []);
+        const bookingsMapped = (bookingsData || []).map(b => ({
+          ...b,
+          trip: tripsDataMapped.find(t => t.id === b.trip_id) || null
+        }));
+        setBookings(bookingsMapped);
       }
       
     } catch (err) {
@@ -128,13 +157,12 @@ export const TripProvider = ({ children }) => {
   const getTripById = (id) => trips.find(t => t.id === id) || null;
 
   const publishTrip = async (tripData, driverUser) => {
-    const isAllowed = driverUser?.role === 'admin' || (driverUser?.driver_status === 'VERIFIED' && driverUser?.is_driver_active);
+    const isAllowed = driverUser?.role === 'admin' || driverUser?.role === 'driver';
     if (!isAllowed) {
-      throw new Error("403 FORBIDDEN: Seuls les chauffeurs vérifiés et actifs peuvent publier un trajet.");
+      throw new Error("403 FORBIDDEN: Seuls les chauffeurs peuvent publier un trajet.");
     }
     
-    // Le contrôle du quota est théoriquement fait par RLS sur Supabase
-    
+    // Pour l'interface (état local)
     const newTrip = {
       driver_id: driverUser.id,
       departure_city: tripData.departure_city,
@@ -154,7 +182,29 @@ export const TripProvider = ({ children }) => {
       status: 'scheduled'
     };
 
-    const isMockUser = !driverUser.id || typeof driverUser.id !== 'string' || driverUser.id.startsWith('usr-') || driverUser.id === 'driver-123';
+    // Pour Supabase (colonnes valides uniquement)
+    const dbTrip = {
+      driver_id: driverUser.id,
+      departure_city: tripData.departure_city,
+      departure_address: tripData.departure_address,
+      arrival_city: tripData.arrival_city,
+      arrival_address: tripData.arrival_address,
+      departure_datetime: tripData.departure_datetime,
+      seats_total: parseInt(tripData.seats_total, 10),
+      seats_available: parseInt(tripData.seats_total, 10),
+      price_per_seat: parseInt(tripData.price_per_seat, 10),
+      cancellation_policy: tripData.cancellation_policy || 'Annulation gratuite jusqu\'à 24h avant le départ',
+      status: 'scheduled',
+      rules: {
+        estimated_duration: tripData.estimated_duration || '2h 30m',
+        rules_luggage: tripData.rules_luggage || 'Sacs ordinaires',
+        rules_pets: !!tripData.rules_pets,
+        rules_smoking: !!tripData.rules_smoking,
+        waypoints: Array.isArray(tripData.waypoints) ? tripData.waypoints : []
+      }
+    };
+
+    const isMockUser = !driverUser.id || typeof driverUser.id !== 'string' || driverUser.id.startsWith('usr-') || driverUser.id.startsWith('driver-') || driverUser.id.startsWith('demo-');
 
     if (!isSupabaseConfigured || isMockUser) {
       const mockNewTrip = {
@@ -168,24 +218,39 @@ export const TripProvider = ({ children }) => {
     }
 
     try {
-      const { data, error } = await supabase.from('trips').insert([newTrip]).select('*, driver:driver_id(*)').single();
-      if (error) throw error;
+      const { data, error } = await supabase.from('trips').insert([dbTrip]).select('*').single();
+      if (error) {
+        console.error("Supabase insert trip error:", error);
+        alert(`Erreur de publication du trajet dans la base de données: ${error.message || JSON.stringify(error)}`);
+        throw error;
+      }
       
-      setTrips([data, ...trips]);
-      return data;
+      const formattedData = {
+        ...data,
+        driver: driverUser,
+        estimated_duration: data.rules?.estimated_duration || '2h 30m',
+        rules_luggage: data.rules?.rules_luggage,
+        rules_pets: data.rules?.rules_pets,
+        rules_smoking: data.rules?.rules_smoking,
+        waypoints: data.rules?.waypoints || [],
+      };
+      
+      setTrips([formattedData, ...trips]);
+      return formattedData;
     } catch (err) {
-      console.warn("Supabase insert trip fallback:", err?.message || err);
-      setTrips([newTrip, ...trips]);
-      return newTrip;
+      console.warn("Supabase insert trip fallback failed:", err?.message || err);
+      throw err;
     }
   };
 
   const updateTrip = async (tripId, tripData, user) => {
     try {
-      const { data, error } = await supabase.from('trips').update(tripData).eq('id', tripId).eq('driver_id', user.id).select('*, driver:driver_id(*)').single();
+      const { data, error } = await supabase.from('trips').update(tripData).eq('id', tripId).eq('driver_id', user.id).select('*').single();
       if (error) throw error;
-      setTrips(trips.map(t => t.id === tripId ? data : t));
-      return data;
+      const existingDriver = trips.find(t => t.id === tripId)?.driver;
+      const formattedData = { ...data, driver: existingDriver };
+      setTrips(trips.map(t => t.id === tripId ? formattedData : t));
+      return formattedData;
     } catch (err) {
       console.warn("Supabase update trip fallback:", err?.message || err);
       const updatedTrip = { ...trips.find(t => t.id === tripId), ...tripData };
@@ -209,14 +274,16 @@ export const TripProvider = ({ children }) => {
 
   const cancelTrip = async (tripId, user) => {
     try {
-      const { data, error } = await supabase.from('trips').update({ status: 'cancelled' }).eq('id', tripId).eq('driver_id', user.id).select('*, driver:driver_id(*)').single();
+      const { data, error } = await supabase.from('trips').update({ status: 'cancelled' }).eq('id', tripId).eq('driver_id', user.id).select('*').single();
       if (error) throw error;
       
       // Annulation des réservations en cascade (idéalement via trigger DB)
       await supabase.from('bookings').update({ status: 'rejected', rejection_reason: 'trip_cancelled' }).eq('trip_id', tripId).in('status', ['pending', 'accepted']);
       
       loadAllData(); // Refresh everything
-      return data;
+      
+      const existingDriver = trips.find(t => t.id === tripId)?.driver;
+      return { ...data, driver: existingDriver };
     } catch (err) {
       console.warn("Supabase cancel trip fallback:", err?.message || err);
       const updatedTrip = { ...trips.find(t => t.id === tripId), status: 'cancelled' };
@@ -273,9 +340,9 @@ export const TripProvider = ({ children }) => {
     }
 
     try {
-      const { data, error } = await supabase.from('bookings').insert([supabasePayload]).select('*, trip:trip_id(*)').single();
+      const { data, error } = await supabase.from('bookings').insert([supabasePayload]).select('*').single();
       if (error) throw error;
-      setBookings(prev => [data, ...prev]);
+      setBookings(prev => [{ ...data, trip: trips.find(t => t.id === tripId) }, ...prev]);
       sendSmsNotification({
         to: passengerPhone,
         message: `DEMANDOO: Votre demande de réservation pour le trajet ${trip.departure_city} - ${trip.arrival_city} a été reçue.`
@@ -307,10 +374,10 @@ export const TripProvider = ({ children }) => {
     }
 
     try {
-      const { data: booking, error } = await supabase.from('bookings').update({ status: 'accepted' }).eq('id', bookingId).select('*, trip:trip_id(*)').single();
+      const { data: booking, error } = await supabase.from('bookings').update({ status: 'accepted' }).eq('id', bookingId).select('*').single();
       if (error) throw error;
       
-      const trip = booking.trip;
+      const trip = trips.find(t => t.id === booking.trip_id);
       if (trip && trip.driver_id === driverUser.id) {
          await supabase.from('trips').update({ seats_available: Math.max(0, trip.seats_available - booking.seats_booked) }).eq('id', trip.id);
          loadAllData();
@@ -330,7 +397,7 @@ export const TripProvider = ({ children }) => {
     }
 
     try {
-      const { data: booking, error } = await supabase.from('bookings').update({ status: 'rejected' }).eq('id', bookingId).select('*, trip:trip_id(*)').single();
+      const { data: booking, error } = await supabase.from('bookings').update({ status: 'rejected' }).eq('id', bookingId).select('*').single();
       if (error) throw error;
       loadAllData();
       return booking;

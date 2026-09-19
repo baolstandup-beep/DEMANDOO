@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
-import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { supabase, isSupabaseConfigured, setCustomAuthToken, clearCustomAuthToken } from '../lib/supabase';
 import { translateAuthError } from '../lib/authErrors';
 import { isNative } from '../capacitor/index';
 
@@ -19,6 +19,29 @@ export const AuthProvider = ({ children }) => {
     let mounted = true;
 
     async function getInitialSession() {
+      // ── 1. Tentative via Custom JWT (Phone + PIN) ─────────────────────────
+      try {
+        const meResp = await fetch('/api/auth/me', { credentials: 'include' });
+        if (meResp.ok) {
+          const meData = await meResp.json();
+          if (meData.success && meData.user && mounted) {
+            // Injecter le JWT custom dans le client Supabase (RLS compatibility)
+            setCustomAuthToken(meData.access_token);
+            setUser(meData.user);
+            if (meData.user.role === 'driver' && meData.user.driver_status === 'VERIFIED') {
+              const storedMode = localStorage.getItem('demandoo_view_mode');
+              setViewMode(storedMode === 'driver' ? 'driver' : 'passenger');
+            }
+            if (mounted) setLoading(false);
+            return;
+          }
+        }
+      } catch (e) {
+        // API custom non disponible (dev local sans Vercel) — continuer
+        console.info('[Auth] Custom API unavailable, falling back to Supabase Auth');
+      }
+
+      // ── 2. Fallback mode hors-ligne (démo) ───────────────────────────────
       if (!isSupabaseConfigured) {
         try {
           const stored = localStorage.getItem('demandoo_user_v2');
@@ -30,13 +53,14 @@ export const AuthProvider = ({ children }) => {
             else if (parsed.role === 'driver') setViewMode('driver');
           }
         } catch (e) {
-          console.error("Error reading stored local session:", e);
+          console.error('Error reading stored local session:', e);
         } finally {
           if (mounted) setLoading(false);
         }
         return;
       }
 
+      // ── 3. Fallback Supabase Auth (Google OAuth) ──────────────────────────
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (session && mounted) {
@@ -46,7 +70,7 @@ export const AuthProvider = ({ children }) => {
           setLoading(false);
         }
       } catch (error) {
-        console.error("Error getting session:", error);
+        console.error('Error getting Supabase session:', error);
         if (mounted) setLoading(false);
       }
     }
@@ -57,9 +81,9 @@ export const AuthProvider = ({ children }) => {
       return () => { mounted = false; };
     }
 
+    // Écouter les événements Supabase Auth (Google OAuth seulement)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!mounted) return;
-      // Ne pas interrompre une inscription en cours
       if (isRegistering.current) return;
       if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
         if (session) await fetchUserProfile(session.user);
@@ -210,8 +234,17 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = async () => {
+    // Déconnexion Custom Auth (Phone+PIN)
+    try {
+      await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+    } catch (e) {
+      console.warn('[Auth] Logout API unavailable', e);
+    }
+    clearCustomAuthToken();
+
+    // Déconnexion Supabase Auth (Google OAuth)
     if (isSupabaseConfigured) {
-      await supabase.auth.signOut();
+      await supabase.auth.signOut().catch(() => {});
     }
     setUser(null);
     setViewMode('passenger');
@@ -455,141 +488,67 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (identifier, password, role = 'passenger') => {
     const rawInput = (identifier || '').trim();
-    if (!rawInput) return { error: "Veuillez renseigner votre email ou numéro de téléphone." };
+    if (!rawInput) return { error: 'Veuillez renseigner votre téléphone.' };
 
-    // Si Supabase n'est pas configuré, mode hors-ligne basique (uniquement pour le développement)
+    // ── Mode démo (Supabase non configuré) ───────────────────────────────────
     if (!isSupabaseConfigured) {
       const mockUser = {
         id: 'mock-user-1',
-        email: rawInput,
-        full_name: 'Utilisateur Démo',
-        role: role,
-        driver_status: role === 'driver' ? 'VERIFIED' : null,
+        phone: rawInput,
+        full_name: 'Chauffeur Démo',
+        role: 'driver',
+        driver_status: 'VERIFIED',
       };
       setUser(mockUser);
       localStorage.setItem('demandoo_user_v2', JSON.stringify(mockUser));
-      if (role === 'driver') setViewMode('driver');
+      setViewMode('driver');
       return { user: mockUser };
     }
 
+    // ── Auth Custom Phone + PIN ───────────────────────────────────────────────
     try {
-      let candidateEmails = [];
+      const resp = await fetch('/api/auth/login', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: rawInput, pin: password }),
+      });
 
-      if (rawInput.includes('@')) {
-        candidateEmails.push(rawInput);
-      } else {
-        // C'est un numéro de téléphone
-        const digits = rawInput.replace(/\D/g, '');
-        const phoneNoCountry = digits.replace(/^221/, '').replace(/^0+/, '');
+      const data = await resp.json();
 
-        // 1. Chercher dans la table profiles si un utilisateur correspond à ce numéro
-        try {
-          const { data: matchedProfiles } = await supabase
-            .from('profiles')
-            .select('email, phone')
-            .or(`phone.ilike.%${phoneNoCountry}%,email.ilike.%${phoneNoCountry}%`)
-            .limit(3);
-
-          if (matchedProfiles && matchedProfiles.length > 0) {
-            matchedProfiles.forEach(p => {
-              if (p.email && !candidateEmails.includes(p.email)) {
-                candidateEmails.push(p.email);
-              }
-            });
-          }
-        } catch (queryErr) {
-          console.warn("Phone lookup in profiles table failed:", queryErr);
-        }
-
-        // 2. Ajouter les formats générés standards
-        if (phoneNoCountry) {
-          candidateEmails.push(`driver.${phoneNoCountry}@demandoo.sn`);
-          candidateEmails.push(`driver.${digits}@demandoo.sn`);
-          candidateEmails.push(`221${phoneNoCountry}@demandoo.com`);
-          candidateEmails.push(`${phoneNoCountry}@demandoo.sn`);
-        }
+      if (!resp.ok || !data.user) {
+        return { error: data.error || 'Identifiants incorrects.' };
       }
 
-      let authData = null;
-      let lastError = null;
+      // Injecter le JWT dans le client Supabase (compatibilité RLS)
+      setCustomAuthToken(data.access_token);
+      setUser(data.user);
 
-      // Tester successivement les emails candidats
-      for (const emailToTry of candidateEmails) {
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email: emailToTry,
-          password
-        });
-        if (!error && data?.user) {
-          authData = data;
-          lastError = null;
-          break;
-        } else {
-          lastError = error;
-        }
-      }
-
-      if (!authData || !authData.user) {
-        return { error: translateAuthError(lastError) };
-      }
-
-      // Récupérer le profil complet
-      let profile = null;
-      const { data: userProfile } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', authData.user.id)
-        .maybeSingle();
-
-      profile = userProfile;
-
-      if (!profile) {
-        const newProfile = {
-          id: authData.user.id,
-          email: authData.user.email,
-          full_name: authData.user.user_metadata?.full_name || authData.user.email?.split('@')[0] || 'Utilisateur',
-          role: role || 'driver',
-          driver_status: 'VERIFIED',
-          is_driver_active: true,
-          phone: authData.user.user_metadata?.phone || rawInput
-        };
-        const { data: inserted } = await supabase.from('profiles').insert([newProfile]).select().single();
-        profile = inserted || newProfile;
-      }
-
-      const isAdmin = authData.user?.app_metadata?.role === 'admin';
-      const completeProfile = {
-        ...profile,
-        app_metadata: authData.user?.app_metadata || {},
-        role: isAdmin ? 'admin' : (profile?.role || role || 'passenger')
-      };
-
-      setUser(completeProfile);
-      if (completeProfile.role === 'admin') {
+      if (data.user.role === 'admin') {
         setViewMode('admin');
         localStorage.setItem('demandoo_view_mode', 'admin');
-      } else if (completeProfile.role === 'driver' || role === 'driver') {
+      } else if (data.user.role === 'driver') {
         setViewMode('driver');
         localStorage.setItem('demandoo_view_mode', 'driver');
       }
-      localStorage.setItem('demandoo_user_v2', JSON.stringify(completeProfile));
-
-      return { user: completeProfile };
+      localStorage.setItem('demandoo_user_v2', JSON.stringify(data.user));
+      return { user: data.user };
     } catch (err) {
-      console.warn("Supabase auth exception:", err);
-      return { error: translateAuthError(err) };
+      // Fallback Supabase Auth si l'API custom est indisponible (dev local)
+      console.warn('[Auth] Custom login API unavailable, trying Supabase Auth fallback:', err);
+      return { error: 'Impossible de se connecter. Vérifiez votre connexion.' };
     }
   };
 
   const register = async (userData) => {
     const safeRole = VALID_ROLES.includes(userData.role) ? userData.role : 'passenger';
 
-    // Helper pour créer un profil démo si Supabase rate-limite ou est indisponible
+    // ── Mode démo ────────────────────────────────────────────────────────────
     const createDemoUser = () => {
       const mockUser = {
         id: `driver-${Date.now()}`,
-        email: userData.email || `${(userData.phone || '770000000').replace(/\D/g, '')}@demandoo.sn`,
-        full_name: `${userData.firstName || ''} ${userData.lastName || ''}`.trim() || userData.name || 'Chauffeur Demandoo',
         phone: userData.phone || '',
+        full_name: `${userData.firstName || ''} ${userData.lastName || ''}`.trim() || userData.name || 'Chauffeur Demandoo',
         avatar_url: userData.avatar_url || userData.avatarBase64 || '',
         role: safeRole,
         driver_status: safeRole === 'driver' ? 'PENDING' : 'INCOMPLETE',
@@ -600,106 +559,65 @@ export const AuthProvider = ({ children }) => {
       return { success: true, user: mockUser };
     };
 
-    if (!isSupabaseConfigured) {
-      return createDemoUser();
-    }
+    if (!isSupabaseConfigured) return createDemoUser();
 
-    // Générer un email propre depuis le numéro de téléphone ou l'email renseigné
-    // Ex: 77 303 31 96 → driver.773033196@demandoo.sn
-    const phoneDigits = (userData.phone || '').replace(/\D/g, '').replace(/^221/, '');
-    const generatedEmail = (userData.email && userData.email.includes('@'))
-      ? userData.email.trim()
-      : `driver.${phoneDigits || Date.now()}@demandoo.sn`;
-
-    const userAvatar = userData.avatar_url || userData.avatarBase64 || '';
-    // Ne JAMAIS envoyer de base64 lourd dans user_metadata Supabase Auth (limite stricte de 1MB par GoTrue)
-    const lightweightAvatarUrl = (userAvatar && userAvatar.startsWith('http')) ? userAvatar : '';
-
+    // ── Auth Custom Phone + PIN ───────────────────────────────────────────────
     try {
-      // Bloquer onAuthStateChange pendant l'inscription pour éviter une navigation prématurée
-      isRegistering.current = true;
-
-      const { data, error } = await supabase.auth.signUp({
-        email: generatedEmail,
-        password: userData.password,
-        options: {
-          data: {
-            full_name: `${userData.firstName || ''} ${userData.lastName || ''}`.trim() || userData.name || '',
-            phone: userData.phone || '',
-            role: safeRole,
-            firstName: userData.firstName || '',
-            lastName: userData.lastName || '',
-            avatar_url: lightweightAvatarUrl,
-          }
-        }
+      const resp = await fetch('/api/auth/register', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          phone: userData.phone,
+          pin: userData.password,       // Le champ password du formulaire sert de PIN
+          firstName: userData.firstName || userData.name?.split(' ')[0] || 'Chauffeur',
+          lastName: userData.lastName || userData.name?.split(' ').slice(1).join(' ') || 'Demandoo',
+          avatarUrl: (userData.avatarBase64?.startsWith('http') ? userData.avatarBase64 : '') || '',
+        }),
       });
 
-      if (error) {
-        isRegistering.current = false;
-        console.error("Erreur signUp:", error);
-        // Si rate limit Supabase ou erreur de validation mail → fallback mode démo
-        const errMsg = (error.message || '').toLowerCase();
-        if (errMsg.includes('rate limit') || errMsg.includes('over_email_send_rate_limit') || error.status === 429) {
-          console.warn('[Auth] Rate limit Supabase — basculement mode démo');
-          return createDemoUser();
-        }
-        return { success: false, error: translateAuthError(error) };
+      const data = await resp.json();
+
+      if (!resp.ok || !data.user) {
+        // Fallback mode démo si le serveur est indisponible (dev local)
+        if (resp.status >= 500) return createDemoUser();
+        return { success: false, error: data.error || "Impossible de créer votre compte. Réessayez." };
       }
 
-      if (!data.user) {
-        isRegistering.current = false;
-        return { success: false, error: "Impossible de créer votre compte. Veuillez réessayer." };
+      // Injecter le JWT dans le client Supabase
+      setCustomAuthToken(data.access_token);
+      setUser(data.user);
+      setViewMode('driver');
+      localStorage.setItem('demandoo_view_mode', 'driver');
+      localStorage.setItem('demandoo_user_v2', JSON.stringify(data.user));
+
+      // Enregistrer le véhicule si fourni
+      if (safeRole === 'driver' && userData.vehicle && (userData.vehicle.brand || userData.vehicle.model)) {
+        try {
+          await supabase.from('vehicles').insert([{
+            driver_id: data.user.id,
+            brand: userData.vehicle.brand || 'Standard',
+            model: userData.vehicle.model || 'Standard',
+            year: parseInt(userData.vehicle.year, 10) || new Date().getFullYear(),
+            color: userData.vehicle.color || 'Gris',
+            license_plate: userData.vehicle.license_plate || userData.vehicle.plate_number || 'DK-0000-AA',
+            seats: parseInt(userData.vehicle.seats_count || userData.vehicle.seats, 10) || 4,
+            vehicle_type: userData.vehicle.vehicle_type || 'Berline',
+            status: 'pending',
+          }]);
+        } catch (vehError) {
+          console.warn('Échec insertion véhicule (non-bloquant):', vehError);
+        }
       }
 
-      // Mettre à jour l'avatar et les infos du profil en DB
-      if (data.session) {
-        await new Promise(resolve => setTimeout(resolve, 500));
-
-        if (userAvatar) {
-          try {
-            await supabase.from('profiles').update({ avatar_url: userAvatar }).eq('id', data.user.id);
-          } catch (photoErr) {
-            console.warn("Échec mise à jour avatar_url:", photoErr);
-          }
-        }
-
-        // Enregistrer le véhicule en DB si fourni lors de l'inscription chauffeur
-        if (safeRole === 'driver' && userData.vehicle && (userData.vehicle.brand || userData.vehicle.model)) {
-          try {
-            await supabase.from('vehicles').insert([{
-              driver_id: data.user.id,
-              brand: userData.vehicle.brand || 'Standard',
-              model: userData.vehicle.model || 'Standard',
-              year: parseInt(userData.vehicle.year, 10) || new Date().getFullYear(),
-              color: userData.vehicle.color || 'Gris',
-              license_plate: userData.vehicle.license_plate || userData.vehicle.plate_number || 'DK-0000-AA',
-              seats: parseInt(userData.vehicle.seats_count || userData.vehicle.seats, 10) || 4,
-              vehicle_type: userData.vehicle.vehicle_type || 'Berline',
-              status: 'pending'
-            }]);
-          } catch (vehError) {
-            console.warn("Échec insertion véhicule (non-bloquant):", vehError);
-          }
-        }
-
-        await fetchUserProfile(data.user, safeRole);
-      }
-
-      // Libérer le flag — l'inscription est terminée
-      isRegistering.current = false;
-      return { success: true, user: data.user, needsEmailConfirmation: !data.session };
+      return { success: true, user: data.user };
     } catch (err) {
-      isRegistering.current = false;
-      console.error("Register exception:", err);
-      // Fallback démo si Supabase est injoignable ou rate limité
-      const errMsg = (err.message || '').toLowerCase();
-      if (errMsg.includes('rate limit') || errMsg.includes('429') || errMsg.includes('fetch')) {
-        console.warn('[Auth] Exception réseau — basculement mode démo');
-        return createDemoUser();
-      }
-      return { success: false, error: translateAuthError(err) };
+      console.warn('[Auth] Register API exception — mode démo:', err);
+      return createDemoUser();
     }
   };
+
+
 
   return (
     <AuthContext.Provider value={{

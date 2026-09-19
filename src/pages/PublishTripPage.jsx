@@ -168,11 +168,11 @@ export const PublishTripPage = () => {
       if (err.message.includes("429")) {
         setErrorMsg("Quota atteint : Vous avez utilisé tous vos trajets. Passez à l'abonnement Pro pour publier en illimité.");
         window.scrollTo({ top: 0, behavior: 'smooth' });
-      } else if (err.message.includes("402") || err.message.includes("FORBIDDEN")) {
+      } else if (err.message && (err.message.includes("402") || err.message.includes("FORBIDDEN"))) {
         alert("⚠️ Action non autorisée.\n\nVous allez être redirigé vers la page des abonnements ou de vérification.");
         navigate('/abonnement');
       } else {
-        setErrorMsg("Erreur lors de la publication du trajet.");
+        setErrorMsg(`Erreur lors de la publication : ${err.message || 'Inconnue'}`);
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }
     }
