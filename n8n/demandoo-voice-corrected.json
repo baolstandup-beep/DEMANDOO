@@ -49,7 +49,8 @@
       "position": [
         -740,
         0
-      ]
+      ],
+      "onError": "continueRegularOutput"
     },
     {
       "parameters": {
@@ -195,7 +196,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const r = $json;\nlet text = '';\nif (typeof r.output_text === 'string') text = r.output_text;\nif (!text && Array.isArray(r.output)) {\n  for (const item of r.output || []) for (const c of item.content || []) if (typeof c.text === 'string') text += c.text;\n}\nreturn [{ json: { text: text.trim() } }];"
+        "jsCode": "const r = $json;\nlet text = '';\nif (typeof r.output_text === 'string') text = r.output_text;\nif (!text && Array.isArray(r.output)) {\n  for (const item of r.output || []) for (const c of item.content || []) if (typeof c.text === 'string') text += c.text;\n}\nconsole.log('[DEMANDOO VOICE] STEP 5 RESPONSE GENERATED');\nreturn [{ json: { text: text.trim() } }];"
       },
       "name": "Extraire réponse",
       "type": "n8n-nodes-base.code",
@@ -257,6 +258,113 @@
         240,
         140
       ]
+    },
+    {
+      "id": "f06087c8-81ef-430d-8557-06c6d0b69a50",
+      "name": "Valider audio",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -860,
+        -220
+      ],
+      "parameters": {
+        "jsCode": "const item = $input.first();\nconst audio = item.binary?.audio;\nconsole.log('[DEMANDOO VOICE] STEP 1 WEBHOOK RECEIVED');\nif (!audio) return [{ json: { success: false, error: 'AUDIO_MISSING', message: 'Aucun fichier audio reçu.', status: 400 } }];\nconst mime = audio.mimeType || '';\nconst size = Number(audio.fileSize || 0);\nconst allowed = ['audio/ogg','audio/opus','audio/mpeg','audio/mp3','audio/mp4','audio/m4a','audio/x-m4a','audio/wav','audio/x-wav','audio/webm'];\nif (!allowed.some(type => mime.toLowerCase().startsWith(type))) {\n  return [{ json: { success: false, error: 'AUDIO_FORMAT_INVALID', message: 'Format audio non pris en charge.', status: 415 } }];\n}\nconsole.log('[DEMANDOO VOICE] STEP 2 AUDIO FOUND', { mimeType: mime, size });\nconsole.log('[DEMANDOO VOICE] STEP 3 TRANSCRIPTION START', { mimeType: mime, size });\nreturn [{ json: { success: true, mimeType: mime, size }, binary: item.binary }];"
+      }
+    },
+    {
+      "id": "2d291975-69b3-49a1-a43c-9a66e3494683",
+      "name": "Audio valide ?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -620,
+        -220
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.success === true }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "454d6c22-85f6-4797-a57a-81354deaf145",
+      "name": "Normaliser transcription",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -380,
+        -220
+      ],
+      "parameters": {
+        "jsCode": "const r = $input.first().json;\nconst audio = $('Valider audio').first().json;\nif (r.error || typeof r.text !== 'string' || !r.text.trim()) {\n  const reason = String(r.error?.message || '');\n  const missingCredential = /credential|nodeNotCovered/i.test(reason);\n  const errorCode = missingCredential ? 'OPENAI_CREDENTIAL_MISSING' : 'TRANSCRIPTION_FAILED';\n  const status = missingCredential ? 503 : 502;\n  console.error('[DEMANDOO VOICE] TRANSCRIPTION FAILED', { status, errorCode, mimeType: audio.mimeType, size: audio.size });\n  return [{ json: { success: false, error: errorCode, message: 'Impossible de transcrire le message vocal.', status } }];\n}\nconsole.log('[DEMANDOO VOICE] STEP 4 TRANSCRIPTION SUCCESS', { mimeType: audio.mimeType, size: audio.size });\nreturn [{ json: { success: true, language: 'wo', transcription: r.text, source: 'voice', text: r.text } }];"
+      }
+    },
+    {
+      "id": "da56221f-41f2-477b-9d67-fe32f4a4abba",
+      "name": "Transcription réussie ?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -140,
+        -220
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.success === true }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "225f76d9-66cb-42e7-9426-091390217537",
+      "name": "Répondre erreur",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        100,
+        240
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ success: false, error: $json.error, message: $json.message }) }}",
+        "options": {
+          "responseCode": "={{ $json.status || 400 }}"
+        }
+      }
     }
   ],
   "connections": {
@@ -264,7 +372,7 @@
       "main": [
         [
           {
-            "node": "Transcrire voix Wolof",
+            "node": "Valider audio",
             "type": "main",
             "index": 0
           }
@@ -275,7 +383,7 @@
       "main": [
         [
           {
-            "node": "Comprendre demande",
+            "node": "Normaliser transcription",
             "type": "main",
             "index": 0
           }
@@ -371,6 +479,64 @@
         [
           {
             "node": "Créer voix",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Valider audio": {
+      "main": [
+        [
+          {
+            "node": "Audio valide ?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Audio valide ?": {
+      "main": [
+        [
+          {
+            "node": "Transcrire voix Wolof",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Répondre erreur",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normaliser transcription": {
+      "main": [
+        [
+          {
+            "node": "Transcription réussie ?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transcription réussie ?": {
+      "main": [
+        [
+          {
+            "node": "Comprendre demande",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Répondre erreur",
             "type": "main",
             "index": 0
           }
