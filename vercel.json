@@ -5,7 +5,7 @@
       "destination": "/admin.html"
     },
     {
-      "source": "/((?!admin\\.html|assets|images|.*\\..*).*)",
+      "source": "/((?!admin\\.html|api/|assets|images|.*\\..*).*)",
       "destination": "/index.html"
     }
   ]
