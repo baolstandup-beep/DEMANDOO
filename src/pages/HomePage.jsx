@@ -22,6 +22,7 @@ import { Reveal } from '../components/common/Reveal';
 import { AnimatedCounter } from '../components/common/AnimatedCounter';
 import { useIntersectionObserver } from '../hooks/useIntersectionObserver';
 import { TripCard } from '../components/common/TripCard';
+import { VoiceSearch } from '../components/common/VoiceSearch';
 
 const AnimatedBackground = () => {
   const [ref, isVisible] = useIntersectionObserver({ threshold: 0, triggerOnce: false });
@@ -212,6 +213,7 @@ export const HomePage = () => {
                     </div>
 
                   </form>
+                  <VoiceSearch />
                 </div>
               </Reveal>
 

@@ -1,0 +1,551 @@
+{
+  "name": "DEMANDOO AI — Assistant vocal Wolof V1",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "demandoo-voice",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "name": "Webhook Demandoo",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -980,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/audio/transcriptions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "file",
+              "inputDataFieldName": "audio"
+            },
+            {
+              "name": "model",
+              "value": "gpt-4o-mini-transcribe"
+            },
+            {
+              "name": "prompt",
+              "value": "Conversation de covoiturage au Sénégal en wolof, français ou mélange des deux. Villes possibles : Touba, Dakar, Thiès, Mbacké."
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Transcrire voix Wolof",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -740,
+        0
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/responses",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"gpt-5-mini\",\n  \"input\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"Tu es DEMANDOO AI. La date d'aujourd'hui est {{ $now.toFormat('yyyy-MM-dd') }}. Comprends le wolof sénégalais, le français et leur mélange. Extrais strictement les informations d'une recherche de covoiturage. Réponds uniquement en JSON valide avec: departure, destination, date, time, passengers, missing. date doit être YYYY-MM-DD si déterminable. passengers doit être un entier. missing est un tableau des champs manquants. N'invente rien.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": {{ JSON.stringify($json.text) }}\n    }\n  ]\n}",
+        "options": {}
+      },
+      "name": "Comprendre demande",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -500,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extrait le texte produit par l'API Responses puis le parse en JSON.\nconst r = $json;\nlet raw = '';\nif (typeof r.output_text === 'string') raw = r.output_text;\nif (!raw && Array.isArray(r.output)) {\n  for (const item of r.output) {\n    if (!Array.isArray(item.content)) continue;\n    for (const c of item.content) {\n      if (typeof c.text === 'string') raw += c.text;\n    }\n  }\n}\nconst fence = String.fromCharCode(96).repeat(3);\nraw = raw.trim()\n  .replace(new RegExp('^' + fence + 'json\\s*', 'i'), '')\n  .replace(new RegExp(fence + '\\s*$'), '')\n  .trim();\nlet parsed;\ntry { parsed = JSON.parse(raw); }\ncatch (e) {\n  return [{ json: { ok: false, error: 'AI_JSON_PARSE_FAILED', raw } }];\n}\nreturn [{ json: { ...parsed, ok: true, missing: Array.isArray(parsed.missing) ? parsed.missing : ['destination'] } }];"
+      },
+      "name": "Parser recherche",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -260,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "dd91c7cf-e062-4497-bd8e-6ce3df619767",
+              "leftValue": "={{ $json.ok === true && Array.isArray($json.missing) && $json.missing.length === 0 }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "name": "Infos complètes ?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -20,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "row",
+        "operation": "getAll",
+        "tableId": "trips",
+        "returnAll": false,
+        "limit": 3,
+        "filterType": "manual",
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "departure_city",
+              "condition": "eq",
+              "keyValue": "={{ $json.departure }}"
+            },
+            {
+              "keyName": "arrival_city",
+              "condition": "eq",
+              "keyValue": "={{ $json.destination }}"
+            },
+            {
+              "keyName": "departure_datetime",
+              "condition": "gte",
+              "keyValue": "={{ $json.date + \"T00:00:00Z\" }}"
+            },
+            {
+              "keyName": "departure_datetime",
+              "condition": "lt",
+              "keyValue": "={{ new Date(Date.parse($json.date + \"T00:00:00Z\") + 86400000).toISOString() }}"
+            },
+            {
+              "keyName": "seats_available",
+              "condition": "gte",
+              "keyValue": "={{ $json.passengers }}"
+            },
+            {
+              "keyName": "status",
+              "condition": "eq",
+              "keyValue": "scheduled"
+            }
+          ]
+        }
+      },
+      "name": "Chercher trajets Supabase",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        240,
+        -120
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "kAiu6ZgZwZx22fi5",
+          "name": "Supabase DEMANDOO"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/responses",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"gpt-5-mini\",\n  \"input\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"Tu es DEMANDOO AI. Réponds en wolof sénégalais simple, naturel et court, adapté à une réponse vocale. Tu peux mélanger légèrement le français pour les heures, prix et lieux. N'invente aucun trajet, prix ou place. Si la liste est vide, dis simplement qu'aucun trajet correspondant n'est disponible et invite à essayer une autre heure/date.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": {{ ('Résultats Demandoo: ' + JSON.stringify($('Chercher trajets Supabase').all().map(i => i.json).filter(o => o && Object.keys(o).length))).toJsonString() }}\n    }\n  ]\n}",
+        "options": {}
+      },
+      "name": "Réponse Wolof",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        500,
+        -120
+      ],
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const r = $json;\nlet text = '';\nif (typeof r.output_text === 'string') text = r.output_text;\nif (!text && Array.isArray(r.output)) {\n  for (const item of r.output || []) for (const c of item.content || []) if (typeof c.text === 'string') text += c.text;\n}\nconsole.log('[DEMANDOO VOICE] STEP 5 RESPONSE GENERATED');\nreturn [{ json: { text: text.trim() } }];"
+      },
+      "name": "Extraire réponse",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        740,
+        -120
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/audio/speech",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"model\":\"gpt-4o-mini-tts\",\"voice\":\"alloy\",\"input\":{{ JSON.stringify($json.text) }},\"response_format\":\"mp3\"}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file",
+              "outputPropertyName": "audio"
+            }
+          }
+        }
+      },
+      "name": "Créer voix",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        980,
+        -120
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "binary",
+        "responseDataSource": "set",
+        "inputFieldName": "audio",
+        "options": {}
+      },
+      "name": "Renvoyer audio",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1220,
+        -120
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const missing = Array.isArray($json.missing) ? $json.missing : [];\nconst map = {\n  departure: 'Fan nga bëgg jóge?',\n  destination: 'Fan nga bëgg dem?',\n  date: 'Ban bés nga bëgg dem?',\n  time: 'Ban waxtu nga bëgg dem?',\n  passengers: 'Ñaata nit ngeen?'\n};\nconst first = missing[0] || 'destination';\nreturn [{ json: { text: map[first] || 'Lan lañu war a xam ngir seet trajet bi?' } }];"
+      },
+      "name": "Question manquante Wolof",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        140
+      ]
+    },
+    {
+      "id": "f06087c8-81ef-430d-8557-06c6d0b69a50",
+      "name": "Valider audio",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -860,
+        -220
+      ],
+      "parameters": {
+        "jsCode": "const item = $input.first();\nconst audio = item.binary?.audio;\nconsole.log('[DEMANDOO VOICE] STEP 1 WEBHOOK RECEIVED');\nif (!audio) return [{ json: { success: false, error: 'AUDIO_MISSING', message: 'Aucun fichier audio reçu.', status: 400 } }];\nconst mime = audio.mimeType || '';\nconst size = Number(audio.fileSize || 0);\nconst allowed = ['audio/ogg','audio/opus','audio/mpeg','audio/mp3','audio/mp4','audio/m4a','audio/x-m4a','audio/wav','audio/x-wav','audio/webm'];\nif (!allowed.some(type => mime.toLowerCase().startsWith(type))) {\n  return [{ json: { success: false, error: 'AUDIO_FORMAT_INVALID', message: 'Format audio non pris en charge.', status: 415 } }];\n}\nconsole.log('[DEMANDOO VOICE] STEP 2 AUDIO FOUND', { mimeType: mime, size });\nconsole.log('[DEMANDOO VOICE] STEP 3 TRANSCRIPTION START', { mimeType: mime, size });\nreturn [{ json: { success: true, mimeType: mime, size }, binary: item.binary }];"
+      }
+    },
+    {
+      "id": "2d291975-69b3-49a1-a43c-9a66e3494683",
+      "name": "Audio valide ?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -620,
+        -220
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.success === true }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "454d6c22-85f6-4797-a57a-81354deaf145",
+      "name": "Normaliser transcription",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -380,
+        -220
+      ],
+      "parameters": {
+        "jsCode": "const r = $input.first().json;\nconst audio = $('Valider audio').first().json;\nif (r.error || typeof r.text !== 'string' || !r.text.trim()) {\n  const reason = String(r.error?.message || '');\n  const missingCredential = /credential|nodeNotCovered/i.test(reason);\n  const errorCode = missingCredential ? 'OPENAI_CREDENTIAL_MISSING' : 'TRANSCRIPTION_FAILED';\n  const status = missingCredential ? 503 : 502;\n  console.error('[DEMANDOO VOICE] TRANSCRIPTION FAILED', { status, errorCode, mimeType: audio.mimeType, size: audio.size });\n  return [{ json: { success: false, error: errorCode, message: 'Impossible de transcrire le message vocal.', status } }];\n}\nconsole.log('[DEMANDOO VOICE] STEP 4 TRANSCRIPTION SUCCESS', { mimeType: audio.mimeType, size: audio.size });\nreturn [{ json: { success: true, language: 'wo', transcription: r.text, source: 'voice', text: r.text } }];"
+      }
+    },
+    {
+      "id": "da56221f-41f2-477b-9d67-fe32f4a4abba",
+      "name": "Transcription réussie ?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -140,
+        -220
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.success === true }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "225f76d9-66cb-42e7-9426-091390217537",
+      "name": "Répondre erreur",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        100,
+        240
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ success: false, error: $json.error, message: $json.message }) }}",
+        "options": {
+          "responseCode": "={{ $json.status || 400 }}"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook Demandoo": {
+      "main": [
+        [
+          {
+            "node": "Valider audio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transcrire voix Wolof": {
+      "main": [
+        [
+          {
+            "node": "Normaliser transcription",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Comprendre demande": {
+      "main": [
+        [
+          {
+            "node": "Parser recherche",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parser recherche": {
+      "main": [
+        [
+          {
+            "node": "Infos complètes ?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Infos complètes ?": {
+      "main": [
+        [
+          {
+            "node": "Chercher trajets Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Question manquante Wolof",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chercher trajets Supabase": {
+      "main": [
+        [
+          {
+            "node": "Réponse Wolof",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Réponse Wolof": {
+      "main": [
+        [
+          {
+            "node": "Extraire réponse",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extraire réponse": {
+      "main": [
+        [
+          {
+            "node": "Créer voix",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Créer voix": {
+      "main": [
+        [
+          {
+            "node": "Renvoyer audio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Question manquante Wolof": {
+      "main": [
+        [
+          {
+            "node": "Créer voix",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Valider audio": {
+      "main": [
+        [
+          {
+            "node": "Audio valide ?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Audio valide ?": {
+      "main": [
+        [
+          {
+            "node": "Transcrire voix Wolof",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Répondre erreur",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normaliser transcription": {
+      "main": [
+        [
+          {
+            "node": "Transcription réussie ?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transcription réussie ?": {
+      "main": [
+        [
+          {
+            "node": "Comprendre demande",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Répondre erreur",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "active": false
+}
