@@ -4,7 +4,7 @@ import { Mic, Square, Volume2 } from 'lucide-react';
 const WEBHOOK_URL = 'https://baolvision.app.n8n.cloud/webhook/demandoo-voice';
 const MAX_RECORDING_MS = 30000;
 
-export const VoiceSearch = () => {
+export const VoiceSearch = ({ onManualSearch }) => {
   const [status, setStatus] = useState('idle');
   const [error, setError] = useState('');
   const [audioUrl, setAudioUrl] = useState('');
@@ -66,7 +66,14 @@ export const VoiceSearch = () => {
           const body = new FormData();
           body.append('audio', file);
           const response = await fetch(WEBHOOK_URL, { method: 'POST', body });
-          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+          if (!response.ok) {
+            const message = response.status >= 500
+              ? 'La transcription vocale est temporairement indisponible. Vous pouvez rechercher un trajet avec le formulaire ci-dessus.'
+              : response.status === 400 || response.status === 415
+                ? 'Le son enregistré n’a pas pu être traité. Réessayez en parlant clairement.'
+                : 'La recherche vocale a échoué. Réessayez ou utilisez le formulaire ci-dessus.';
+            throw new Error(message);
+          }
           const contentType = response.headers.get('content-type') || '';
           if (!contentType.startsWith('audio/')) throw new Error('Réponse audio absente');
           const blob = await response.blob();
@@ -77,7 +84,9 @@ export const VoiceSearch = () => {
           setStatus('ready');
         } catch (cause) {
           setStatus('idle');
-          setError('L’assistant vocal ne répond pas pour le moment. Réessayez plus tard.');
+          setError(cause?.message?.startsWith('La ') || cause?.message?.startsWith('Le ')
+            ? cause.message
+            : 'La recherche vocale n’a pas abouti. Vérifiez votre connexion ou utilisez le formulaire ci-dessus.');
           console.error('Demandoo voice webhook:', cause);
         }
       };
@@ -112,7 +121,16 @@ export const VoiceSearch = () => {
               'Dites votre départ, destination, date et nombre de passagers.'}
         </span>
       </div>
-      {error && <p role="alert" className="mt-3 text-sm font-semibold text-rose-700">{error}</p>}
+      {error && (
+        <div className="mt-3 flex flex-wrap items-center gap-3">
+          <p role="alert" className="text-sm font-semibold text-rose-700">{error}</p>
+          {onManualSearch && (
+            <button type="button" onClick={onManualSearch} className="text-sm font-bold text-demandoo-700 underline underline-offset-2">
+              Rechercher sans voix
+            </button>
+          )}
+        </div>
+      )}
       {audioUrl && status === 'ready' && (
         <div className="mt-4 flex flex-wrap items-center gap-2">
           <Volume2 className="h-5 w-5 text-demandoo-600" aria-hidden="true" />
