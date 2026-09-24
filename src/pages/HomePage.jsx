@@ -52,6 +52,7 @@ export const HomePage = () => {
   const [destination, setDestination] = useState('');
   const [date, setDate] = useState('');
   const [passengers, setPassengers] = useState(1);
+  const destinationRef = useRef(null);
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
@@ -158,6 +159,7 @@ export const HomePage = () => {
                         <div className="w-full text-left">
                           <label className="sr-only">Destination</label>
                           <input 
+                            ref={destinationRef}
                             type="text" 
                             list="cities-list" 
                             value={destination} 
@@ -213,7 +215,7 @@ export const HomePage = () => {
                     </div>
 
                   </form>
-                  <VoiceSearch />
+                  <VoiceSearch onManualSearch={() => destinationRef.current?.focus()} />
                 </div>
               </Reveal>
 
