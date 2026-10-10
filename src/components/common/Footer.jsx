@@ -48,8 +48,8 @@ export const Footer = () => {
               <li><Link to="/" className="hover:text-white transition-colors inline-block">Accueil</Link></li>
               <li><Link to="/trajets" className="hover:text-white transition-colors inline-block">Rechercher un trajet</Link></li>
               <li><Link to="/publier" className="hover:text-white transition-colors inline-block">Publier un trajet</Link></li>
-              <li><Link to="/comment-ca-marche" className="hover:text-white transition-colors inline-block">Comment ça marche</Link></li>
-              <li><Link to="/faq" className="hover:text-white transition-colors inline-block">Nos contacts</Link></li>
+              <li><a href="/#comment-ca-marche" className="hover:text-white transition-colors inline-block">Comment ça marche</a></li>
+              <li><a href="/#faq" className="hover:text-white transition-colors inline-block">Questions fréquentes</a></li>
             </ul>
           </div>
 
@@ -59,15 +59,15 @@ export const Footer = () => {
             <div className="space-y-4 text-sm font-medium text-slate-300">
               <p className="leading-relaxed">
                 <strong className="text-white">Siège social :</strong> Dakar, Sénégal face à l'aéroport<br/>
-                <strong className="text-white">Annexe :</strong> Touba, à côté de la grande Mosquée
+                <strong className="text-white">Touba :</strong> Ndame, route nationale N3, à côté de la station Elton
               </p>
-              <a href="mailto:info@demandoo.sn" className="flex items-center gap-3 hover:text-white transition-colors">
+              <a href="mailto:demandoo@gmail.com" className="flex items-center gap-3 hover:text-white transition-colors">
                 <Mail className="w-5 h-5 text-demandoo-500" />
-                info@demandoo.sn
+                demandoo@gmail.com
               </a>
-              <a href="tel:+221770000000" className="flex items-center gap-3 hover:text-white transition-colors">
+              <a href="tel:+221785324040" className="flex items-center gap-3 hover:text-white transition-colors">
                 <Phone className="w-5 h-5 text-demandoo-500" />
-                +221 77 000 00 00
+                +221 78 532 40 40
               </a>
             </div>
           </div>

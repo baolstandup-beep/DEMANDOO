@@ -52,6 +52,10 @@ export default {
           blue: '#183e94',
           teal: '#008577',
           dark: '#0A1E4A',
+          // Accent de la landing page : contraste 11:1 avec brand.dark (texte bleu nuit sur lime)
+          lime: '#C6F24E',
+          'lime-dark': '#AEDB2F',
+          mist: '#F3F6FB',
         },
       },
       fontFamily: {
