@@ -2,6 +2,7 @@
 // Connexion chauffeur par Téléphone + PIN avec protection Anti-Brute Force.
 
 import crypto from 'node:crypto';
+import { applyCors } from '../_lib/server.js';
 
 // ─── Helpers JWT ──────────────────────────────────────────────────────────────
 function b64url(str) { return Buffer.from(str).toString('base64url'); }
@@ -46,12 +47,8 @@ const SUPA_URL = () => process.env.VITE_SUPABASE_URL;
 
 // ─────────────────────────────────────────────────────────────────────────────
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
-  res.setHeader('Access-Control-Allow-Origin', req.headers.origin || '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
-  if (req.method === 'OPTIONS') return res.status(200).end();
+  // CORS restreint aux origines Demandoo (auparavant : toute origine + cookies)
+  if (applyCors(req, res)) return;
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
 
   try {
@@ -156,6 +153,6 @@ export default async function handler(req, res) {
 
   } catch (err) {
     console.error('Login handler error:', err);
-    return res.status(500).json({ error: err.message || 'Erreur interne du serveur.' });
+    return res.status(500).json({ error: 'Erreur interne du serveur.' });
   }
 }

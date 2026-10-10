@@ -27,6 +27,11 @@ export const DriverRouteGuard = ({ children, allowedStatuses = [] }) => {
     return <Navigate to="/inscription-chauffeur" state={{ from: location }} replace />;
   }
 
-  // 2. CHAUFFEUR AUTORISÉ -> On laisse passer le rendu du composant
+  // 2. STATUT REQUIS (ex. VERIFIED pour publier) — les admins passent toujours
+  if (user.role !== 'admin' && allowedStatuses.length > 0 && !allowedStatuses.includes(user.driver_status)) {
+    return <Navigate to="/verification-chauffeur" state={{ from: location }} replace />;
+  }
+
+  // 3. CHAUFFEUR AUTORISÉ -> On laisse passer le rendu du composant
   return children;
 };

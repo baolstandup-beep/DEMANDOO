@@ -388,7 +388,7 @@ export const PublishTripPage = () => {
             {waypoints.map((wp, idx) => (
               <div key={idx} className="relative z-10 ml-[48px]">
                 <div className="flex items-center justify-between mb-2">
-                  <label className="text-[12px] font-bold text-[#667085] uppercase">
+                  <label htmlFor="publish-field-1" className="text-[12px] font-bold text-[#667085] uppercase">
                     Arrêt {idx + 1}
                   </label>
                   <button
@@ -401,7 +401,7 @@ export const PublishTripPage = () => {
                 </div>
                 <div className="relative">
                   <div className="absolute -left-[29.5px] top-1/2 -translate-y-1/2 w-[8px] h-[8px] rounded-full bg-[#667085] z-10 border-2 border-white" />
-                  <input
+                  <input id="publish-field-1"
                     type="text"
                     list="cities-list-pub"
                     value={wp}
@@ -702,9 +702,9 @@ export const PublishTripPage = () => {
 
           <div className="space-y-6 mt-8">
             <div className="relative flex flex-col items-center">
-              <label className="text-[13px] font-bold text-[#667085] uppercase tracking-wider mb-4">PRIX PAR PASSAGER</label>
+              <label htmlFor="publish-field-2" className="text-[13px] font-bold text-[#667085] uppercase tracking-wider mb-4">PRIX PAR PASSAGER</label>
               <div className="relative w-full max-w-[400px]">
-                <input
+                <input id="publish-field-2"
                   type="number"
                   min={500}
                   step={500}

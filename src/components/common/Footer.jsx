@@ -8,6 +8,13 @@ import {
   Instagram
 } from 'lucide-react';
 
+// Renseigner les URL des pages officielles : un lien vide n'est pas affiché (plus de liens « # » morts)
+const SOCIAL_LINKS = [
+  { label: 'Facebook', url: '', Icon: Facebook, filled: true },
+  { label: 'X (Twitter)', url: '', Icon: Twitter, filled: true },
+  { label: 'Instagram', url: '', Icon: Instagram, filled: false },
+];
+
 export const Footer = () => {
   const currentYear = new Date().getFullYear();
 
@@ -74,17 +81,22 @@ export const Footer = () => {
           <p className="text-xs sm:text-sm font-medium text-white/90 text-center md:text-left">
             Copyright © {currentYear}. Tous droits réservés - DEMANDOO | Conception pour la mobilité
           </p>
-          <div className="flex items-center gap-3">
-            <a href="#" className="w-8 h-8 rounded-full bg-white text-demandoo-600 flex items-center justify-center hover:scale-110 transition-transform">
-              <Facebook className="w-4 h-4 fill-current" />
-            </a>
-            <a href="#" className="w-8 h-8 rounded-full bg-white text-demandoo-600 flex items-center justify-center hover:scale-110 transition-transform">
-              <Twitter className="w-4 h-4 fill-current" />
-            </a>
-            <a href="#" className="w-8 h-8 rounded-full bg-white text-demandoo-600 flex items-center justify-center hover:scale-110 transition-transform">
-              <Instagram className="w-4 h-4" />
-            </a>
-          </div>
+          {SOCIAL_LINKS.some(l => l.url) && (
+            <div className="flex items-center gap-3">
+              {SOCIAL_LINKS.filter(l => l.url).map(({ label, url, Icon, filled }) => (
+                <a
+                  key={label}
+                  href={url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={`Demandoo sur ${label}`}
+                  className="w-8 h-8 rounded-full bg-white text-demandoo-600 flex items-center justify-center hover:scale-110 transition-transform"
+                >
+                  <Icon className={`w-4 h-4 ${filled ? 'fill-current' : ''}`} aria-hidden="true" />
+                </a>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 

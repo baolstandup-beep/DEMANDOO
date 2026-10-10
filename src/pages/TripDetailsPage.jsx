@@ -23,7 +23,6 @@ import {
   Loader2
 } from 'lucide-react';
 import { MapView } from '../components/common/MapView';
-import { PassengerPaymentModal } from '../components/passenger/PassengerPaymentModal';
 
 export const TripDetailsPage = () => {
   const { id } = useParams();
@@ -35,7 +34,6 @@ export const TripDetailsPage = () => {
   const existingBooking = bookings.find(b => b.trip_id === trip?.id && b.passenger_id === user?.id);
   const isAccepted = existingBooking && ['paid', 'confirmed', 'completed', 'accepted'].includes(existingBooking.status);
 
-  const [showPaymentModal, setShowPaymentModal] = React.useState(false);
   const [passengers, setPassengers] = React.useState(1);
   const [searchParams] = useSearchParams();
   const paymentStatus = searchParams.get('payment');
@@ -340,13 +338,6 @@ export const TripDetailsPage = () => {
         </div>
 
       </div>
-
-      <PassengerPaymentModal 
-        isOpen={showPaymentModal} 
-        onClose={() => setShowPaymentModal(false)} 
-        trip={trip} 
-        passengers={passengers} 
-      />
     </div>
   );
 };

@@ -7,7 +7,10 @@ export const useGeolocation = (isActive = false, intervalMs = 15000) => {
   const [hasPermission, setHasPermission] = useState(false);
   const intervalRef = useRef(null);
 
+  // Ne demander l'accès GPS que lorsque le suivi est réellement activé (chauffeur en ligne),
+  // jamais à l'arrivée d'un simple visiteur.
   useEffect(() => {
+    if (!isActive || hasPermission) return;
     const checkPermissions = async () => {
       try {
         const permissions = await Geolocation.checkPermissions();
@@ -27,7 +30,7 @@ export const useGeolocation = (isActive = false, intervalMs = 15000) => {
     };
     
     checkPermissions();
-  }, []);
+  }, [isActive, hasPermission]);
 
   useEffect(() => {
     if (!isActive || !hasPermission) {

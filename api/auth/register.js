@@ -3,6 +3,7 @@
 // Utilise bcrypt PBKDF2 natif Node.js + JWT signé avec SUPABASE_JWT_SECRET.
 
 import crypto from 'node:crypto';
+import { applyCors } from '../_lib/server.js';
 
 // ─── Helpers JWT (natif Node.js, sans dépendance externe) ────────────────────
 function b64url(str) {
@@ -45,12 +46,8 @@ const SUPA_URL = () => process.env.VITE_SUPABASE_URL;
 
 // ─────────────────────────────────────────────────────────────────────────────
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
-  res.setHeader('Access-Control-Allow-Origin', req.headers.origin || '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
-  if (req.method === 'OPTIONS') return res.status(200).end();
+  // CORS restreint aux origines Demandoo
+  if (applyCors(req, res, 'POST, OPTIONS')) return;
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
 
   try {

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { apiPost } from '../lib/api';
 import { useNotifications } from '../context/NotificationContext';
 import { VerifiedDriverBadge } from '../components/common/Badge';
 import { 
@@ -20,7 +21,8 @@ import {
 } from 'lucide-react';
 
 export const DriverVerificationPage = () => {
-  const { user, updateDriverStatus, completeDriverOnboarding } = useAuth();
+  const { user, updateDriverStatus, completeDriverOnboarding, refreshProfile } = useAuth();
+  const [verificationStatus, setVerificationStatus] = useState(null);
   const { addNotification } = useNotifications();
   const navigate = useNavigate();
   const getInitialStep = () => {
@@ -107,46 +109,7 @@ export const DriverVerificationPage = () => {
 
     setIsSubmitting(true);
     try {
-      // 1. Vérification KYC IA si le fichier est présent
-      if (licenseInfo.licenseFront && user?.id) {
-        // Convert file to base64
-        const fileToBase64 = (file) => new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.readAsDataURL(file);
-          reader.onload = () => resolve(reader.result);
-          reader.onerror = error => reject(error);
-        });
-
-        const imageBase64 = await fileToBase64(licenseInfo.licenseFront);
-
-        // Appel à l'Agent IA
-        addNotification({ title: "Vérification en cours", message: "Analyse de votre document par l'IA...", type: "info" });
-        const kycRes = await fetch('/api/verify-kyc', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            driver_id: user.id,
-            image_base64: imageBase64
-          })
-        });
-
-        if (kycRes.ok) {
-          const kycData = await kycRes.json();
-          if (!kycData.is_valid) {
-            addNotification({
-              title: "Document refusé",
-              message: kycData.reason || "Votre permis n'a pas pu être validé.",
-              type: "error"
-            });
-            setIsSubmitting(false);
-            return;
-          }
-        } else {
-           console.warn("KYC API failed, continuing with manual verification...", await kycRes.text());
-        }
-      }
-
-      // 2. Continuer l'enregistrement (mise à jour DB locale/Supabase)
+      // 1. Enregistrer le dossier (statut PENDING — jamais VERIFIED depuis le navigateur)
       const result = await completeDriverOnboarding({
         personalInfo,
         licenseInfo,
@@ -156,25 +119,51 @@ export const DriverVerificationPage = () => {
 
       if (!result.success) {
         addNotification({
-          title: "Dossier incomplet",
+          title: "Dossier non enregistré",
           message: result.error || "Une erreur est survenue lors de l'enregistrement.",
           type: "error"
         });
         return;
       }
-      
-      // Success: Chauffeur activé
+
+      // 2. Pré-vérification IA côté serveur : elle seule peut valider automatiquement le compte
+      let finalStatus = result.user?.driver_status || 'PENDING';
+      if (licenseInfo.licenseFront && finalStatus !== 'VERIFIED') {
+        const fileToBase64 = (file) => new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.readAsDataURL(file);
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = error => reject(error);
+        });
+
+        addNotification({ title: "Vérification en cours", message: "Analyse de votre permis…", type: "info" });
+        try {
+          const kyc = await apiPost('/api/verify-kyc', {
+            image_base64: await fileToBase64(licenseInfo.licenseFront)
+          });
+          finalStatus = kyc.status;
+          if (kyc.status !== 'VERIFIED' && kyc.reason) {
+            addNotification({ title: "Vérification manuelle", message: kyc.reason, type: "info" });
+          }
+        } catch (kycErr) {
+          console.warn("KYC indisponible, revue manuelle :", kycErr);
+        }
+        await refreshProfile();
+      }
+
+      setVerificationStatus(finalStatus);
       setStep(6);
-      
-      addNotification({
-        title: "Compte activé !",
-        message: "Félicitations, votre compte chauffeur est validé par notre agent IA.",
-        type: "success"
-      });
+
+      addNotification(finalStatus === 'VERIFIED'
+        ? { title: "Compte activé !", message: "Votre permis a été vérifié. Vous pouvez proposer des trajets.", type: "success" }
+        : { title: "Dossier envoyé", message: "Notre équipe vérifie votre dossier, généralement sous 24 h.", type: "success" });
     } catch (err) {
       console.error("Submission error:", err);
-      // En cas de problème exceptionnel, finaliser quand même l'étape
-      setStep(6);
+      addNotification({
+        title: "Envoi impossible",
+        message: "Votre dossier n'a pas pu être envoyé. Vérifiez votre connexion et réessayez.",
+        type: "error"
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -307,24 +296,24 @@ export const DriverVerificationPage = () => {
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <div>
-                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest block mb-2">Nom complet</label>
-                  <input type="text" value={personalInfo.fullName} onChange={e => setPersonalInfo({...personalInfo, fullName: e.target.value})} className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 font-bold text-sm focus:ring-2 focus:ring-demandoo-500/20 focus:border-demandoo-500 outline-none" />
+                  <label htmlFor="kyc-field-1" className="text-[11px] font-black text-slate-400 uppercase tracking-widest block mb-2">Nom complet</label>
+                  <input id="kyc-field-1" type="text" value={personalInfo.fullName} onChange={e => setPersonalInfo({...personalInfo, fullName: e.target.value})} className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 font-bold text-sm focus:ring-2 focus:ring-demandoo-500/20 focus:border-demandoo-500 outline-none" />
                 </div>
                 <div>
-                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest block mb-2">Date de naissance</label>
-                  <input type="date" value={personalInfo.dob} onChange={e => setPersonalInfo({...personalInfo, dob: e.target.value})} className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 font-bold text-sm focus:ring-2 focus:ring-demandoo-500/20 focus:border-demandoo-500 outline-none" />
+                  <label htmlFor="kyc-field-2" className="text-[11px] font-black text-slate-400 uppercase tracking-widest block mb-2">Date de naissance</label>
+                  <input id="kyc-field-2" type="date" value={personalInfo.dob} onChange={e => setPersonalInfo({...personalInfo, dob: e.target.value})} className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 font-bold text-sm focus:ring-2 focus:ring-demandoo-500/20 focus:border-demandoo-500 outline-none" />
                 </div>
                 <div>
-                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest block mb-2">Téléphone</label>
-                  <input type="tel" value={personalInfo.phone} onChange={e => setPersonalInfo({...personalInfo, phone: e.target.value})} className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 font-bold text-sm focus:ring-2 focus:ring-demandoo-500/20 focus:border-demandoo-500 outline-none" />
+                  <label htmlFor="kyc-field-3" className="text-[11px] font-black text-slate-400 uppercase tracking-widest block mb-2">Téléphone</label>
+                  <input id="kyc-field-3" type="tel" value={personalInfo.phone} onChange={e => setPersonalInfo({...personalInfo, phone: e.target.value})} className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 font-bold text-sm focus:ring-2 focus:ring-demandoo-500/20 focus:border-demandoo-500 outline-none" />
                 </div>
                 <div>
-                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest block mb-2">Ville</label>
-                  <input type="text" value={personalInfo.city} onChange={e => setPersonalInfo({...personalInfo, city: e.target.value})} placeholder="Ex: Dakar, Touba" className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 font-bold text-sm focus:ring-2 focus:ring-demandoo-500/20 focus:border-demandoo-500 outline-none" />
+                  <label htmlFor="kyc-field-4" className="text-[11px] font-black text-slate-400 uppercase tracking-widest block mb-2">Ville</label>
+                  <input id="kyc-field-4" type="text" value={personalInfo.city} onChange={e => setPersonalInfo({...personalInfo, city: e.target.value})} placeholder="Ex: Dakar, Touba" className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 font-bold text-sm focus:ring-2 focus:ring-demandoo-500/20 focus:border-demandoo-500 outline-none" />
                 </div>
                 <div className="sm:col-span-2">
-                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest block mb-2">Adresse complète</label>
-                  <input type="text" value={personalInfo.address} onChange={e => setPersonalInfo({...personalInfo, address: e.target.value})} placeholder="Ex: HLM Grand Yoff, Villa 123" className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 font-bold text-sm focus:ring-2 focus:ring-demandoo-500/20 focus:border-demandoo-500 outline-none" />
+                  <label htmlFor="kyc-field-5" className="text-[11px] font-black text-slate-400 uppercase tracking-widest block mb-2">Adresse complète</label>
+                  <input id="kyc-field-5" type="text" value={personalInfo.address} onChange={e => setPersonalInfo({...personalInfo, address: e.target.value})} placeholder="Ex: HLM Grand Yoff, Villa 123" className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 font-bold text-sm focus:ring-2 focus:ring-demandoo-500/20 focus:border-demandoo-500 outline-none" />
                 </div>
               </div>
 
@@ -352,16 +341,16 @@ export const DriverVerificationPage = () => {
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <div className="sm:col-span-2">
-                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest block mb-2">Numéro du permis</label>
-                  <input type="text" value={licenseInfo.number} onChange={e => setLicenseInfo({...licenseInfo, number: e.target.value})} className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 font-bold text-sm focus:ring-2 focus:ring-demandoo-500/20 focus:border-demandoo-500 outline-none" />
+                  <label htmlFor="kyc-field-6" className="text-[11px] font-black text-slate-400 uppercase tracking-widest block mb-2">Numéro du permis</label>
+                  <input id="kyc-field-6" type="text" value={licenseInfo.number} onChange={e => setLicenseInfo({...licenseInfo, number: e.target.value})} className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 font-bold text-sm focus:ring-2 focus:ring-demandoo-500/20 focus:border-demandoo-500 outline-none" />
                 </div>
                 <div>
-                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest block mb-2">Date de délivrance</label>
-                  <input type="date" value={licenseInfo.issueDate} onChange={e => setLicenseInfo({...licenseInfo, issueDate: e.target.value})} className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 font-bold text-sm focus:ring-2 focus:ring-demandoo-500/20 focus:border-demandoo-500 outline-none" />
+                  <label htmlFor="kyc-field-7" className="text-[11px] font-black text-slate-400 uppercase tracking-widest block mb-2">Date de délivrance</label>
+                  <input id="kyc-field-7" type="date" value={licenseInfo.issueDate} onChange={e => setLicenseInfo({...licenseInfo, issueDate: e.target.value})} className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 font-bold text-sm focus:ring-2 focus:ring-demandoo-500/20 focus:border-demandoo-500 outline-none" />
                 </div>
                 <div>
-                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest block mb-2">Date d'expiration</label>
-                  <input type="date" value={licenseInfo.expireDate} onChange={e => setLicenseInfo({...licenseInfo, expireDate: e.target.value})} className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 font-bold text-sm focus:ring-2 focus:ring-demandoo-500/20 focus:border-demandoo-500 outline-none" />
+                  <label htmlFor="kyc-field-8" className="text-[11px] font-black text-slate-400 uppercase tracking-widest block mb-2">Date d'expiration</label>
+                  <input id="kyc-field-8" type="date" value={licenseInfo.expireDate} onChange={e => setLicenseInfo({...licenseInfo, expireDate: e.target.value})} className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 font-bold text-sm focus:ring-2 focus:ring-demandoo-500/20 focus:border-demandoo-500 outline-none" />
                 </div>
               </div>
 
@@ -391,28 +380,28 @@ export const DriverVerificationPage = () => {
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <div>
-                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest block mb-2">Marque</label>
-                  <input type="text" value={vehicleInfo.make} onChange={e => setVehicleInfo({...vehicleInfo, make: e.target.value})} placeholder="Ex: Peugeot" className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 font-bold text-sm focus:ring-2 focus:ring-demandoo-500/20 focus:border-demandoo-500 outline-none" />
+                  <label htmlFor="kyc-field-9" className="text-[11px] font-black text-slate-400 uppercase tracking-widest block mb-2">Marque</label>
+                  <input id="kyc-field-9" type="text" value={vehicleInfo.make} onChange={e => setVehicleInfo({...vehicleInfo, make: e.target.value})} placeholder="Ex: Peugeot" className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 font-bold text-sm focus:ring-2 focus:ring-demandoo-500/20 focus:border-demandoo-500 outline-none" />
                 </div>
                 <div>
-                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest block mb-2">Modèle</label>
-                  <input type="text" value={vehicleInfo.model} onChange={e => setVehicleInfo({...vehicleInfo, model: e.target.value})} placeholder="Ex: 508" className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 font-bold text-sm focus:ring-2 focus:ring-demandoo-500/20 focus:border-demandoo-500 outline-none" />
+                  <label htmlFor="kyc-field-10" className="text-[11px] font-black text-slate-400 uppercase tracking-widest block mb-2">Modèle</label>
+                  <input id="kyc-field-10" type="text" value={vehicleInfo.model} onChange={e => setVehicleInfo({...vehicleInfo, model: e.target.value})} placeholder="Ex: 508" className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 font-bold text-sm focus:ring-2 focus:ring-demandoo-500/20 focus:border-demandoo-500 outline-none" />
                 </div>
                 <div>
-                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest block mb-2">Année</label>
-                  <input type="number" value={vehicleInfo.year} onChange={e => setVehicleInfo({...vehicleInfo, year: e.target.value})} placeholder="Ex: 2018" className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 font-bold text-sm focus:ring-2 focus:ring-demandoo-500/20 focus:border-demandoo-500 outline-none" />
+                  <label htmlFor="kyc-field-11" className="text-[11px] font-black text-slate-400 uppercase tracking-widest block mb-2">Année</label>
+                  <input id="kyc-field-11" type="number" value={vehicleInfo.year} onChange={e => setVehicleInfo({...vehicleInfo, year: e.target.value})} placeholder="Ex: 2018" className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 font-bold text-sm focus:ring-2 focus:ring-demandoo-500/20 focus:border-demandoo-500 outline-none" />
                 </div>
                 <div>
-                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest block mb-2">Couleur</label>
-                  <input type="text" value={vehicleInfo.color} onChange={e => setVehicleInfo({...vehicleInfo, color: e.target.value})} placeholder="Ex: Gris" className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 font-bold text-sm focus:ring-2 focus:ring-demandoo-500/20 focus:border-demandoo-500 outline-none" />
+                  <label htmlFor="kyc-field-12" className="text-[11px] font-black text-slate-400 uppercase tracking-widest block mb-2">Couleur</label>
+                  <input id="kyc-field-12" type="text" value={vehicleInfo.color} onChange={e => setVehicleInfo({...vehicleInfo, color: e.target.value})} placeholder="Ex: Gris" className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 font-bold text-sm focus:ring-2 focus:ring-demandoo-500/20 focus:border-demandoo-500 outline-none" />
                 </div>
                 <div>
-                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest block mb-2">Immatriculation</label>
-                  <input type="text" value={vehicleInfo.plate} onChange={e => setVehicleInfo({...vehicleInfo, plate: e.target.value})} placeholder="Ex: DK-1234-AB" className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 font-bold text-sm focus:ring-2 focus:ring-demandoo-500/20 focus:border-demandoo-500 outline-none" />
+                  <label htmlFor="kyc-field-13" className="text-[11px] font-black text-slate-400 uppercase tracking-widest block mb-2">Immatriculation</label>
+                  <input id="kyc-field-13" type="text" value={vehicleInfo.plate} onChange={e => setVehicleInfo({...vehicleInfo, plate: e.target.value})} placeholder="Ex: DK-1234-AB" className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 font-bold text-sm focus:ring-2 focus:ring-demandoo-500/20 focus:border-demandoo-500 outline-none" />
                 </div>
                 <div>
-                  <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest block mb-2">Nombre de places disponibles</label>
-                  <input type="number" min={1} max={7} value={vehicleInfo.seats} onChange={e => setVehicleInfo({...vehicleInfo, seats: parseInt(e.target.value)})} className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 font-bold text-sm focus:ring-2 focus:ring-demandoo-500/20 focus:border-demandoo-500 outline-none" />
+                  <label htmlFor="kyc-field-14" className="text-[11px] font-black text-slate-400 uppercase tracking-widest block mb-2">Nombre de places disponibles</label>
+                  <input id="kyc-field-14" type="number" min={1} max={7} value={vehicleInfo.seats} onChange={e => setVehicleInfo({...vehicleInfo, seats: parseInt(e.target.value)})} className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 font-bold text-sm focus:ring-2 focus:ring-demandoo-500/20 focus:border-demandoo-500 outline-none" />
                 </div>
               </div>
 
@@ -454,8 +443,8 @@ export const DriverVerificationPage = () => {
               </h2>
               
               <div className="space-y-2 mb-6">
-                <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest block">Date d'expiration de l'assurance</label>
-                <input type="date" value={vehicleDocs.insuranceExpireDate} onChange={e => setVehicleDocs({...vehicleDocs, insuranceExpireDate: e.target.value})} className="w-full sm:w-1/2 px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 font-bold text-sm focus:ring-2 focus:ring-demandoo-500/20 focus:border-demandoo-500 outline-none" />
+                <label htmlFor="kyc-field-15" className="text-[11px] font-black text-slate-400 uppercase tracking-widest block">Date d'expiration de l'assurance</label>
+                <input id="kyc-field-15" type="date" value={vehicleDocs.insuranceExpireDate} onChange={e => setVehicleDocs({...vehicleDocs, insuranceExpireDate: e.target.value})} className="w-full sm:w-1/2 px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 font-bold text-sm focus:ring-2 focus:ring-demandoo-500/20 focus:border-demandoo-500 outline-none" />
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -534,7 +523,7 @@ export const DriverVerificationPage = () => {
           )}
 
           {/* STEP 6: Activation réussie */}
-          {step === 6 && (
+          {step === 6 && verificationStatus === 'VERIFIED' && (
             <div className="text-center space-y-6 py-10 animate-fade-in">
               <div className="w-24 h-24 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-6">
                 <CheckCircle2 className="w-12 h-12 text-emerald-500" />
@@ -543,15 +532,34 @@ export const DriverVerificationPage = () => {
                 Félicitations ! Votre compte chauffeur Demandoo est maintenant actif.
               </h2>
               <p className="text-slate-500 font-medium max-w-md mx-auto">
-                Votre dossier est complet. Vous pouvez dès à présent utiliser toutes les fonctionnalités chauffeur.
+                Votre permis a été vérifié. Vous pouvez dès à présent proposer vos trajets.
               </p>
-              
+
               <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mt-8">
                 <Link to="/publier" className="px-8 py-4 bg-demandoo-600 hover:bg-demandoo-700 text-white rounded-2xl font-black text-sm shadow-lg shadow-demandoo-600/20 active:scale-95 transition-all">
                   Commencer à proposer des trajets
                 </Link>
                 <Link to="/espace-chauffeur" className="px-8 py-4 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-2xl font-black text-sm transition-all">
                   Accéder à l'espace chauffeur
+                </Link>
+              </div>
+            </div>
+          )}
+
+          {step === 6 && verificationStatus !== 'VERIFIED' && (
+            <div className="text-center space-y-6 py-10 animate-fade-in" role="status">
+              <div className="w-24 h-24 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-6">
+                <CheckCircle2 className="w-12 h-12 text-amber-500" />
+              </div>
+              <h2 className="text-2xl sm:text-3xl font-black text-slate-900">
+                Dossier bien reçu, merci !
+              </h2>
+              <p className="text-slate-500 font-medium max-w-md mx-auto">
+                Notre équipe vérifie vos documents, généralement sous 24 h. Vous recevrez une notification dès que votre compte chauffeur sera validé.
+              </p>
+              <div className="flex justify-center mt-8">
+                <Link to="/" className="px-8 py-4 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-2xl font-black text-sm transition-all">
+                  Retour à l'accueil
                 </Link>
               </div>
             </div>

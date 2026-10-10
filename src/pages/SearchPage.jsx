@@ -110,11 +110,11 @@ export const SearchPage = () => {
           {/* Formulaire de recherche Responsive (1 col mobile, 48-52px) */}
           <form onSubmit={handleSearch} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
             <div className="space-y-1.5 sm:col-span-2 lg:col-span-1">
-              <label className="text-[10px] font-extrabold text-slate-500 uppercase tracking-widest flex items-center gap-1">
+              <label htmlFor="search-field-1" className="text-[10px] font-extrabold text-slate-500 uppercase tracking-widest flex items-center gap-1">
                 <Navigation className="w-3 h-3 text-emerald-600" /> Départ
               </label>
               <div className="relative">
-                <input
+                <input id="search-field-1"
                   type="text" list="cities-list" value={departure}
                   onChange={(e) => setDeparture(e.target.value)}
                   placeholder="Touba"
@@ -124,10 +124,10 @@ export const SearchPage = () => {
             </div>
 
             <div className="space-y-1.5 sm:col-span-2 lg:col-span-1">
-              <label className="text-[10px] font-extrabold text-slate-500 uppercase tracking-widest flex items-center gap-1">
+              <label htmlFor="search-field-2" className="text-[10px] font-extrabold text-slate-500 uppercase tracking-widest flex items-center gap-1">
                 <MapPin className="w-3 h-3 text-rose-500" /> Destination
               </label>
-              <input
+              <input id="search-field-2"
                 type="text" list="cities-list" value={destination}
                 onChange={(e) => setDestination(e.target.value)}
                 placeholder="Dakar, Thiès…"
@@ -136,20 +136,20 @@ export const SearchPage = () => {
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-[10px] font-extrabold text-slate-500 uppercase tracking-widest flex items-center gap-1">
+              <label htmlFor="search-field-3" className="text-[10px] font-extrabold text-slate-500 uppercase tracking-widest flex items-center gap-1">
                 <Calendar className="w-3 h-3 text-slate-400" /> Date
               </label>
-              <input
+              <input id="search-field-3"
                 type="date" value={date} onChange={(e) => setDate(e.target.value)}
                 className="w-full px-3.5 py-3.5 sm:py-3 min-h-[48px] rounded-2xl border border-slate-200 text-sm font-bold text-slate-900 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/15 bg-slate-50 focus:bg-white transition-all"
               />
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-[10px] font-extrabold text-slate-500 uppercase tracking-widest flex items-center gap-1">
+              <label htmlFor="search-field-4" className="text-[10px] font-extrabold text-slate-500 uppercase tracking-widest flex items-center gap-1">
                 <Users className="w-3 h-3 text-slate-400" /> Places
               </label>
-              <select
+              <select id="search-field-4"
                 value={passengers} onChange={(e) => setPassengers(parseInt(e.target.value, 10))}
                 className="w-full px-3.5 py-3.5 sm:py-3 min-h-[48px] rounded-2xl border border-slate-200 text-sm font-bold text-slate-900 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/15 bg-slate-50 focus:bg-white transition-all"
               >
@@ -190,18 +190,22 @@ export const SearchPage = () => {
               </h3>
 
               <div className="space-y-3 pt-1 border-t border-slate-100">
-                <label className="flex items-center justify-between cursor-pointer group">
-                  <span className="flex items-center gap-2 text-xs font-bold text-slate-700">
-                    <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                <div className="flex items-center justify-between group">
+                  <span id="verified-only-label" className="flex items-center gap-2 text-xs font-bold text-slate-700">
+                    <ShieldCheck className="w-4 h-4 text-emerald-600" aria-hidden="true" />
                     Conducteurs vérifiés
                   </span>
-                  <div
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={verifiedOnly}
+                    aria-labelledby="verified-only-label"
                     onClick={() => setVerifiedOnly(!verifiedOnly)}
                     className={`relative w-10 h-5 rounded-full transition-colors cursor-pointer ${verifiedOnly ? 'bg-emerald-500' : 'bg-slate-200'}`}
                   >
                     <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${verifiedOnly ? 'translate-x-5' : 'translate-x-0.5'}`} />
-                  </div>
-                </label>
+                  </button>
+                </div>
               </div>
 
               <div className="space-y-3 border-t border-slate-100 pt-4">
@@ -209,7 +213,8 @@ export const SearchPage = () => {
                   <span className="text-xs font-bold text-slate-700">Prix maximum</span>
                   <span className="text-xs font-black text-emerald-700">{maxPrice.toLocaleString('fr-FR')} FCFA</span>
                 </div>
-                <input
+                <input id="search-field-5"
+                  aria-label="Prix maximum"
                   type="range" min={1000} max={15000} step={500} value={maxPrice}
                   onChange={(e) => setMaxPrice(parseInt(e.target.value, 10))}
                   className="w-full accent-emerald-500 cursor-pointer"
@@ -258,7 +263,7 @@ export const SearchPage = () => {
                 Filtres
                 <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showFilters ? 'rotate-180' : ''}`} />
               </button>
-              <select
+              <select aria-label="Trier les trajets"
                 value={sortBy} onChange={(e) => setSortBy(e.target.value)}
                 className="px-3 py-2.5 rounded-2xl border border-slate-200 bg-white text-xs font-bold text-slate-800 focus:outline-none"
               >
@@ -282,7 +287,7 @@ export const SearchPage = () => {
                     <span>Prix max</span>
                     <span className="text-emerald-700">{maxPrice.toLocaleString('fr-FR')} FCFA</span>
                   </div>
-                  <input type="range" min={1000} max={15000} step={500} value={maxPrice} onChange={e => setMaxPrice(parseInt(e.target.value, 10))} className="w-full accent-emerald-500" />
+                  <input type="range" aria-label="Prix maximum" min={1000} max={15000} step={500} value={maxPrice} onChange={e => setMaxPrice(parseInt(e.target.value, 10))} className="w-full accent-emerald-500" />
                 </div>
               </div>
             )}
@@ -350,18 +355,18 @@ export const SearchPage = () => {
             ) : (
               <form onSubmit={handleCreateAlert} className="space-y-4">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-700">Ville de départ</label>
-                  <input type="text" value={departure} onChange={e => setDeparture(e.target.value)} placeholder="Ex: Touba" required
+                  <label htmlFor="search-field-6" className="text-xs font-bold text-slate-700">Ville de départ</label>
+                  <input id="search-field-6" type="text" value={departure} onChange={e => setDeparture(e.target.value)} placeholder="Ex: Touba" required
                     className="w-full px-4 py-2.5 rounded-2xl border border-slate-200 text-sm font-bold text-slate-900 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/15" />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-700">Destination</label>
-                  <input type="text" value={destination} onChange={e => setDestination(e.target.value)} placeholder="Ex: Dakar" required
+                  <label htmlFor="search-field-7" className="text-xs font-bold text-slate-700">Destination</label>
+                  <input id="search-field-7" type="text" value={destination} onChange={e => setDestination(e.target.value)} placeholder="Ex: Dakar" required
                     className="w-full px-4 py-2.5 rounded-2xl border border-slate-200 text-sm font-bold text-slate-900 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/15" />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-700">Date souhaitée <span className="font-normal text-slate-400">(optionnel)</span></label>
-                  <input type="date" value={date} onChange={e => setDate(e.target.value)}
+                  <label htmlFor="search-field-8" className="text-xs font-bold text-slate-700">Date souhaitée <span className="font-normal text-slate-400">(optionnel)</span></label>
+                  <input id="search-field-8" type="date" value={date} onChange={e => setDate(e.target.value)}
                     className="w-full px-4 py-2.5 rounded-2xl border border-slate-200 text-sm font-bold text-slate-900 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/15" />
                 </div>
                 <div className="flex gap-3 pt-2">

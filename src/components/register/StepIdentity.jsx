@@ -22,10 +22,10 @@ export const StepIdentity = ({ data, updateData, onNext, showPassword, setShowPa
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
         <div className="space-y-2">
-          <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest block ml-1">Prénom *</label>
+          <label htmlFor="reg-identity-field-1" className="text-[11px] font-black text-slate-500 uppercase tracking-widest block ml-1">Prénom *</label>
           <div className="relative">
             <User className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
-            <input
+            <input id="reg-identity-field-1"
               type="text"
               value={data.firstName}
               onChange={(e) => updateData({ firstName: e.target.value })}
@@ -37,10 +37,10 @@ export const StepIdentity = ({ data, updateData, onNext, showPassword, setShowPa
         </div>
 
         <div className="space-y-2">
-          <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest block ml-1">Nom *</label>
+          <label htmlFor="reg-identity-field-2" className="text-[11px] font-black text-slate-500 uppercase tracking-widest block ml-1">Nom *</label>
           <div className="relative">
             <User className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
-            <input
+            <input id="reg-identity-field-2"
               type="text"
               value={data.lastName}
               onChange={(e) => updateData({ lastName: e.target.value })}
@@ -53,12 +53,12 @@ export const StepIdentity = ({ data, updateData, onNext, showPassword, setShowPa
       </div>
 
       <div className="space-y-2">
-        <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest block ml-1">Numéro de téléphone *</label>
+        <label htmlFor="reg-identity-field-3" className="text-[11px] font-black text-slate-500 uppercase tracking-widest block ml-1">Numéro de téléphone *</label>
         <div className="relative flex">
           <div className="shrink-0 pl-4 pr-3 py-3.5 rounded-l-2xl bg-slate-50 border-y border-l border-slate-200 flex items-center justify-center">
             <span className="text-sm font-bold text-slate-500">+221</span>
           </div>
-          <input
+          <input id="reg-identity-field-3"
             type="tel"
             value={data.phone}
             onChange={(e) => updateData({ phone: e.target.value })}
@@ -71,10 +71,10 @@ export const StepIdentity = ({ data, updateData, onNext, showPassword, setShowPa
       </div>
 
       <div className="space-y-2">
-        <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest block ml-1">Code secret (4 chiffres) *</label>
+        <label htmlFor="reg-identity-field-4" className="text-[11px] font-black text-slate-500 uppercase tracking-widest block ml-1">Code secret (4 chiffres) *</label>
         <div className="relative">
           <Lock className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
-          <input
+          <input id="reg-identity-field-4"
             type={showPassword ? "text" : "password"}
             inputMode="numeric"
             maxLength={4}
@@ -96,10 +96,10 @@ export const StepIdentity = ({ data, updateData, onNext, showPassword, setShowPa
       </div>
 
       <div className="space-y-2">
-        <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest block ml-1">Confirmation du code secret *</label>
+        <label htmlFor="reg-identity-field-5" className="text-[11px] font-black text-slate-500 uppercase tracking-widest block ml-1">Confirmation du code secret *</label>
         <div className="relative">
           <Lock className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
-          <input
+          <input id="reg-identity-field-5"
             type={showConfirmPassword ? "text" : "password"}
             inputMode="numeric"
             maxLength={4}

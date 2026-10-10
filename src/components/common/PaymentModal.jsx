@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { X, Loader2, Smartphone, ShieldCheck } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
+import { apiPost } from '../../lib/api';
 import { useAuth } from '../../context/AuthContext';
 
 export const PaymentModal = ({ isOpen, onClose, plan, onSuccess }) => {
@@ -20,62 +20,17 @@ export const PaymentModal = ({ isOpen, onClose, plan, onSuccess }) => {
     setErrorMsg('');
     
     try {
-      const clientReference = `sub_${user?.id}_${Date.now()}`;
-      const successUrl = `${window.location.origin}/abonnement?payment=success&plan_id=${plan.id}`;
-      const errorUrl = `${window.location.origin}/abonnement?payment=cancelled`;
-
-      // 1. Appel dynamique à la passerelle Afrotools
-      let redirectUrl = null;
-
-      if (provider === 'wave') {
-        const { createWaveCheckout } = await import('../../services/afrotoolsService');
-        const response = await createWaveCheckout({
-          amount: plan.monthly_price,
-          clientReference,
-          clientPhone: phoneNumber,
-          successUrl,
-          errorUrl
-        });
-        
-        // Mode Simulation Sandbox de Afrotools: L'URL retournée est une fausse URL (pay.wave.com/m/...). 
-        // Si c'est le cas, on contourne et on redirige directement vers le succès pour la démo.
-        if (response.wave_launch_url && response.wave_launch_url.includes('wave_')) {
-            redirectUrl = successUrl;
-        } else {
-            redirectUrl = response.wave_launch_url;
-        }
-      } else {
-        const { createBictorysCharge } = await import('../../services/afrotoolsService');
-        const response = await createBictorysCharge({
-          amount: plan.monthly_price,
-          clientReference,
-          customerName: user?.full_name || 'Chauffeur',
-          customerPhone: phoneNumber,
-          customerEmail: user?.email,
-          paymentType: provider === 'orange_money' ? 'orange_money' : undefined,
-          successUrl,
-          errorUrl
-        });
-
-        // Mode Simulation Sandbox Bictorys
-        if (response.link && response.link.includes('bictorys_chg_')) {
-            redirectUrl = successUrl;
-        } else {
-            redirectUrl = response.link;
-        }
-      }
-
-      // 2. Redirection vers la plateforme de paiement ou l'URL de succès
-      if (redirectUrl) {
-        window.location.href = redirectUrl;
-      } else {
-        throw new Error("L'URL de paiement n'a pas pu être générée.");
-      }
-      
+      // Session de paiement créée côté serveur : montant calculé et clés API protégées
+      const { url } = await apiPost('/api/payments/checkout', {
+        plan_slug: plan.slug,
+        provider,
+        phone: phoneNumber,
+      });
+      window.location.href = url;
     } catch (err) {
-      console.error("Erreur de paiement Afrotools:", err);
+      console.error("Erreur de paiement:", err);
       setStatus('error');
-      setErrorMsg("La transaction a échoué. Veuillez vérifier votre solde et réessayer.");
+      setErrorMsg(err.message || "Le paiement n'a pas pu être lancé. Réessayez.");
     }
   };
 
@@ -92,6 +47,7 @@ export const PaymentModal = ({ isOpen, onClose, plan, onSuccess }) => {
           <button 
             onClick={onClose}
             disabled={status === 'processing'}
+            aria-label="Fermer la fenêtre de paiement"
             className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-full transition-colors disabled:opacity-50 min-h-[40px] min-w-[40px] flex items-center justify-center"
           >
             <X className="w-5 h-5" />
@@ -144,10 +100,12 @@ export const PaymentModal = ({ isOpen, onClose, plan, onSuccess }) => {
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-black text-slate-400 uppercase tracking-widest block ml-1">Numéro de téléphone</label>
+              <label htmlFor="payment-phone" className="text-xs font-black text-slate-400 uppercase tracking-widest block ml-1">Numéro de téléphone</label>
               <div className="relative">
                 <Smartphone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                 <input
+                  id="payment-phone"
+                  autoComplete="tel-national"
                   type="tel"
                   value={phoneNumber}
                   onChange={(e) => setPhoneNumber(e.target.value)}
@@ -177,7 +135,7 @@ export const PaymentModal = ({ isOpen, onClose, plan, onSuccess }) => {
             </button>
             
             <p className="text-[10px] text-center text-slate-400 font-medium">
-              Simulation sécurisée. Aucune somme réelle ne sera débitée de votre compte.
+              Vous serez redirigé vers la page sécurisée de l'opérateur pour valider le paiement.
             </p>
           </form>
         )}

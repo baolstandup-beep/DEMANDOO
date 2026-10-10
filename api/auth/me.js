@@ -2,6 +2,7 @@
 // Valide le cookie de session et retourne le profil utilisateur + access_token.
 
 import crypto from 'node:crypto';
+import { applyCors } from '../_lib/server.js';
 
 // ─── Helpers JWT ──────────────────────────────────────────────────────────────
 function b64url(str) { return Buffer.from(str).toString('base64url'); }
@@ -48,12 +49,8 @@ const SUPA_URL = () => process.env.VITE_SUPABASE_URL;
 
 // ─────────────────────────────────────────────────────────────────────────────
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
-  res.setHeader('Access-Control-Allow-Origin', req.headers.origin || '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
-  if (req.method === 'OPTIONS') return res.status(200).end();
+  // CORS restreint aux origines Demandoo
+  if (applyCors(req, res, 'GET, OPTIONS')) return;
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method Not Allowed' });
 
   try {

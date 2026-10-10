@@ -1,7 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Mic, Square, Volume2 } from 'lucide-react';
+import { apiUrl } from '../../lib/api';
 
-const WEBHOOK_URL = 'https://baolvision.app.n8n.cloud/webhook/demandoo-voice';
+// Passe par notre proxy serverless (URL n8n cachée, débit et taille limités)
+const WEBHOOK_URL = apiUrl('/api/voice');
 const MAX_RECORDING_MS = 30000;
 
 export const VoiceSearch = ({ onManualSearch }) => {
@@ -67,7 +69,9 @@ export const VoiceSearch = ({ onManualSearch }) => {
           body.append('audio', file);
           const response = await fetch(WEBHOOK_URL, { method: 'POST', body });
           if (!response.ok) {
-            const message = response.status >= 500
+            const message = response.status === 429
+              ? 'Trop de recherches vocales d’affilée. Patientez quelques minutes ou utilisez le formulaire ci-dessus.'
+              : response.status >= 500
               ? 'La transcription vocale est temporairement indisponible. Vous pouvez rechercher un trajet avec le formulaire ci-dessus.'
               : response.status === 400 || response.status === 415
                 ? 'Le son enregistré n’a pas pu être traité. Réessayez en parlant clairement.'

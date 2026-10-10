@@ -1,31 +1,41 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, lazy, Suspense } from 'react';
 import { Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import { Header } from './components/common/Header';
 import { MobileNavbar } from './components/common/MobileNavbar';
 import { Footer } from './components/common/Footer';
 import { HomePage } from './pages/HomePage';
-import { SearchPage } from './pages/SearchPage';
-import { TripDetailsPage } from './pages/TripDetailsPage';
-import { DriverProfilePage } from './pages/DriverProfilePage';
-import { DriverSpacePage } from './pages/DriverSpacePage';
-import { PublishTripPage } from './pages/PublishTripPage';
-import { DriverVerificationPage } from './pages/DriverVerificationPage';
-import { AdminDashboardPage } from './pages/AdminDashboardPage';
-import { AdminDriversPage } from './pages/AdminDriversPage';
-import { AdminDriverReviewPage } from './pages/AdminDriverReviewPage';
-import { MyBookingsPage } from './pages/MyBookingsPage';
-import { LoginPage } from './pages/LoginPage';
-import { RegisterPage } from './pages/RegisterPage';
-import { SubscriptionPage } from './pages/SubscriptionPage';
 import { LocationTracker } from './components/common/LocationTracker';
 
 import { DriverRouteGuard } from './components/common/DriverRouteGuard';
 import { AdminRouteGuard } from './components/common/AdminRouteGuard';
-import { NotFoundPage } from './pages/NotFoundPage';
-import { AuthCallbackPage } from './pages/AuthCallbackPage';
 import { PushNotificationsSetup } from './capacitor/PushNotifications';
 import { registerAndroidBackButton } from './capacitor/index';
 import { useNotifications } from './context/NotificationContext';
+import { Loader2 } from 'lucide-react';
+
+// Découpage par route : seule la page d'accueil est dans le bundle initial
+const lazyPage = (name) => lazy(() => import(`./pages/${name}.jsx`).then((m) => ({ default: m[name] })));
+const SearchPage = lazyPage('SearchPage');
+const TripDetailsPage = lazyPage('TripDetailsPage');
+const DriverProfilePage = lazyPage('DriverProfilePage');
+const DriverSpacePage = lazyPage('DriverSpacePage');
+const PublishTripPage = lazyPage('PublishTripPage');
+const DriverVerificationPage = lazyPage('DriverVerificationPage');
+const AdminDashboardPage = lazyPage('AdminDashboardPage');
+const AdminDriversPage = lazyPage('AdminDriversPage');
+const AdminDriverReviewPage = lazyPage('AdminDriverReviewPage');
+const MyBookingsPage = lazyPage('MyBookingsPage');
+const LoginPage = lazyPage('LoginPage');
+const RegisterPage = lazyPage('RegisterPage');
+const SubscriptionPage = lazyPage('SubscriptionPage');
+const NotFoundPage = lazyPage('NotFoundPage');
+const AuthCallbackPage = lazyPage('AuthCallbackPage');
+
+const PageFallback = () => (
+  <div className="min-h-[60vh] flex items-center justify-center" role="status" aria-label="Chargement de la page">
+    <Loader2 className="w-8 h-8 animate-spin text-demandoo-600" />
+  </div>
+);
 
 export function App() {
   const location = useLocation();
@@ -37,7 +47,7 @@ export function App() {
   useEffect(() => {
     const path = location.pathname;
     if (path === '/') {
-      document.title = 'Demandoo — Covoiturage de confiance au Sénégal';
+      document.title = 'Demandoo — Covoiturage de confiance au Sénégal (Touba, Dakar, Thiès…)';
     } else if (path.startsWith('/trajets')) {
       document.title = 'Trouver un trajet | Demandoo';
     } else if (path.startsWith('/trajet/')) {
@@ -58,6 +68,8 @@ export function App() {
       document.title = 'Connexion | Demandoo';
     } else if (path === '/inscription-chauffeur') {
       document.title = 'Inscription | Demandoo';
+    } else if (path === '/abonnement') {
+      document.title = 'Formules chauffeur | Demandoo';
     }
   }, [location]);
 
@@ -76,7 +88,11 @@ export function App() {
 
       <Header />
       
-      <main className="flex-1 w-full pb-20 md:pb-0 overflow-x-hidden">
+      <a href="#contenu" className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[1000] focus:px-4 focus:py-2 focus:rounded-lg focus:bg-white focus:text-slate-900 focus:font-bold focus:shadow-lg">
+        Aller au contenu
+      </a>
+      <main id="contenu" tabIndex={-1} className="flex-1 w-full pb-20 md:pb-0 overflow-x-hidden focus:outline-none">
+        <Suspense fallback={<PageFallback />}>
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/trajets" element={<SearchPage />} />
@@ -124,6 +140,7 @@ export function App() {
           <Route path="/auth/callback" element={<AuthCallbackPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
+        </Suspense>
       </main>
 
       <Footer />

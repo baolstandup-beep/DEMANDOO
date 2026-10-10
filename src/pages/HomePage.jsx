@@ -1,8 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useTrips } from '../context/TripContext';
 import { INITIAL_CITIES } from '../lib/mockData';
-import InteractiveMap from '../components/common/InteractiveMap';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
+// Leaflet (~150 Ko) chargé seulement quand la carte est rendue
+const InteractiveMap = lazy(() => import('../components/common/InteractiveMap'));
 import { 
   Search,
   MessageCircle,
@@ -44,9 +46,33 @@ const AnimatedBackground = () => {
 };
 
 
+// « Fatou Diop » → « Fatou D. » (respect de la vie privée)
+const formatReviewerName = (fullName) => {
+  const parts = (fullName || 'Passager').trim().split(/\s+/);
+  return parts.length > 1 ? `${parts[0]} ${parts[parts.length - 1].charAt(0)}.` : parts[0];
+};
+
 export const HomePage = () => {
   const navigate = useNavigate();
   const { trips } = useTrips();
+  const [reviews, setReviews] = useState([]);
+
+  useEffect(() => {
+    if (!isSupabaseConfigured) return;
+    let cancelled = false;
+    supabase
+      .from('reviews')
+      .select('id, rating, comment, passenger:profiles!reviews_passenger_id_fkey(full_name)')
+      .gte('rating', 4)
+      .not('comment', 'is', null)
+      .order('created_at', { ascending: false })
+      .limit(6)
+      .then(({ data, error }) => {
+        if (cancelled || error || !data) return;
+        setReviews(data.filter(r => (r.comment || '').trim().length >= 20));
+      });
+    return () => { cancelled = true; };
+  }, []);
 
   const [departure, setDeparture] = useState('Touba');
   const [destination, setDestination] = useState('');
@@ -84,40 +110,40 @@ export const HomePage = () => {
       <AnimatedBackground />
 
       {/* 2. PREMIER ÉCRAN (Hero Section Premium) */}
-      <section className="relative overflow-x-clip min-h-[780px] flex items-center pt-24 pb-16 lg:pt-0 lg:pb-0 border-b border-white/10">
+      <section className="relative overflow-x-clip lg:min-h-[780px] flex items-center pt-8 pb-12 sm:pt-16 lg:pt-0 lg:pb-0 border-b border-white/10">
         
         <div className="relative w-[92%] max-w-[1500px] mx-auto z-10">
-          <div className="grid grid-cols-1 lg:grid-cols-[52%_48%] items-center justify-center min-h-[780px] gap-12 lg:gap-0">
+          <div className="grid grid-cols-[minmax(0,1fr)] lg:grid-cols-[minmax(0,52%)_minmax(0,48%)] items-center justify-center lg:min-h-[780px] gap-8 lg:gap-10">
             
             {/* COLONNE GAUCHE (CONTENU & RECHERCHE) */}
-            <div className="flex flex-col items-center lg:items-start text-center lg:text-left space-y-7 order-2 lg:order-1 w-full max-w-[720px] mx-auto lg:mx-0">
+            <div className="flex flex-col items-center lg:items-start text-center lg:text-left space-y-7 order-1 w-full max-w-[720px] mx-auto lg:mx-0">
               
               {/* Badge */}
-              <Reveal delay={100}>
+              <div className="animate-fade-in">
                 <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-md text-xs sm:text-sm font-bold text-emerald-300 shadow-sm animate-fade-in">
                   <Star className="w-4 h-4 shrink-0" fill="currentColor" />
-                  <span>★ Le covoiturage de confiance au Sénégal</span>
+                  <span>Le covoiturage de confiance au Sénégal</span>
                 </div>
-              </Reveal>
+              </div>
 
               {/* Titre Principal */}
-              <Reveal delay={200} className="w-full">
+              <div className="w-full">
                 <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-[4rem] font-black text-white tracking-tight leading-[1.1] break-words">
                   Depuis Touba,<br />
                   trouvez votre trajet <br className="hidden sm:block" />
-                  <span className="text-amber-500">partout au Sénégal.</span>
+                  <span className="text-amber-400">partout au Sénégal.</span>
                 </h1>
-              </Reveal>
+              </div>
 
               {/* Description */}
-              <Reveal delay={300} className="w-full">
+              <div className="w-full">
                 <p className="text-base sm:text-lg lg:text-xl text-slate-300 font-medium leading-relaxed">
                   Demandoo met en relation passagers et chauffeurs. Vous organisez ensemble votre trajet et son règlement, simplement et directement.
                 </p>
-              </Reveal>
+              </div>
               
               {/* FORMULAIRE DE RECHERCHE */}
-              <Reveal delay={400} className="w-full">
+              <div className="w-full">
                 <div className="bg-white/10 backdrop-blur-2xl p-4 sm:p-5 lg:p-6 rounded-[24px] w-full shadow-[0_8px_32px_rgba(0,0,0,0.3)] border border-white/20 relative z-20 transition-transform duration-300 hover:shadow-demandoo-500/20">
                   <form onSubmit={handleSearchSubmit} className="flex flex-col gap-3">
                     
@@ -127,9 +153,12 @@ export const HomePage = () => {
                       <div className="w-full sm:flex-1 flex items-center gap-3 bg-white/5 hover:bg-white/10 focus-within:bg-white/10 focus-within:ring-2 focus-within:ring-white/30 p-3.5 sm:p-4 rounded-2xl transition-all border border-white/10">
                         <MapPin className="w-5 h-5 text-white/70 shrink-0" />
                         <div className="w-full text-left">
-                          <label className="sr-only">Ville de départ</label>
+                          <label htmlFor="home-departure" className="sr-only">Ville de départ</label>
                           <input 
+                            id="home-departure"
                             type="text" 
+                            list="cities-list"
+                            autoComplete="off" 
                             value={departure} 
                             onChange={(e) => setDeparture(e.target.value)} 
                             placeholder="Départ (ex: Touba)" 
@@ -157,8 +186,10 @@ export const HomePage = () => {
                       <div className="w-full sm:flex-1 flex items-center gap-3 bg-white/5 hover:bg-white/10 focus-within:bg-white/10 focus-within:ring-2 focus-within:ring-white/30 p-3.5 sm:p-4 rounded-2xl transition-all border border-white/10">
                         <MapPin className="w-5 h-5 text-rose-400 shrink-0" />
                         <div className="w-full text-left">
-                          <label className="sr-only">Destination</label>
+                          <label htmlFor="home-destination" className="sr-only">Destination</label>
                           <input 
+                            id="home-destination"
+                            autoComplete="off"
                             ref={destinationRef}
                             type="text" 
                             list="cities-list" 
@@ -177,8 +208,9 @@ export const HomePage = () => {
                       <div className="w-full sm:flex-[2] md:flex-1 flex items-center gap-3 bg-white/5 hover:bg-white/10 focus-within:bg-white/10 focus-within:ring-2 focus-within:ring-white/30 p-3.5 sm:p-4 rounded-2xl transition-all border border-white/10">
                         <Calendar className="w-5 h-5 text-white/70 shrink-0" />
                         <div className="w-full text-left">
-                          <label className="sr-only">Date</label>
+                          <label htmlFor="home-date" className="sr-only">Date du trajet</label>
                           <input 
+                            id="home-date"
                             type="date" 
                             value={date} 
                             onChange={(e) => setDate(e.target.value)} 
@@ -191,10 +223,12 @@ export const HomePage = () => {
                       <div className="w-full sm:w-32 flex items-center justify-between sm:justify-center gap-2 bg-white/5 hover:bg-white/10 focus-within:bg-white/10 focus-within:ring-2 focus-within:ring-white/30 p-3.5 sm:p-4 rounded-2xl transition-all border border-white/10">
                         <div className="flex items-center gap-2">
                           <Users className="w-5 h-5 text-white/70 shrink-0" />
-                          <span className="sm:hidden text-sm font-bold text-white/80">Passagers :</span>
+                          <label htmlFor="home-passengers" className="sm:hidden text-sm font-bold text-white/80">Passagers :</label>
                         </div>
                         <input 
+                          id="home-passengers"
                           type="number" 
+                          inputMode="numeric" 
                           min="1" 
                           max="7" 
                           value={passengers} 
@@ -217,7 +251,7 @@ export const HomePage = () => {
                   </form>
                   <VoiceSearch onManualSearch={() => destinationRef.current?.focus()} />
                 </div>
-              </Reveal>
+              </div>
 
               {/* CTA SECONDAIRE */}
               <Reveal delay={500} className="w-full">
@@ -245,8 +279,8 @@ export const HomePage = () => {
             </div>
             
             {/* COLONNE DROITE (GRANDE IMAGE DEMANDOO) */}
-            <div className="relative flex items-center justify-center order-1 lg:order-2 w-full mt-4 lg:mt-0">
-              <Reveal delay={400} className="w-full">
+            <div className="relative flex items-center justify-center order-2 w-full">
+              <div className="w-full">
                 <div className="relative w-full flex justify-center lg:justify-end items-center animate-fade-in" style={{ animationDuration: '1s' }}>
                   
                   {/* Lumière radiale turquoise subtile */}
@@ -255,8 +289,12 @@ export const HomePage = () => {
                   {/* Image Transparente Extra-Large */}
                   <img 
                     src="/images/UUU.png" 
-                    alt="Covoiturage Demandoo Sénégal" 
-                    className="relative z-10 w-[min(115%,600px)] lg:w-[clamp(650px,52vw,950px)] max-w-none h-auto object-contain animate-float"
+                    alt="Voiture Demandoo et application mobile de covoiturage" 
+                    width="622"
+                    height="506"
+                    fetchpriority="high"
+                    decoding="async"
+                    className="relative z-10 w-full max-w-[440px] sm:max-w-[560px] lg:max-w-[680px] h-auto object-contain motion-safe:animate-float"
                     style={{ 
                       filter: 'drop-shadow(0 25px 25px rgba(0,0,0,0.15))' 
                     }}
@@ -269,7 +307,7 @@ export const HomePage = () => {
                   {/* Ombre au sol (ellipse) */}
                   <div className="absolute bottom-[5%] left-1/2 -translate-x-1/2 w-[60%] h-6 bg-black/30 blur-[12px] rounded-[100%] pointer-events-none"></div>
                 </div>
-              </Reveal>
+              </div>
             </div>
 
           </div>
@@ -318,10 +356,22 @@ export const HomePage = () => {
         </div>
 
         {availableTrips.length === 0 ? (
-          <div className="bg-white/10 backdrop-blur-xl p-8 rounded-[2rem] text-center border border-white/20 shadow-lg">
-            <h3 className="text-lg font-bold text-white mb-2">Aucun trajet à venir pour le moment</h3>
-            <p className="text-white/70 mb-4">Soyez le premier à proposer un trajet ou modifiez vos critères de recherche.</p>
-            <Link to="/publier" className="inline-block px-6 py-3 rounded-xl bg-demandoo-500 text-white font-bold hover:bg-demandoo-400 transition-colors">Proposer un trajet</Link>
+          <div className="bg-white/10 backdrop-blur-xl p-6 sm:p-8 rounded-[2rem] text-center border border-white/20 shadow-lg">
+            <h3 className="text-lg font-bold text-white mb-2">Les prochains départs arrivent</h3>
+            <p className="text-white/70 mb-6 max-w-xl mx-auto">De nouveaux trajets sont publiés chaque jour. Choisissez une ligne pour voir les départs dès qu'ils sont disponibles.</p>
+            <div className="flex flex-wrap justify-center gap-2 mb-6">
+              {[['Touba', 'Dakar'], ['Touba', 'Thiès'], ['Touba', 'Saint-Louis'], ['Touba', 'Mbour'], ['Dakar', 'Touba']].map(([dep, arr]) => (
+                <button
+                  key={`${dep}-${arr}`}
+                  type="button"
+                  onClick={() => setPopularRoute(dep, arr)}
+                  className="px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 text-sm font-bold text-white transition-colors"
+                >
+                  {dep} → {arr}
+                </button>
+              ))}
+            </div>
+            <Link to="/publier" className="inline-block px-6 py-3 rounded-xl bg-demandoo-500 text-white font-bold hover:bg-demandoo-400 transition-colors">Vous partez ? Proposez un trajet</Link>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -375,7 +425,9 @@ export const HomePage = () => {
       </section>
 
       {/* 5. CARTE INTERACTIVE */}
-      <InteractiveMap />
+      <Suspense fallback={<div className="h-[420px]" aria-hidden="true" />}>
+        <InteractiveMap />
+      </Suspense>
 
       {/* 6. INFORMATIONS DE CONFIANCE */}
       <section className="relative py-16 bg-white/5 backdrop-blur-md border-y border-white/10 z-10">
@@ -388,40 +440,39 @@ export const HomePage = () => {
         </div>
       </section>
 
-      {/* 7. TÉMOIGNAGES */}
-      <section className="relative py-16 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 z-10">
-        <Reveal>
-          <h2 className="text-3xl font-black text-white text-center mb-10">Ce qu'en disent nos utilisateurs</h2>
-        </Reveal>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {[
-            { name: "Fatou D.", role: "Passagère", img: "https://images.unsplash.com/photo-1531123897727-8f129e1bf38c?auto=format&fit=crop&q=80&w=150", text: "J'ai trouvé un trajet pour Dakar très rapidement. Le chauffeur était ponctuel et sympathique. C'est vraiment simple de s'arranger directement !" },
-            { name: "Modou S.", role: "Chauffeur", img: "https://images.unsplash.com/photo-1506277886164-e25aa3f4ef7f?auto=format&fit=crop&q=80&w=150", text: "Depuis que j'utilise Demandoo, je ne fais plus mes trajets vers Saint-Louis à vide. Je suis contacté facilement et je remplis ma voiture à chaque fois." },
-            { name: "Aïssatou N.", role: "Passagère", img: "https://images.unsplash.com/photo-1589156229687-496a31ad1d1f?auto=format&fit=crop&q=80&w=150", text: "Ce que j'aime, c'est la transparence. Pas de commission, on paye directement en entrant dans le véhicule. Très pratique pour mes déplacements réguliers." },
-            { name: "Cheikh T.", role: "Passager", img: "https://images.unsplash.com/photo-1522529599102-193c0d76b5b6?auto=format&fit=crop&q=80&w=150", text: "L'application est très intuitive. J'ai pu contacter mon chauffeur via WhatsApp en deux clics. Je recommande vivement pour voyager tranquille." },
-            { name: "Ousmane F.", role: "Chauffeur", img: "https://images.unsplash.com/photo-1531384441138-2736e62e0919?auto=format&fit=crop&q=80&w=150", text: "Je publie mes trajets Touba - Dakar chaque semaine. Ça me rembourse le carburant et les passagers sont toujours ponctuels." },
-            { name: "Mariama B.", role: "Passagère", img: "https://images.unsplash.com/photo-1489424731084-a5d8b219a5bb?auto=format&fit=crop&q=80&w=150", text: "Fini les longues attentes à la gare routière ! Je trouve mon trajet à l'avance, on s'arrange sur le point de rendez-vous et on y va." }
-          ].map((testimonial, i) => (
-            <Reveal key={i} delay={i * 100}>
-              <div className="bg-white/10 backdrop-blur-md p-6 rounded-2xl shadow-lg border border-white/20 flex flex-col justify-between h-full hover:-translate-y-1 transition-transform">
-                <div className="space-y-4 mb-6">
-                  <div className="flex gap-1">
-                    {[1,2,3,4,5].map(star => <Star key={star} className="w-4 h-4 fill-amber-400 text-amber-400" />)}
+      {/* 7. TÉMOIGNAGES — avis réels laissés après un trajet (aucun avis fictif) */}
+      {reviews.length >= 3 && (
+        <section className="relative py-16 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 z-10">
+          <Reveal>
+            <h2 className="text-3xl font-black text-white text-center mb-10">Ce qu'en disent nos utilisateurs</h2>
+          </Reveal>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {reviews.map((review, i) => (
+              <Reveal key={review.id} delay={i * 100}>
+                <figure className="bg-white/10 backdrop-blur-md p-6 rounded-2xl shadow-lg border border-white/20 flex flex-col justify-between h-full">
+                  <div className="space-y-4 mb-6">
+                    <div className="flex gap-1" role="img" aria-label={`${review.rating} étoiles sur 5`}>
+                      {[1, 2, 3, 4, 5].map(star => (
+                        <Star key={star} aria-hidden="true" className={`w-4 h-4 ${star <= review.rating ? 'fill-amber-400 text-amber-400' : 'text-white/30'}`} />
+                      ))}
+                    </div>
+                    <blockquote className="text-white/80 font-medium italic">« {review.comment} »</blockquote>
                   </div>
-                  <p className="text-white/80 font-medium italic">"{testimonial.text}"</p>
-                </div>
-                <div className="flex items-center gap-3">
-                  <img src={testimonial.img} alt={testimonial.name} className="w-10 h-10 rounded-full object-cover border-2 border-white/20 shadow-sm" />
-                  <div>
-                    <p className="font-black text-white">{testimonial.name}</p>
-                    <p className="text-sm font-bold text-demandoo-400">{testimonial.role}</p>
-                  </div>
-                </div>
-              </div>
-            </Reveal>
-          ))}
-        </div>
-      </section>
+                  <figcaption className="flex items-center gap-3">
+                    <span aria-hidden="true" className="w-10 h-10 rounded-full bg-demandoo-500/30 border-2 border-white/20 flex items-center justify-center font-black text-white">
+                      {(review.passenger?.full_name || 'P').charAt(0).toUpperCase()}
+                    </span>
+                    <span>
+                      <span className="block font-black text-white">{formatReviewerName(review.passenger?.full_name)}</span>
+                      <span className="block text-sm font-bold text-demandoo-400">Passager · trajet vérifié</span>
+                    </span>
+                  </figcaption>
+                </figure>
+              </Reveal>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* 8. FAQ COURTE */}
       <section className="relative py-16 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 z-10">

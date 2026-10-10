@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /espace-chauffeur
+Disallow: /mes-reservations
+Disallow: /verification-chauffeur
+Disallow: /auth/
+Disallow: /api/
+
+Sitemap: https://demandoo-kappa.vercel.app/sitemap.xml

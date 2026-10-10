@@ -114,10 +114,10 @@ export const LoginPage = () => {
         <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-6">
 
           <div className="space-y-2">
-            <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest block ml-1">Numéro de téléphone</label>
+            <label htmlFor="login-field-1" className="text-[11px] font-black text-slate-400 uppercase tracking-widest block ml-1">Numéro de téléphone</label>
             <div className="relative">
               <User className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
-              <input
+              <input id="login-field-1"
                 type="tel"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
@@ -129,10 +129,10 @@ export const LoginPage = () => {
           </div>
 
           <div className="space-y-2">
-            <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest block ml-1">Code secret (4 chiffres)</label>
+            <label htmlFor="login-field-2" className="text-[11px] font-black text-slate-400 uppercase tracking-widest block ml-1">Code secret (4 chiffres)</label>
             <div className="relative">
               <Lock className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
-              <input
+              <input id="login-field-2"
                 type={showPassword ? "text" : "password"}
                 inputMode="numeric"
                 maxLength={4}

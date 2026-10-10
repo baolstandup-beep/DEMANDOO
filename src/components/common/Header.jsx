@@ -57,7 +57,7 @@ export const Header = () => {
         {/* LOGO */}
         <Link to="/" className="flex items-center gap-2 group py-1">
           <img 
-            src="/logo.png" 
+            src="/logo-header.png" 
             alt="Demandoo — Covoiturage Sénégal" 
             className="h-8 sm:h-9 w-auto object-contain transition-transform duration-200 group-hover:scale-[1.03]"
           />
@@ -336,7 +336,7 @@ export const Header = () => {
           >
             {/* Drawer Header */}
             <div className="flex items-center justify-between pb-4 border-b border-slate-100">
-              <img src="/logo.png" alt="Demandoo" className="h-7 w-auto object-contain" />
+              <img src="/logo-header.png" alt="Demandoo" className="h-7 w-auto object-contain" />
               <button 
                 onClick={() => setMobileMenuOpen(false)}
                 className="p-2 rounded-full bg-slate-100 text-slate-500 hover:text-slate-800"

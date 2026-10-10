@@ -57,7 +57,7 @@ const SUBSCRIPTION_TIERS = [
 ];
 
 export const SubscriptionPage = () => {
-  const { user } = useAuth();
+  const { user, subscribeDriver, refreshProfile } = useAuth();
   const navigate = useNavigate();
   const [dbPlans, setDbPlans] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -105,6 +105,7 @@ export const SubscriptionPage = () => {
     
     const planToProcess = {
       id: getPlanId(tier),
+      slug: tier.id_fallback,
       name: tier.name,
       monthly_price: tier.price
     };
@@ -116,87 +117,60 @@ export const SubscriptionPage = () => {
     }
   };
 
-  const handlePaymentSuccess = async (plan, provider) => {
+  // Offre gratuite : activation contrôlée côté base (RPC start_free_trial, 1 fois par chauffeur).
+  // Offres payantes : activées UNIQUEMENT par le webhook de paiement, jamais par cette page.
+  const handlePaymentSuccess = async (plan) => {
     setSubscribingTo(plan.id);
     setSelectedPlan(null);
     setError('');
-    
     try {
-      const periodEnd = new Date();
-      periodEnd.setMonth(periodEnd.getMonth() + 1);
-      
-      if (plan.id.length === 36) { // If it's a real UUID from DB
-        await supabase
-          .from('driver_subscriptions')
-          .insert([{
-            driver_id: user.id,
-            plan_id: plan.id,
-            billing_cycle: 'monthly',
-            status: 'active',
-            period_end: periodEnd.toISOString()
-          }]);
+      const result = await subscribeDriver('trial');
+      if (!result.success) {
+        setError(result.error || "Une erreur est survenue lors de l'activation de votre offre.");
+        return;
       }
-      
-      // Update profile subscription info locally & in DB
-      await supabase.from('profiles').update({ 
-        subscription_status: plan.monthly_price === 0 ? 'trial' : 'active',
-        driver_status: 'VERIFIED',
-        is_driver_active: true,
-        kyc_status: 'verified'
-      }).eq('id', user.id);
-      
-      // Force localStorage update for AuthContext
-      const stored = localStorage.getItem('demandoo_user_v2');
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        parsed.subscription_status = plan.monthly_price === 0 ? 'trial' : 'active';
-        parsed.driver_status = 'VERIFIED';
-        parsed.is_driver_active = true;
-        parsed.kyc_status = 'verified';
-        localStorage.setItem('demandoo_user_v2', JSON.stringify(parsed));
-      }
-      
-      alert(`Félicitations, vous êtes maintenant abonné à la formule ${plan.name} !`);
-      window.location.href = '/espace-chauffeur';
-    } catch (err) {
-      console.error('Error recording subscription:', err);
-      setError("Une erreur est survenue lors de l'activation de votre abonnement.");
+      navigate('/espace-chauffeur');
     } finally {
       setSubscribingTo(null);
     }
   };
 
-  // Intercepter le retour de paiement depuis Afrotools
+  // Retour depuis la page de paiement : on attend la confirmation du webhook
+  const [confirmingPayment, setConfirmingPayment] = useState(false);
   useEffect(() => {
-    if (!loading && dbPlans.length > 0 && user) {
-      const params = new URLSearchParams(location.search);
-      const paymentStatus = params.get('payment');
-      const planId = params.get('plan_id');
-      
-      if (paymentStatus === 'success' && planId) {
-        // Retrouver les infos du plan depuis dbPlans ou le fallback
-        let matchedPlan = dbPlans.find(p => p.id === planId);
-        if (!matchedPlan) {
-          // Chercher dans les fallbacks si ce n'est pas un plan DB
-          const fallbackTier = SUBSCRIPTION_TIERS.find(t => t.id_fallback === planId);
-          if (fallbackTier) {
-            matchedPlan = {
-              id: fallbackTier.id_fallback,
-              name: fallbackTier.name,
-              monthly_price: fallbackTier.price
-            };
-          }
-        }
-        
-        if (matchedPlan) {
-          handlePaymentSuccess(matchedPlan, 'afrotools');
-          
-          // Nettoyer l'URL pour ne pas réexécuter si l'utilisateur rafraîchit
-          window.history.replaceState({}, document.title, window.location.pathname);
-        }
-      }
+    if (!user) return;
+    const params = new URLSearchParams(location.search);
+    const paymentStatus = params.get('payment');
+    if (paymentStatus === 'cancelled') {
+      setError('Paiement annulé. Aucun montant n’a été débité.');
+      window.history.replaceState({}, document.title, window.location.pathname);
+      return;
     }
-  }, [location.search, loading, dbPlans, user]);
+    if (paymentStatus !== 'success') return;
+
+    window.history.replaceState({}, document.title, window.location.pathname);
+    setConfirmingPayment(true);
+    let attempts = 0;
+    let cancelled = false;
+    const poll = async () => {
+      if (cancelled) return;
+      attempts += 1;
+      const profile = await refreshProfile();
+      if (profile?.subscription_status === 'active') {
+        setConfirmingPayment(false);
+        navigate('/espace-chauffeur');
+        return;
+      }
+      if (attempts >= 10) {
+        setConfirmingPayment(false);
+        setError("Votre paiement est en cours de confirmation par l'opérateur. Votre formule s'activera automatiquement dans quelques minutes.");
+        return;
+      }
+      setTimeout(poll, 3000);
+    };
+    poll();
+    return () => { cancelled = true; };
+  }, [location.search, user?.id]);
 
   if (loading) {
     return (
@@ -220,8 +194,15 @@ export const SubscriptionPage = () => {
           </p>
         </div>
 
+        {confirmingPayment && (
+          <div role="status" className="max-w-2xl mx-auto mb-8 bg-demandoo-50 p-4 rounded-xl flex items-center gap-3 text-demandoo-800 border border-demandoo-200">
+            <Loader2 className="w-5 h-5 shrink-0 animate-spin" />
+            <p className="text-xs sm:text-sm font-medium">Confirmation de votre paiement en cours…</p>
+          </div>
+        )}
+
         {error && (
-          <div className="max-w-2xl mx-auto mb-8 bg-red-50 p-4 rounded-xl flex items-center gap-3 text-red-700 border border-red-200 shadow-sm">
+          <div role="alert" className="max-w-2xl mx-auto mb-8 bg-red-50 p-4 rounded-xl flex items-center gap-3 text-red-700 border border-red-200 shadow-sm">
             <AlertCircle className="w-5 h-5 shrink-0" />
             <p className="text-xs sm:text-sm font-medium">{error}</p>
           </div>

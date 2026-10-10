@@ -11,6 +11,11 @@ const VALID_ROLES = ['passenger', 'driver'];
 // Helper pour sécuriser le code secret de 4 chiffres
 const padSecretCode = (code) => `DMD-Sec-24!${code}`;
 
+// Le mode démo (données en localStorage) n'existe qu'en développement local.
+// En production, une erreur serveur doit rester une erreur — jamais un faux succès.
+const DEMO_MODE = import.meta.env.DEV;
+const isDemoUser = (u) => DEMO_MODE && (!u?.id || typeof u.id !== 'string' || u.id.startsWith('usr-'));
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -235,7 +240,7 @@ export const AuthProvider = ({ children }) => {
 
     // Bloquer les champs sensibles côté frontend
     const { role: _r, is_admin: _a, ...safeUpdates } = updates;
-    const isMockUser = !user.id || typeof user.id !== 'string' || user.id.startsWith('usr-');
+    const isMockUser = isDemoUser(user);
 
     if (!isSupabaseConfigured || isMockUser) {
       const updated = { ...user, ...safeUpdates };
@@ -252,149 +257,103 @@ export const AuthProvider = ({ children }) => {
         .select()
         .single();
 
-      if (error) {
-        console.warn("Update profile error (fallback to local):", error);
-        const updated = { ...user, ...safeUpdates };
-        setUser(updated);
-        localStorage.setItem('demandoo_user_v2', JSON.stringify(updated));
-        return { success: true, user: updated };
-      }
-      setUser(data);
+      if (error) throw error;
+      setUser({ ...user, ...data });
       return { success: true, user: data };
     } catch (err) {
-      console.warn("Exception in updateProfile (fallback to local):", err);
-      const updated = { ...user, ...safeUpdates };
-      setUser(updated);
-      localStorage.setItem('demandoo_user_v2', JSON.stringify(updated));
-      return { success: true, user: updated };
+      console.warn("Update profile error:", err);
+      return { success: false, error: translateAuthError(err) };
     }
   };
 
+  // Enregistre le dossier chauffeur. Le statut VERIFIED n'est JAMAIS posé ici :
+  // il vient de /api/verify-kyc (IA, côté serveur) ou d'un administrateur.
   const completeDriverOnboarding = async (formData) => {
     if (!user) return { success: false, error: 'Non authentifié' };
 
-    const updates = {
-      role: 'driver',
-      driver_status: 'VERIFIED',
-      is_driver_active: true,
-      kyc_status: 'verified',
-      license_number: formData?.licenseInfo?.number || user.license_number || '',
-    };
-
-    const updatedUser = {
-      ...user,
-      ...updates,
+    const extras = {
       vehicle: formData?.vehicleInfo || user.vehicle || null,
       license_info: formData?.licenseInfo || null,
       personal_info: formData?.personalInfo || null,
       onboarding_completed: true,
     };
 
-    const isMockUser = !user.id || typeof user.id !== 'string' || user.id.startsWith('usr-');
-
-    if (!isSupabaseConfigured || isMockUser) {
+    if (!isSupabaseConfigured || isDemoUser(user)) {
+      const updatedUser = { ...user, ...extras, role: 'driver', driver_status: 'PENDING' };
       setUser(updatedUser);
       localStorage.setItem('demandoo_user_v2', JSON.stringify(updatedUser));
-      setViewMode('driver');
-      localStorage.setItem('demandoo_view_mode', 'driver');
       return { success: true, user: updatedUser };
     }
 
     try {
-      // Uniquement les colonnes valides pour public.profiles dans Supabase
       const dbUpdates = {
         role: 'driver',
-        driver_status: 'VERIFIED',
-        is_driver_active: true,
-        kyc_status: 'verified',
-        ...(formData?.licenseInfo?.number ? { license_number: formData.licenseInfo.number } : {})
+        ...(formData?.licenseInfo?.number ? { license_number: formData.licenseInfo.number } : {}),
+        // Soumission du dossier (le trigger SQL n'autorise que INCOMPLETE/REJECTED → PENDING)
+        ...(['VERIFIED', 'PENDING'].includes(user.driver_status) ? {} : { driver_status: 'PENDING' }),
       };
 
-      const { data, error } = await supabase
-        .from('profiles')
-        .update(dbUpdates)
-        .eq('id', user.id)
-        .select()
-        .single();
+      const { error } = await supabase.from('profiles').update(dbUpdates).eq('id', user.id);
+      if (error) throw error;
 
-      if (error) {
-        console.warn("Supabase driver onboarding update fallback to local:", error);
-        setUser(updatedUser);
-        localStorage.setItem('demandoo_user_v2', JSON.stringify(updatedUser));
+      // Relire le profil : le statut a pu être validé côté serveur par l'IA
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      const refreshed = authUser ? await fetchUserProfile(authUser) : null;
+      const finalUser = { ...(refreshed || user), ...extras };
+      setUser(finalUser);
+      if (finalUser.driver_status === 'VERIFIED') {
         setViewMode('driver');
         localStorage.setItem('demandoo_view_mode', 'driver');
-        return { success: true, user: updatedUser };
       }
-
-      const finalUser = { ...updatedUser, ...(data || {}) };
-      setUser(finalUser);
-      localStorage.setItem('demandoo_user_v2', JSON.stringify(finalUser));
-      setViewMode('driver');
-      localStorage.setItem('demandoo_view_mode', 'driver');
       return { success: true, user: finalUser };
     } catch (err) {
-      console.warn("Exception during driver onboarding (fallback to local):", err);
-      setUser(updatedUser);
-      localStorage.setItem('demandoo_user_v2', JSON.stringify(updatedUser));
-      setViewMode('driver');
-      localStorage.setItem('demandoo_view_mode', 'driver');
-      return { success: true, user: updatedUser };
+      console.warn("Driver onboarding error:", err);
+      return { success: false, error: "Impossible d'enregistrer votre dossier. Vérifiez votre connexion et réessayez." };
     }
   };
 
-  // SaaS Subscriptions
-  const subscribeDriver = async (planSlug, billingCycle, tripLimit) => {
+  // SaaS Subscriptions — seule l'offre gratuite s'active depuis le navigateur (RPC contrôlée,
+  // 1 fois par chauffeur). Les formules payantes passent par /api/payments/checkout + webhook.
+  const subscribeDriver = async (planSlug) => {
     if (!user) return { success: false };
 
-    const isMockUser = !user.id || typeof user.id !== 'string' || user.id.startsWith('usr-');
-
-    if (!isSupabaseConfigured || isMockUser) {
-      const updates = {
-        subscription_status: planSlug === 'trial' ? 'trial' : 'active',
-        subscription_plan: planSlug,
-        subscription_trip_limit: tripLimit,
-        subscription_trips_used: 0
-      };
-      const updated = { ...user, ...updates };
+    if (!isSupabaseConfigured || isDemoUser(user)) {
+      const updated = { ...user, subscription_status: 'trial', subscription_plan: 'trial', subscription_trip_limit: 1, subscription_trips_used: 0 };
       setUser(updated);
       localStorage.setItem('demandoo_user_v2', JSON.stringify(updated));
       return { success: true, user: updated };
     }
 
+    if (planSlug !== 'trial') {
+      return { success: false, error: 'Les formules payantes nécessitent un paiement.' };
+    }
+
     try {
-      const mockTransactionId = `DEM-${Date.now()}`;
-      const amount = planSlug === 'pro' ? 5000 : (planSlug === 'standard' ? 2500 : 0);
-
-      const { error } = await supabase.rpc('mock_payment_webhook', {
-        p_transaction_id: mockTransactionId,
-        p_driver_id: user.id,
-        p_plan: planSlug,
-        p_amount: amount
-      });
-
+      const { data, error } = await supabase.rpc('start_free_trial');
       if (error) throw error;
-
-      // Refresh profile
-      const { data: refreshedProfile } = await supabase.from('profiles').select('*').eq('id', user.id).single();
-      
-      if (refreshedProfile) {
-        setUser(refreshedProfile);
-        localStorage.setItem('demandoo_user_v2', JSON.stringify(refreshedProfile));
-        return { success: true, user: refreshedProfile };
+      if (data?.status === 'already_used') {
+        return { success: false, error: "Vous avez déjà profité de l'offre Découverte." };
       }
-
-      return { success: false };
+      const refreshed = await refreshProfile();
+      return { success: true, user: refreshed };
     } catch (e) {
       console.warn("Subscription error:", e);
-      return { success: false, error: e };
+      return { success: false, error: "Impossible d'activer l'offre. Réessayez." };
     }
+  };
+
+  // Relit le profil depuis Supabase (ex. après confirmation d'un paiement par webhook)
+  const refreshProfile = async () => {
+    if (!isSupabaseConfigured || !user) return user;
+    const { data: { user: authUser } } = await supabase.auth.getUser();
+    return authUser ? fetchUserProfile(authUser) : null;
   };
 
   const updateDriverStatus = async (isActive) => {
     if (!user) return { success: false };
     
     // Fallback mode if Supabase not configured
-    const isMockUser = !user.id || typeof user.id !== 'string' || user.id.startsWith('usr-');
+    const isMockUser = isDemoUser(user);
     if (!isSupabaseConfigured || isMockUser) {
       const updated = { ...user, is_driver_active: isActive };
       setUser(updated);
@@ -410,22 +369,20 @@ export const AuthProvider = ({ children }) => {
         .select()
         .single();
       if (error) throw error;
-      setUser(data);
-      localStorage.setItem('demandoo_user_v2', JSON.stringify(data));
-      return { success: true, user: data };
+      const merged = { ...user, ...data };
+      setUser(merged);
+      localStorage.setItem('demandoo_user_v2', JSON.stringify(merged));
+      return { success: true, user: merged };
     } catch (err) {
       console.warn("Failed to update driver status:", err);
-      const updated = { ...user, is_driver_active: isActive };
-      setUser(updated);
-      localStorage.setItem('demandoo_user_v2', JSON.stringify(updated));
-      return { success: true, user: updated };
+      return { success: false, error: translateAuthError(err) };
     }
   };
 
   const incrementTripsUsed = async () => {
     if (!user) return { success: false };
     
-    const isMockUser = !user.id || typeof user.id !== 'string' || user.id.startsWith('usr-');
+    const isMockUser = isDemoUser(user);
     if (!isSupabaseConfigured || isMockUser) {
       const updatedUser = { ...user, subscription_trips_used: (user.subscription_trips_used || 0) + 1 };
       setUser(updatedUser);
@@ -433,27 +390,11 @@ export const AuthProvider = ({ children }) => {
       return { success: true, user: updatedUser };
     }
 
-    try {
-      const newTripsUsed = (user.subscription_trips_used || 0) + 1;
-      
-      const { error } = await supabase
-        .from('driver_subscriptions')
-        .update({ trips_used: newTripsUsed })
-        .eq('driver_id', user.id)
-        .in('status', ['active', 'trial']);
-        
-      if (error) throw error;
-      const updatedUser = { ...user, subscription_trips_used: newTripsUsed };
-      setUser(updatedUser);
-      localStorage.setItem('demandoo_user_v2', JSON.stringify(updatedUser));
-      return { success: true, user: updatedUser };
-    } catch (err) {
-      console.warn("Failed to increment trips used:", err);
-      const updatedUser = { ...user, subscription_trips_used: (user.subscription_trips_used || 0) + 1 };
-      setUser(updatedUser);
-      localStorage.setItem('demandoo_user_v2', JSON.stringify(updatedUser));
-      return { success: true, user: updatedUser };
-    }
+    // Le compteur réel est incrémenté en base par le trigger after_trip_insert_increment_quota.
+    // Ici on ne met à jour que l'affichage.
+    const updatedUser = { ...user, subscription_trips_used: (user.subscription_trips_used || 0) + 1 };
+    setUser(updatedUser);
+    return { success: true, user: updatedUser };
   };
 
   const login = async (identifier, password, role = 'passenger') => {
@@ -472,7 +413,7 @@ export const AuthProvider = ({ children }) => {
         email: rawInput,
         full_name: 'Utilisateur Démo',
         role: role,
-        driver_status: role === 'driver' ? 'VERIFIED' : null,
+        driver_status: role === 'driver' ? 'PENDING' : null,
       };
       setUser(mockUser);
       localStorage.setItem('demandoo_user_v2', JSON.stringify(mockUser));
@@ -489,25 +430,6 @@ export const AuthProvider = ({ children }) => {
         // C'est un numéro de téléphone
         const digits = rawInput.replace(/\D/g, '');
         const phoneNoCountry = digits.replace(/^221/, '').replace(/^0+/, '');
-
-        // 1. Chercher dans la table profiles si un utilisateur correspond à ce numéro
-        try {
-          const { data: matchedProfiles } = await supabase
-            .from('profiles')
-            .select('email, phone')
-            .or(`phone.ilike.%${phoneNoCountry}%,email.ilike.%${phoneNoCountry}%`)
-            .limit(3);
-
-          if (matchedProfiles && matchedProfiles.length > 0) {
-            matchedProfiles.forEach(p => {
-              if (p.email && !candidateEmails.includes(p.email)) {
-                candidateEmails.push(p.email);
-              }
-            });
-          }
-        } catch (queryErr) {
-          console.warn("Phone lookup in profiles table failed:", queryErr);
-        }
 
         // 2. Ajouter les formats générés standards
         if (phoneNoCountry) {
@@ -554,9 +476,8 @@ export const AuthProvider = ({ children }) => {
           id: authData.user.id,
           email: authData.user.email,
           full_name: authData.user.user_metadata?.full_name || authData.user.email?.split('@')[0] || 'Utilisateur',
-          role: role || 'driver',
-          driver_status: 'VERIFIED',
-          is_driver_active: true,
+          role: VALID_ROLES.includes(role) ? role : 'passenger',
+          driver_status: role === 'driver' ? 'PENDING' : 'INCOMPLETE',
           phone: authData.user.user_metadata?.phone || rawInput
         };
         const { data: inserted } = await supabase.from('profiles').insert([newProfile]).select().single();
@@ -574,7 +495,7 @@ export const AuthProvider = ({ children }) => {
       if (completeProfile.role === 'admin') {
         setViewMode('admin');
         localStorage.setItem('demandoo_view_mode', 'admin');
-      } else if (completeProfile.role === 'driver' || role === 'driver') {
+      } else if (completeProfile.role === 'driver' && completeProfile.driver_status === 'VERIFIED') {
         setViewMode('driver');
         localStorage.setItem('demandoo_view_mode', 'driver');
       }
@@ -651,8 +572,8 @@ export const AuthProvider = ({ children }) => {
         console.error("Erreur signUp:", error);
         // Si rate limit Supabase ou erreur de validation mail → fallback mode démo
         const errMsg = (error.message || '').toLowerCase();
-        if (errMsg.includes('rate limit') || errMsg.includes('over_email_send_rate_limit') || error.status === 429) {
-          console.warn('[Auth] Rate limit Supabase — basculement mode démo');
+        if (DEMO_MODE && (errMsg.includes('rate limit') || errMsg.includes('over_email_send_rate_limit') || error.status === 429)) {
+          console.warn('[Auth] Rate limit Supabase — basculement mode démo (dev uniquement)');
           return createDemoUser();
         }
         return { success: false, error: translateAuthError(error) };
@@ -705,7 +626,7 @@ export const AuthProvider = ({ children }) => {
       console.error("Register exception:", err);
       // Fallback démo si Supabase est injoignable ou rate limité
       const errMsg = (err.message || '').toLowerCase();
-      if (errMsg.includes('rate limit') || errMsg.includes('429') || errMsg.includes('fetch')) {
+      if (DEMO_MODE && (errMsg.includes('rate limit') || errMsg.includes('429') || errMsg.includes('fetch'))) {
         console.warn('[Auth] Exception réseau — basculement mode démo');
         return createDemoUser();
       }
@@ -729,6 +650,7 @@ export const AuthProvider = ({ children }) => {
       subscribeDriver,
       incrementTripsUsed,
       fetchUserProfile,
+      refreshProfile,
     }}>
       {children}
     </AuthContext.Provider>
