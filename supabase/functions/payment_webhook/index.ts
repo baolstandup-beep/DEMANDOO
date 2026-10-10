@@ -2,9 +2,8 @@
 // Sécurité :
 //   - Wave : signature HMAC-SHA256 de l'en-tête « Wave-Signature » (secret WAVE_WEBHOOK_SECRET)
 //   - Bictorys / autres : en-tête « X-Secret-Key » ou « X-Webhook-Secret » = PAYMENT_WEBHOOK_SECRET
-//   - Le plan et le montant attendu viennent de la ligne `payments` créée par /api/payments/checkout,
+//   - Le plan et le montant attendu viennent de la ligne payments créée par /api/payments/checkout,
 //     jamais du contenu du webhook.
-import { serve } from "https://deno.land/std@0.177.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 
 const encoder = new TextEncoder()
@@ -39,7 +38,7 @@ function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } })
 }
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   if (req.method !== "POST") return new Response("Method Not Allowed", { status: 405 })
 
   const rawBody = await req.text()
