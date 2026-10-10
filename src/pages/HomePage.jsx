@@ -40,7 +40,7 @@ const POPULAR_LINES = [
 ];
 
 const REASONS = [
-  { icon: ShieldCheck, title: 'Chauffeurs vérifiés', text: 'Pièce d’identité et permis contrôlés avant le badge.' },
+  { icon: ShieldCheck, title: 'Chauffeurs vérifiés', text: 'Dossier et documents du véhicule contrôlés avant le badge.' },
   { icon: BadgePercent, title: 'Zéro commission', text: 'Le prix convenu revient entièrement au chauffeur.' },
   { icon: MessageCircle, title: 'Contact direct', text: 'Appel ou WhatsApp, sans intermédiaire.' },
   { icon: Wallet, title: 'Paiement simple', text: 'Espèces, Wave ou Orange Money, selon votre accord.' },
@@ -316,7 +316,7 @@ export const HomePage = () => {
       <section aria-labelledby="trust-title" className="bg-brand-mist py-20 sm:py-24 px-4 sm:px-6 lg:px-8 overflow-hidden">
         <div className="max-w-6xl mx-auto grid grid-cols-[minmax(0,1fr)] lg:grid-cols-2 gap-12 items-center">
           <Reveal>
-            <SectionHeading id="trust-title" align="left" eyebrow="Votre route, notre engagement" title="Arrivez à destination l’esprit tranquille" text="Le badge « Vérifié » signifie que le chauffeur a fourni une pièce d’identité et un permis valides, contrôlés par notre équipe. Vous savez qui vous conduit avant de partir." />
+            <SectionHeading id="trust-title" align="left" eyebrow="Votre route, notre engagement" title="Arrivez à destination l’esprit tranquille" text="Le badge « Vérifié » signifie que notre équipe a contrôlé le dossier du chauffeur : carte grise, assurance et photos du véhicule. Vous savez qui vous conduit avant de partir." />
             <ul className="mt-6 space-y-3">
               {['Profils et véhicules présentés en détail', 'Avis laissés par de vrais passagers', 'Échange direct avant le départ'].map(item => (
                 <li key={item} className="flex items-center gap-3 font-semibold text-slate-700">

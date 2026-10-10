@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { apiPost } from '../lib/api';
 import { useNotifications } from '../context/NotificationContext';
 import { VerifiedDriverBadge } from '../components/common/Badge';
 import { 
@@ -21,7 +20,7 @@ import {
 } from 'lucide-react';
 
 export const DriverVerificationPage = () => {
-  const { user, updateDriverStatus, completeDriverOnboarding, refreshProfile } = useAuth();
+  const { user, updateDriverStatus, completeDriverOnboarding } = useAuth();
   const [verificationStatus, setVerificationStatus] = useState(null);
   const { addNotification } = useNotifications();
   const navigate = useNavigate();
@@ -58,15 +57,6 @@ export const DriverVerificationPage = () => {
 
 
 
-  // Étape 3 : Permis
-  const [licenseInfo, setLicenseInfo] = useState({
-    number: '',
-    issueDate: '',
-    expireDate: '',
-    licenseFront: null,
-    licenseBack: null
-  });
-
   // Étape 4 : Véhicule
   const [vehicleInfo, setVehicleInfo] = useState({
     make: '',
@@ -93,8 +83,10 @@ export const DriverVerificationPage = () => {
   // Étape 6 : Validation finale
   const [certify, setCertify] = useState(false);
 
-  const handleNext = () => setStep(s => Math.min(s + 1, 6));
-  const handlePrev = () => setStep(s => Math.max(s - 1, 1));
+  // Parcours : Infos (1) → Véhicule (3) → Docs (4) → Validation (5) → Confirmation (6)
+  const STEP_SEQUENCE = [1, 3, 4, 5, 6];
+  const handleNext = () => setStep(s => STEP_SEQUENCE[Math.min(STEP_SEQUENCE.indexOf(s) + 1, STEP_SEQUENCE.length - 1)]);
+  const handlePrev = () => setStep(s => STEP_SEQUENCE[Math.max(STEP_SEQUENCE.indexOf(s) - 1, 0)]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -112,7 +104,6 @@ export const DriverVerificationPage = () => {
       // 1. Enregistrer le dossier (statut PENDING — jamais VERIFIED depuis le navigateur)
       const result = await completeDriverOnboarding({
         personalInfo,
-        licenseInfo,
         vehicleDocs,
         vehicleInfo
       });
@@ -126,36 +117,14 @@ export const DriverVerificationPage = () => {
         return;
       }
 
-      // 2. Pré-vérification IA côté serveur : elle seule peut valider automatiquement le compte
-      let finalStatus = result.user?.driver_status || 'PENDING';
-      if (licenseInfo.licenseFront && finalStatus !== 'VERIFIED') {
-        const fileToBase64 = (file) => new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.readAsDataURL(file);
-          reader.onload = () => resolve(reader.result);
-          reader.onerror = error => reject(error);
-        });
-
-        addNotification({ title: "Vérification en cours", message: "Analyse de votre permis…", type: "info" });
-        try {
-          const kyc = await apiPost('/api/verify-kyc', {
-            image_base64: await fileToBase64(licenseInfo.licenseFront)
-          });
-          finalStatus = kyc.status;
-          if (kyc.status !== 'VERIFIED' && kyc.reason) {
-            addNotification({ title: "Vérification manuelle", message: kyc.reason, type: "info" });
-          }
-        } catch (kycErr) {
-          console.warn("KYC indisponible, revue manuelle :", kycErr);
-        }
-        await refreshProfile();
-      }
+      // 2. Le dossier est vérifié par l'équipe (statut PENDING jusqu'à validation)
+      const finalStatus = result.user?.driver_status || 'PENDING';
 
       setVerificationStatus(finalStatus);
       setStep(6);
 
       addNotification(finalStatus === 'VERIFIED'
-        ? { title: "Compte activé !", message: "Votre permis a été vérifié. Vous pouvez proposer des trajets.", type: "success" }
+        ? { title: "Compte activé !", message: "Votre dossier a été validé. Vous pouvez proposer des trajets.", type: "success" }
         : { title: "Dossier envoyé", message: "Notre équipe vérifie votre dossier, généralement sous 24 h.", type: "success" });
     } catch (err) {
       console.error("Submission error:", err);
@@ -170,33 +139,28 @@ export const DriverVerificationPage = () => {
   };
 
   const renderProgressBar = () => {
-    const titles = [
-      "Infos",
-      "Permis",
-      "Véhicule",
-      "Docs",
-      "Validation"
-    ];
+    const titles = ["Infos", "Véhicule", "Docs", "Validation"];
+    const visibleIndex = Math.max(STEP_SEQUENCE.indexOf(step), 0) + 1; // 1 à 4
     
     return (
       <div className="mb-8">
         <div className="flex justify-between items-center mb-2">
-          <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Étape {step} sur 5</span>
-          <span className="text-xs font-black text-demandoo-600">{Math.round((step / 5) * 100)}%</span>
+          <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Étape {visibleIndex} sur 4</span>
+          <span className="text-xs font-black text-demandoo-600">{Math.round((visibleIndex / 4) * 100)}%</span>
         </div>
         <div className="h-2 bg-slate-100 rounded-full overflow-hidden flex">
-          {[1, 2, 3, 4, 5].map((s) => (
+          {[1, 2, 3, 4].map((s) => (
             <div 
               key={s}
               className={`h-full transition-all duration-500 flex-1 ${
-                s < step ? 'bg-emerald-500' : s === step ? 'bg-demandoo-500' : 'bg-transparent border-r border-white/40'
+                s < visibleIndex ? 'bg-emerald-500' : s === visibleIndex ? 'bg-demandoo-500' : 'bg-transparent border-r border-white/40'
               }`}
             />
           ))}
         </div>
         <div className="flex justify-between mt-3 px-1 hidden sm:flex">
           {titles.map((title, i) => (
-            <span key={i} className={`text-[10px] font-black uppercase tracking-widest ${i + 1 <= step ? 'text-demandoo-600' : 'text-slate-300'}`}>
+            <span key={i} className={`text-[10px] font-black uppercase tracking-widest ${i + 1 <= visibleIndex ? 'text-demandoo-600' : 'text-slate-300'}`}>
               {title}
             </span>
           ))}
@@ -275,8 +239,8 @@ export const DriverVerificationPage = () => {
               Une correction est nécessaire dans votre dossier.
             </div>
             <p className="font-medium text-rose-800/80 leading-relaxed">
-              <strong>Permis de conduire</strong><br/>
-              Motif : « L’image est trop floue. Merci d’envoyer une nouvelle photo. »
+              Vérifiez vos informations et vos documents, puis soumettez de nouveau votre dossier.
+              Besoin d’aide ? Appelez-nous au +221 78 532 40 40.
             </p>
           </div>
         )}
@@ -330,45 +294,6 @@ export const DriverVerificationPage = () => {
             </div>
           )}
 
-
-          {/* STEP 2: Permis de conduire */}
-          {step === 2 && (
-            <div className="space-y-6 animate-fade-in">
-              <h2 className="text-xl font-black text-slate-900 flex items-center gap-2">
-                <FileText className="w-6 h-6 text-demandoo-500" />
-                Permis de conduire
-              </h2>
-              
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                <div className="sm:col-span-2">
-                  <label htmlFor="kyc-field-6" className="text-[11px] font-black text-slate-400 uppercase tracking-widest block mb-2">Numéro du permis</label>
-                  <input id="kyc-field-6" type="text" value={licenseInfo.number} onChange={e => setLicenseInfo({...licenseInfo, number: e.target.value})} className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 font-bold text-sm focus:ring-2 focus:ring-demandoo-500/20 focus:border-demandoo-500 outline-none" />
-                </div>
-                <div>
-                  <label htmlFor="kyc-field-7" className="text-[11px] font-black text-slate-400 uppercase tracking-widest block mb-2">Date de délivrance</label>
-                  <input id="kyc-field-7" type="date" value={licenseInfo.issueDate} onChange={e => setLicenseInfo({...licenseInfo, issueDate: e.target.value})} className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 font-bold text-sm focus:ring-2 focus:ring-demandoo-500/20 focus:border-demandoo-500 outline-none" />
-                </div>
-                <div>
-                  <label htmlFor="kyc-field-8" className="text-[11px] font-black text-slate-400 uppercase tracking-widest block mb-2">Date d'expiration</label>
-                  <input id="kyc-field-8" type="date" value={licenseInfo.expireDate} onChange={e => setLicenseInfo({...licenseInfo, expireDate: e.target.value})} className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 font-bold text-sm focus:ring-2 focus:ring-demandoo-500/20 focus:border-demandoo-500 outline-none" />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
-                {renderUploadBox("Photo recto du permis", true, licenseInfo.licenseFront, (f) => setLicenseInfo({...licenseInfo, licenseFront: f}))}
-                {renderUploadBox("Photo verso si nécessaire", false, licenseInfo.licenseBack, (f) => setLicenseInfo({...licenseInfo, licenseBack: f}))}
-              </div>
-
-              <div className="flex justify-between pt-6 border-t border-slate-100">
-                <button onClick={handlePrev} className="px-6 py-4 text-slate-500 hover:text-slate-900 font-black text-sm flex items-center gap-2">
-                  <ArrowLeft className="w-4 h-4" /> Retour
-                </button>
-                <button onClick={handleNext} className="px-8 py-4 bg-demandoo-600 hover:bg-demandoo-700 text-white rounded-2xl font-black text-sm flex items-center gap-2 shadow-lg shadow-demandoo-600/20 active:scale-95 transition-all">
-                  Continuer <ArrowRight className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-          )}
 
           {/* STEP 3: Informations du véhicule */}
           {step === 3 && (
@@ -479,10 +404,6 @@ export const DriverVerificationPage = () => {
               
               <div className="bg-slate-50 rounded-2xl p-6 border border-slate-200 space-y-4 text-sm">
 
-                <div className="flex justify-between border-b border-slate-200 pb-2">
-                  <span className="font-bold text-slate-500">Permis</span>
-                  <span className="font-black text-slate-900">Complété</span>
-                </div>
                 <div className="flex justify-between">
                   <span className="font-bold text-slate-500">Véhicule</span>
                   <span className="font-black text-slate-900">Complété</span>
@@ -532,7 +453,7 @@ export const DriverVerificationPage = () => {
                 Félicitations ! Votre compte chauffeur Demandoo est maintenant actif.
               </h2>
               <p className="text-slate-500 font-medium max-w-md mx-auto">
-                Votre permis a été vérifié. Vous pouvez dès à présent proposer vos trajets.
+                Votre dossier a été validé. Vous pouvez dès à présent proposer vos trajets.
               </p>
 
               <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mt-8">
