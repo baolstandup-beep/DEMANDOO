@@ -119,13 +119,25 @@ FOR EACH ROW EXECUTE FUNCTION public.protect_profile_sensitive_fields();
 
 
 -- ─── 3. Abonnements & paiements : écriture réservée au serveur ─────────────────────────
-DROP POLICY IF EXISTS "Drivers can insert own subscriptions" ON public.driver_subscriptions;
-DROP POLICY IF EXISTS "Drivers can create own subscriptions" ON public.driver_subscriptions;
-DROP POLICY IF EXISTS "Drivers can update own subscriptions" ON public.driver_subscriptions;
-DROP POLICY IF EXISTS "Drivers can create payments" ON public.payments;
+-- (chaque table n'est traitée que si elle existe : driver_subscriptions est absente en production)
+DO $$
+BEGIN
+  IF to_regclass('public.driver_subscriptions') IS NOT NULL THEN
+    EXECUTE 'DROP POLICY IF EXISTS "Drivers can insert own subscriptions" ON public.driver_subscriptions';
+    EXECUTE 'DROP POLICY IF EXISTS "Drivers can create own subscriptions" ON public.driver_subscriptions';
+    EXECUTE 'DROP POLICY IF EXISTS "Drivers can update own subscriptions" ON public.driver_subscriptions';
+    EXECUTE 'REVOKE INSERT, UPDATE, DELETE ON public.driver_subscriptions FROM anon, authenticated';
+  END IF;
+  IF to_regclass('public.payments') IS NOT NULL THEN
+    EXECUTE 'DROP POLICY IF EXISTS "Drivers can create payments" ON public.payments';
+    EXECUTE 'REVOKE INSERT, UPDATE, DELETE ON public.payments FROM anon, authenticated';
+  END IF;
+END $$;
 
-REVOKE INSERT, UPDATE, DELETE ON public.driver_subscriptions FROM anon, authenticated;
-REVOKE INSERT, UPDATE, DELETE ON public.payments FROM anon, authenticated;
+-- Prix alignés sur le site (Découverte 0, Standard 2 400, Pro 4 900 FCFA / mois)
+UPDATE public.subscription_plans SET monthly_price = 0    WHERE slug = 'trial';
+UPDATE public.subscription_plans SET monthly_price = 2400 WHERE slug = 'standard';
+UPDATE public.subscription_plans SET monthly_price = 4900 WHERE slug = 'pro';
 
 
 -- ─── 4. Offre gratuite « Découverte » : 1 seule fois par chauffeur ─────────────────────
@@ -139,6 +151,7 @@ DECLARE
   v_uid     UUID := auth.uid();
   v_profile public.profiles%ROWTYPE;
   v_plan_id UUID;
+  v_used    BOOLEAN := FALSE;
 BEGIN
   IF v_uid IS NULL THEN
     RAISE EXCEPTION 'Non authentifié' USING ERRCODE = '42501';
@@ -150,17 +163,23 @@ BEGIN
   END IF;
 
   -- Déjà eu un abonnement (essai ou payant) → refus
-  IF v_profile.subscription_plan IS NOT NULL
-     OR EXISTS (SELECT 1 FROM public.driver_subscriptions WHERE driver_id = v_uid) THEN
+  IF v_profile.subscription_plan IS NOT NULL THEN
     RETURN jsonb_build_object('status', 'already_used');
   END IF;
 
-  SELECT id INTO v_plan_id FROM public.subscription_plans
-   WHERE slug IN ('trial', 'decouverte', 'free') ORDER BY monthly_price LIMIT 1;
-
-  IF v_plan_id IS NOT NULL THEN
-    INSERT INTO public.driver_subscriptions (driver_id, plan_id, billing_cycle, status, period_end)
-    VALUES (v_uid, v_plan_id, 'trial', 'trial', NOW() + INTERVAL '1 month');
+  -- Historique facultatif (si la table driver_subscriptions existe)
+  IF to_regclass('public.driver_subscriptions') IS NOT NULL THEN
+    IF EXISTS (SELECT 1 FROM public.subscription_plans WHERE slug = 'trial') THEN
+      SELECT id INTO v_plan_id FROM public.subscription_plans WHERE slug = 'trial' LIMIT 1;
+      EXECUTE 'SELECT EXISTS (SELECT 1 FROM public.driver_subscriptions WHERE driver_id = $1)'
+         INTO v_used USING v_uid;
+      IF v_used THEN
+        RETURN jsonb_build_object('status', 'already_used');
+      END IF;
+      EXECUTE 'INSERT INTO public.driver_subscriptions (driver_id, plan_id, billing_cycle, status, period_end)
+               VALUES ($1, $2, ''trial'', ''trial'', NOW() + INTERVAL ''1 month'')'
+        USING v_uid, v_plan_id;
+    END IF;
   END IF;
 
   UPDATE public.profiles
@@ -212,15 +231,20 @@ BEGIN
   v_slug := split_part(p_reference, '_', 2);
   SELECT * INTO v_plan FROM public.subscription_plans WHERE slug = v_slug LIMIT 1;
 
-  IF v_plan.id IS NOT NULL THEN
-    INSERT INTO public.driver_subscriptions (driver_id, plan_id, billing_cycle, status, period_end)
-    VALUES (v_payment.driver_id, v_plan.id, 'monthly', 'active', NOW() + INTERVAL '1 month')
-    RETURNING id INTO v_sub_id;
+  IF v_plan.id IS NULL OR v_slug NOT IN ('standard', 'pro') THEN
+    RETURN jsonb_build_object('status', 'unknown_plan');
   END IF;
 
   UPDATE public.payments
-     SET status = 'paid', confirmed_at = NOW(), subscription_id = v_sub_id
+     SET status = 'paid', confirmed_at = NOW()
    WHERE id = v_payment.id;
+
+  -- Historique facultatif (si la table driver_subscriptions existe)
+  IF to_regclass('public.driver_subscriptions') IS NOT NULL THEN
+    EXECUTE 'INSERT INTO public.driver_subscriptions (driver_id, plan_id, billing_cycle, status, period_end)
+             VALUES ($1, $2, ''monthly'', ''active'', NOW() + INTERVAL ''1 month'') RETURNING id'
+       INTO v_sub_id USING v_payment.driver_id, v_plan.id;
+  END IF;
 
   UPDATE public.profiles
      SET subscription_plan       = v_slug,
@@ -259,6 +283,8 @@ CREATE POLICY "Only verified drivers can publish trips" ON public.trips
 -- ─── 7. Vérifications post-migration (à lire dans les résultats) ────────────────────────
 -- Doit renvoyer 0 ligne :
 --   SELECT proname FROM pg_proc WHERE proname = 'mock_payment_webhook';
--- Doit renvoyer uniquement des politiques SELECT pour authenticated :
+-- Ne doit renvoyer aucune politique INSERT/UPDATE pour les utilisateurs :
 --   SELECT tablename, policyname, cmd FROM pg_policies
 --    WHERE tablename IN ('driver_subscriptions','payments');
+-- Prix attendus : 0 / 2400 / 4900
+--   SELECT slug, monthly_price FROM public.subscription_plans ORDER BY monthly_price;

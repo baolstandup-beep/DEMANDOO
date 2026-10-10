@@ -90,12 +90,15 @@ export const SubscriptionPage = () => {
     }
   };
 
+  // La base (subscription_plans) fait foi : c'est le prix réellement facturé par /api/payments/checkout
   const getPlanId = (tier) => {
-    // Try to match the hardcoded tier with a real DB UUID based on price or name if needed.
-    // For now, if there is a DB plan with matching price, use its ID.
-    const dbPlan = dbPlans.find(p => p.monthly_price === tier.price);
+    const dbPlan = dbPlans.find(p => p.slug === tier.id_fallback);
     return dbPlan ? dbPlan.id : tier.id_fallback;
   };
+  const tiers = SUBSCRIPTION_TIERS.map(tier => {
+    const dbPlan = dbPlans.find(p => p.slug === tier.id_fallback);
+    return dbPlan ? { ...tier, price: dbPlan.monthly_price } : tier;
+  });
 
   const handleSubscribeClick = (tier) => {
     if (!user) {
@@ -210,7 +213,7 @@ export const SubscriptionPage = () => {
 
         {/* Grille des offres */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch">
-          {SUBSCRIPTION_TIERS.map((tier) => {
+          {tiers.map((tier) => {
             const isPro = tier.name === 'Pro';
             
             return (
